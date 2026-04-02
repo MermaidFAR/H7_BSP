@@ -32,7 +32,18 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 enable_language(C ASM)
 
 # Create an executable object type
-add_executable(${CMAKE_PROJECT_NAME})
+add_executable(${CMAKE_PROJECT_NAME}
+        User_File/Middleware/Algorithm/Basic/alg_basic.cpp
+        User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
+        User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
+        User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
+        User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
+        User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
+        User_File/Middleware/Algorithm/PID/alg_pid.cpp
+        User_File/Middleware/Algorithm/Complex/alg_complex.cpp
+        User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
+        User_File/Middleware/Algorithm/Queue/alg_queue.cpp
+        User_File/Middleware/Algorithm/Slope/alg_slope.cpp)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -50,6 +61,18 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+        User_File/Middleware/Algorithm/Basic
+        User_File/Middleware/Algorithm/Complex
+        User_File/Middleware/Algorithm/Filter/EKF
+        User_File/Middleware/Algorithm/Filter/Frequency
+        User_File/Middleware/Algorithm/Filter/Kalman
+        User_File/Middleware/Algorithm/FSM
+        User_File/Middleware/Algorithm/Matrix
+        User_File/Middleware/Algorithm/PID
+        User_File/Middleware/Algorithm/Quaternion
+        User_File/Middleware/Algorithm/Queue
+        User_File/Middleware/Algorithm/Slope
+        Middlewares/ST/ARM/DSP/Inc
 )
 
 # Add project symbols (macros)
