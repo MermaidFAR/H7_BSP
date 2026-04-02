@@ -1,0 +1,39 @@
+# CMake 构建输出
+build/
+cmake-build-*/
+out/
+
+# C/C++ 编译中间产物
+*.o
+*.d
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.su
+*.a
+*.so
+
+# STM32CubeMX 相关
+mx.scratch
+*.bak
+!.settings
+
+# IDE 与编辑器配置
+.idea/
+.vscode/
+*.swp
+*~
+*.log
+
+# 调试器配置与日志
+*.jlink
+*.launch
+JLinkLog.txt
+*.jdebug.user
+Debug.jdebug.user
+
+# 操作系统级缓存
+.DS_Store
+Thumbs.db
