@@ -31,19 +31,18 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
+include_directories(
+    ${CMAKE_SOURCE_DIR}/SystemView/SEGGER
+    ${CMAKE_SOURCE_DIR}/SystemView/FreeRTOS
+    ${CMAKE_SOURCE_DIR}/SystemView/Config
+    ${CMAKE_SOURCE_DIR}/SystemView/FreeRTOS/Config
+
+)
+
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
-        User_File/Middleware/Algorithm/Basic/alg_basic.cpp
-        User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
-        User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
-        User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
-        User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
-        User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
-        User_File/Middleware/Algorithm/PID/alg_pid.cpp
-        User_File/Middleware/Algorithm/Complex/alg_complex.cpp
-        User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
-        User_File/Middleware/Algorithm/Queue/alg_queue.cpp
-        User_File/Middleware/Algorithm/Slope/alg_slope.cpp)
+
+        )
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -56,6 +55,23 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+        User_File/Middleware/Algorithm/Basic/alg_basic.cpp
+        User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
+        User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
+        User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
+        User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
+        User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
+        User_File/Middleware/Algorithm/PID/alg_pid.cpp
+        User_File/Middleware/Algorithm/Complex/alg_complex.cpp
+        User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
+        User_File/Middleware/Algorithm/Queue/alg_queue.cpp
+        User_File/Middleware/Algorithm/Slope/alg_slope.cpp
+        SystemView/SEGGER/SEGGER_RTT.c
+        SystemView/SEGGER/SEGGER_SYSVIEW.c
+        SystemView/SEGGER/SEGGER_RTT_printf.c
+        SystemView/FreeRTOS/SEGGER_SYSVIEW_FreeRTOS.c
+        SystemView/FreeRTOS/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
+        SystemView/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
 )
 
 # Add include paths

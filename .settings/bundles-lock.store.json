@@ -89,6 +89,50 @@
       ]
     },
     {
+      "name": "jlink-gdbserver",
+      "version": "9.14.1+st.1",
+      "platform": "aarch64-darwin",
+      "selected_by": [
+        {
+          "name": "jlink-gdbserver",
+          "version": "9.14.1+st.1"
+        }
+      ]
+    },
+    {
+      "name": "jlink-gdbserver",
+      "version": "9.14.1+st.1",
+      "platform": "x86_64-darwin",
+      "selected_by": [
+        {
+          "name": "jlink-gdbserver",
+          "version": "9.14.1+st.1"
+        }
+      ]
+    },
+    {
+      "name": "jlink-gdbserver",
+      "version": "9.14.1+st.1",
+      "platform": "x86_64-linux",
+      "selected_by": [
+        {
+          "name": "jlink-gdbserver",
+          "version": "9.14.1+st.1"
+        }
+      ]
+    },
+    {
+      "name": "jlink-gdbserver",
+      "version": "9.14.1+st.1",
+      "platform": "x86_64-windows",
+      "selected_by": [
+        {
+          "name": "jlink-gdbserver",
+          "version": "9.14.1+st.1"
+        }
+      ]
+    },
+    {
       "name": "ninja",
       "version": "1.13.2+st.1",
       "platform": "darwin",

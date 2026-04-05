@@ -15,6 +15,10 @@
     {
       "name": "st-arm-clangd",
       "version": "21.1.0+st.2"
+    },
+    {
+      "name": "jlink-gdbserver",
+      "version": "9.14.1+st.1"
     }
   ]
 }
