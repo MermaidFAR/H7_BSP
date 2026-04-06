@@ -41,11 +41,18 @@ include_directories(
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
-
-        )
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
+
+get_target_property(RTOS_SRC FreeRTOS SOURCES)
+
+list(FILTER RTOS_SRC EXCLUDE REGEX "port\\.c$")
+
+list(APPEND RTOS_SRC "${CMAKE_SOURCE_DIR}/User_Config/FreeRTOS_Patch/port_patched.c")
+
+set_target_properties(FreeRTOS PROPERTIES SOURCES "${RTOS_SRC}")
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE

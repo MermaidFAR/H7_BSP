@@ -1,3 +1,9 @@
+/**
+ * @file    port_patched.c
+ * @author  zzm
+ * @brief   FreeRTOS 底层接口补丁，已注入 SystemView 探针。禁止由 CubeMX 覆写。
+ */
+
 /*
  * FreeRTOS Kernel V10.3.1
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.

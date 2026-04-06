@@ -177,6 +177,7 @@ standard names. */
 /* USER CODE END 2 */
 
 /* USER CODE BEGIN Defines */
+#define INCLUDE_xTaskGetIdleTaskHandle 1
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
 /* USER CODE END Defines */
 
