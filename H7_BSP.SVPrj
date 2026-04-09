@@ -5,7 +5,9 @@
     <IP TXT_IP="127.0.0.1" TXT_PORT="19111"/>
     <UART CMB_COM_PORT="COM1" TXT_BAUDRATE="700000"/>
   </Recorder>
-  <RecordingFiles/>
+  <RecordingFiles>
+    <File Name="C:/Program Files/SEGGER/SystemView/Sample/Sample_Multicore.SVDat"/>
+  </RecordingFiles>
   <DescriptionsFiles/>
   <ApplicationElfFiles/>
   <ElfFiles/>

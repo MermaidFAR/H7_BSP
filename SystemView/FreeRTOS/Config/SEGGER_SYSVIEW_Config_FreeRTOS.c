@@ -83,6 +83,9 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 static void _cbSendSystemDesc(void) {
   SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME",O=FreeRTOS");
   SEGGER_SYSVIEW_SendSysDesc("I#15=SysTick");
+  SEGGER_SYSVIEW_SendSysDesc("I#66=TIM5");  // TIM5_IRQn=50, 向量号=50+16=66
+  SEGGER_SYSVIEW_SendSysDesc("I#46=TIM4");  // TIM4_IRQn=30, 向量号=30+16=46
+  SEGGER_SYSVIEW_SendSysDesc("I#60=TIM8_UP_TIM13");  // TIM8_UP_TIM13_IRQn=44, 向量号=44+16=60
 }
 
 /*********************************************************************

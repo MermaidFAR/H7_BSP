@@ -1,0 +1,5 @@
+#
+#    SystemView Message file.
+#      Generated for: D:/KnowledgeBase/MyProject/BSP/H7_BSP/build/Debug/H7_BSP.elf from 09 4ÔÂ 2026 13:18:08
+#      Created on: 09 4ÔÂ 2026 13:18:19
+#

@@ -141,7 +141,7 @@ uint32_t Basic_Math_Endian_Reverse_32(void *Source, void *Destination)
 uint8_t Basic_Math_Sum_8(const uint8_t *Address, uint32_t Length)
 {
     uint8_t sum = 0;
-    for (int i = 0; i < Length; i++)
+    for (uint32_t i = 0; i < Length; i++)
     {
         sum += Address[i];
     }
@@ -158,7 +158,7 @@ uint8_t Basic_Math_Sum_8(const uint8_t *Address, uint32_t Length)
 uint16_t Basic_Math_Sum_16(const uint16_t *Address, uint32_t Length)
 {
     uint16_t sum = 0;
-    for (int i = 0; i < Length; i++)
+    for (uint32_t i = 0; i < Length; i++)
     {
         sum += Address[i];
     }
@@ -175,7 +175,7 @@ uint16_t Basic_Math_Sum_16(const uint16_t *Address, uint32_t Length)
 uint32_t Basic_Math_Sum_32(const uint32_t *Address, uint32_t Length)
 {
     uint32_t sum = 0;
-    for (int i = 0; i < Length; i++)
+    for (uint32_t i = 0; i < Length; i++)
     {
         sum += Address[i];
     }

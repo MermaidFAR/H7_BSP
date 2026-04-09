@@ -73,6 +73,16 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
         User_File/Middleware/Algorithm/Queue/alg_queue.cpp
         User_File/Middleware/Algorithm/Slope/alg_slope.cpp
+        User_File/Middleware/BSP/ADC/bsp_adc.cpp
+        User_File/Middleware/BSP/SPI/bsp_spi.cpp
+        User_File/Middleware/System/callback/tim_callback.cpp
+        User_File/Middleware/System/Timestamp/sys_timestamp.cpp
+        User_File/Device/Components/Power/bsp_power.cpp
+        User_File/Device/Components/BMI088/bsp_bmi088.cpp
+        User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel.cpp
+        User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel_register.cpp
+        User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro.cpp
+        User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro_register.cpp
         SystemView/SEGGER/SEGGER_RTT.c
         SystemView/SEGGER/SEGGER_SYSVIEW.c
         SystemView/SEGGER/SEGGER_RTT_printf.c
@@ -95,6 +105,14 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Quaternion
         User_File/Middleware/Algorithm/Queue
         User_File/Middleware/Algorithm/Slope
+        User_File/Middleware/BSP/ADC
+        User_File/Middleware/BSP/SPI
+        User_File/Middleware/System/callback
+        User_File/Middleware/System/Timestamp
+        User_File/Device/Components/Power
+        User_File/Device/Components/BMI088
+        User_File/Device/Components/BMI088/Accel
+        User_File/Device/Components/BMI088/Gyro
         Middlewares/ST/ARM/DSP/Inc
 )
 

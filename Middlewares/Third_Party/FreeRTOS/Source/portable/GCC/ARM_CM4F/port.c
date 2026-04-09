@@ -487,26 +487,21 @@ void xPortPendSVHandler( void )
 
 void xPortSysTickHandler( void )
 {
-    /* The SysTick runs at the lowest interrupt priority... */
-    portDISABLE_INTERRUPTS();
-    
-    traceISR_ENTER(); /* 新增：在临界区内，记录进入 SysTick 中断 */
-    
-    {
-        /* Increment the RTOS tick. */
-        if( xTaskIncrementTick() != pdFALSE )
-        {
-            traceISR_EXIT_TO_SCHEDULER(); /* 新增：时钟推进唤醒了高优先级任务，即将触发上下文切换 */
-            
-            /* A context switch is required... */
-            portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;
-        }
-        else
-        {
-            traceISR_EXIT(); /* 新增：没有唤醒任何任务，原路退出当前中断 */
-        }
-    }
-    portENABLE_INTERRUPTS();
+	/* The SysTick runs at the lowest interrupt priority, so when this interrupt
+	executes all interrupts must be unmasked.  There is therefore no need to
+	save and then restore the interrupt mask value as its value is already
+	known. */
+	portDISABLE_INTERRUPTS();
+	{
+		/* Increment the RTOS tick. */
+		if( xTaskIncrementTick() != pdFALSE )
+		{
+			/* A context switch is required.  Context switching is performed in
+			the PendSV interrupt.  Pend the PendSV interrupt. */
+			portNVIC_INT_CTRL_REG = portNVIC_PENDSVSET_BIT;
+		}
+	}
+	portENABLE_INTERRUPTS();
 }
 /*-----------------------------------------------------------*/
 

@@ -28,7 +28,6 @@ void OnProjectLoad (void) {
   Project.SetHostIF ("USB", "30500471");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("4 MHz");
-  Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
   //
   // User settings
   //
