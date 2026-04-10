@@ -365,11 +365,11 @@ void TIM2_IRQHandler(void)
 void TIM4_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM4_IRQn 0 */
-  traceISR_ENTER();
+  // traceISR_ENTER();
   /* USER CODE END TIM4_IRQn 0 */
   HAL_TIM_IRQHandler(&htim4);
   /* USER CODE BEGIN TIM4_IRQn 1 */
-  traceISR_EXIT();
+  // traceISR_EXIT();
   /* USER CODE END TIM4_IRQn 1 */
 }
 
@@ -435,11 +435,11 @@ void USART3_IRQHandler(void)
 void TIM8_UP_TIM13_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM8_UP_TIM13_IRQn 0 */
-  traceISR_ENTER();
+  // traceISR_ENTER();
   /* USER CODE END TIM8_UP_TIM13_IRQn 0 */
   HAL_TIM_IRQHandler(&htim8);
   /* USER CODE BEGIN TIM8_UP_TIM13_IRQn 1 */
-  traceISR_EXIT();
+  // traceISR_EXIT();
   /* USER CODE END TIM8_UP_TIM13_IRQn 1 */
 }
 
@@ -463,11 +463,11 @@ void DMA1_Stream7_IRQHandler(void)
 void TIM5_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM5_IRQn 0 */
-  traceISR_ENTER();
+  // traceISR_ENTER();
   /* USER CODE END TIM5_IRQn 0 */
   HAL_TIM_IRQHandler(&htim5);
   /* USER CODE BEGIN TIM5_IRQn 1 */
-  traceISR_EXIT();
+  // traceISR_EXIT();
   /* USER CODE END TIM5_IRQn 1 */
 }
 
