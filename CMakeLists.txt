@@ -57,38 +57,44 @@ set_target_properties(FreeRTOS PROPERTIES SOURCES "${RTOS_SRC}")
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
+    Middlewares/ST/ARM/DSP/Lib
 )
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-        User_File/Middleware/Algorithm/Basic/alg_basic.cpp
-        User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
-        User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
-        User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
-        User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
-        User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
-        User_File/Middleware/Algorithm/PID/alg_pid.cpp
-        User_File/Middleware/Algorithm/Complex/alg_complex.cpp
-        User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
-        User_File/Middleware/Algorithm/Queue/alg_queue.cpp
-        User_File/Middleware/Algorithm/Slope/alg_slope.cpp
-        User_File/Middleware/BSP/ADC/bsp_adc.cpp
-        User_File/Middleware/BSP/SPI/bsp_spi.cpp
-        User_File/Middleware/System/callback/tim_callback.cpp
-        User_File/Middleware/System/Timestamp/sys_timestamp.cpp
-        User_File/Device/Components/Power/bsp_power.cpp
-        User_File/Device/Components/BMI088/bsp_bmi088.cpp
-        User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel.cpp
-        User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel_register.cpp
-        User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro.cpp
-        User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro_register.cpp
-        SystemView/SEGGER/SEGGER_RTT.c
-        SystemView/SEGGER/SEGGER_SYSVIEW.c
-        SystemView/SEGGER/SEGGER_RTT_printf.c
-        SystemView/FreeRTOS/SEGGER_SYSVIEW_FreeRTOS.c
-        SystemView/FreeRTOS/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
-        SystemView/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Basic/alg_basic.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/PID/alg_pid.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Complex/alg_complex.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Queue/alg_queue.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Slope/alg_slope.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/ADC/bsp_adc.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/SPI/bsp_spi.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/callback/callback.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/Timestamp/sys_timestamp.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/Power/bsp_power.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/bsp_bmi088.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel_register.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro_register.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT.c
+        ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_SYSVIEW.c
+        ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT_printf.c
+        ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/SEGGER_SYSVIEW_FreeRTOS.c
+        ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
+        ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/Init/Init.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/InsTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.h
 )
 
 # Add include paths
@@ -114,6 +120,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Components/BMI088/Accel
         User_File/Device/Components/BMI088/Gyro
         Middlewares/ST/ARM/DSP/Inc
+        User_File/Middleware/System/Init
+        User_File/Task
+        User_File/Middleware/System/debug
 )
 
 # Add project symbols (macros)
@@ -129,4 +138,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
 
     # Add user defined libraries
+    arm_cortexM7lfsp_math
 )

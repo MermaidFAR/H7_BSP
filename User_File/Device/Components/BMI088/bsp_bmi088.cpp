@@ -13,6 +13,9 @@
 
 #include "bsp_bmi088.h"
 
+
+extern "C" { extern osThreadId_t InsTaskHandle; }
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -20,6 +23,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 Class_BMI088 BSP_BMI088;
+
+// Ozone graphing: plain global floats for Timeline Data Plot
+volatile float ozone_accel[3] = {0};
+volatile float ozone_gyro[3] = {0};
+volatile float ozone_euler[3] = {0};
 
 /* Private function declarations ---------------------------------------------*/
 
@@ -75,8 +83,14 @@ void Class_BMI088::SPI_RxCpltCallback()
             Gyro_Transfering_Flag = false;
             Gyro_Update_Flag = true;
             Gyro_Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            vTaskNotifyGiveFromISR((TaskHandle_t)InsTaskHandle, &xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
     }
+
+    // 不再从 SPI 回调中发起新传输（DMA-in-DMA 竞态），由 EXTI 统一发起
 }
 
 /**
@@ -86,15 +100,44 @@ void Class_BMI088::SPI_RxCpltCallback()
  */
 void Class_BMI088::EXTI_Flag_Callback(uint16_t GPIO_Pin)
 {
+    if (!Init_Finished_Flag) return;
+
+    // 记录当前传感器数据就绪
     if (GPIO_Pin == BMI088_ACCEL__INTERRUPT_Pin)
     {
-        Accel_Ready_Flag = true;
         Accel_Ready_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+        Accel_Ready_Flag = true;
     }
     else if (GPIO_Pin == BMI088_GYRO__INTERRUPT_Pin)
     {
-        Gyro_Ready_Flag = true;
         Gyro_Ready_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+        Gyro_Ready_Flag = true;
+    }
+
+    // 如果没有传输在进行，按优先级启动第一个就绪的传输
+    if (!Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
+    {
+        if (Accel_Ready_Flag)
+        {
+            Accel_Transfering_Flag = true;
+            Accel_Transfering_Timestamp = Accel_Ready_Timestamp;
+            BMI088_Accel.SPI_Request_Accel();
+            Accel_Ready_Flag = false;
+        }
+        else if (Gyro_Ready_Flag)
+        {
+            Gyro_Transfering_Flag = true;
+            Gyro_Transfering_Timestamp = Gyro_Ready_Timestamp;
+            BMI088_Gyro.SPI_Request_Gyro();
+            Gyro_Ready_Flag = false;
+        }
+        else if (Temperature_Ready_Flag)
+        {
+            Temperature_Transfering_Flag = true;
+            Temperature_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+            BMI088_Accel.SPI_Request_Temperature();
+            Temperature_Ready_Flag = false;
+        }
     }
 }
 
@@ -112,7 +155,7 @@ void Class_BMI088::TIM_128ms_Calculate_PeriodElapsedCallback()
  * @brief 定时器周期中断回调函数
  *
  */
-void Class_BMI088::TIM_125us_Calculate_PeriodElapsedCallback()
+void Class_BMI088::EKF_Calculate()
 {
     EKF_Now_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
 
@@ -239,75 +282,84 @@ void Class_BMI088::TIM_125us_Calculate_PeriodElapsedCallback()
             Vector_Pre_Original_Gyro = Vector_Original_Gyro;
         }
         EKF_Pre_Timestamp = EKF_Now_Timestamp;
+
+        // Update Ozone graphing variables
+        extern volatile float ozone_accel[3], ozone_gyro[3], ozone_euler[3];
+        for (int i = 0; i < 3; i++)
+        {
+            ozone_accel[i] = Vector_Original_Accel[i][0];
+            ozone_gyro[i] = Vector_Original_Gyro[i][0];
+            ozone_euler[i] = Vector_Euler_Angle[i][0];
+        }
     }
 }
 
 /**
  * @brief 定时器周期中断回调函数
- *
+ * @note 已废弃,原因过高频率中断打断MCU影响RTOS使用,实际实现极为优雅,仅是不兼容RTOS
  */
-void Class_BMI088::TIM_10us_Calculate_PeriodElapsedCallback()
-{
-    if (Init_Finished_Flag && Accel_Ready_Flag && !Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
-    {
-        // 数据准备好, 读取加速度计
-        Accel_Transfering_Flag = true;
-        Accel_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        BMI088_Accel.SPI_Request_Accel();
-        Accel_Ready_Flag = false;
-        return;
-    }
-
-    if (Init_Finished_Flag && Gyro_Ready_Flag && !Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
-    {
-        // 数据准备好, 读取陀螺仪
-        Gyro_Transfering_Flag = true;
-        Gyro_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        BMI088_Gyro.SPI_Request_Gyro();
-        Gyro_Ready_Flag = false;
-        return;
-    }
-
-    if (Init_Finished_Flag && Temperature_Ready_Flag && !Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
-    {
-        // 温度准备好, 读取温度
-        Temperature_Transfering_Flag = true;
-        Temperature_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        BMI088_Accel.SPI_Request_Temperature();
-        Temperature_Ready_Flag = false;
-        return;
-    }
-
-    if (Init_Finished_Flag && Accel_Transfering_Flag && (SYS_Timestamp.Get_Now_Microsecond() - Accel_Transfering_Timestamp) >= TRANSFERING_TIMEOUT)
-    {
-        // 加速度计传输超时
-        Accel_Transfering_Flag = true;
-        Accel_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        BMI088_Accel.SPI_Request_Accel();
-        Accel_Ready_Flag = false;
-        return;
-    }
-
-    if (Init_Finished_Flag && Gyro_Transfering_Flag && (SYS_Timestamp.Get_Now_Microsecond() - Gyro_Transfering_Timestamp) >= TRANSFERING_TIMEOUT)
-    {
-        // 陀螺仪传输超时
-        Gyro_Transfering_Flag = true;
-        Gyro_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        BMI088_Gyro.SPI_Request_Gyro();
-        Gyro_Ready_Flag = false;
-        return;
-    }
-
-    if (Init_Finished_Flag && Temperature_Transfering_Flag && (SYS_Timestamp.Get_Now_Microsecond() - Temperature_Transfering_Timestamp) >= TRANSFERING_TIMEOUT)
-    {
-        // 温度传输超时
-        Temperature_Transfering_Flag = true;
-        Temperature_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        BMI088_Accel.SPI_Request_Temperature();
-        Temperature_Ready_Flag = false;
-        return;
-    }
-}
+// void Class_BMI088::TIM_10us_Calculate_PeriodElapsedCallback()
+// {
+//     if (Init_Finished_Flag && Accel_Ready_Flag && !Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
+//     {
+//         // 数据准备好, 读取加速度计
+//         Accel_Transfering_Flag = true;
+//         Accel_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+//         BMI088_Accel.SPI_Request_Accel();
+//         Accel_Ready_Flag = false;
+//         return;
+//     }
+//
+//     if (Init_Finished_Flag && Gyro_Ready_Flag && !Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
+//     {
+//         // 数据准备好, 读取陀螺仪
+//         Gyro_Transfering_Flag = true;
+//         Gyro_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+//         BMI088_Gyro.SPI_Request_Gyro();
+//         Gyro_Ready_Flag = false;
+//         return;
+//     }
+//
+//     if (Init_Finished_Flag && Temperature_Ready_Flag && !Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
+//     {
+//         // 温度准备好, 读取温度
+//         Temperature_Transfering_Flag = true;
+//         Temperature_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+//         BMI088_Accel.SPI_Request_Temperature();
+//         Temperature_Ready_Flag = false;
+//         return;
+//     }
+//
+//     if (Init_Finished_Flag && Accel_Transfering_Flag && (SYS_Timestamp.Get_Now_Microsecond() - Accel_Transfering_Timestamp) >= TRANSFERING_TIMEOUT)
+//     {
+//         // 加速度计传输超时
+//         Accel_Transfering_Flag = true;
+//         Accel_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+//         BMI088_Accel.SPI_Request_Accel();
+//         Accel_Ready_Flag = false;
+//         return;
+//     }
+//
+//     if (Init_Finished_Flag && Gyro_Transfering_Flag && (SYS_Timestamp.Get_Now_Microsecond() - Gyro_Transfering_Timestamp) >= TRANSFERING_TIMEOUT)
+//     {
+//         // 陀螺仪传输超时
+//         Gyro_Transfering_Flag = true;
+//         Gyro_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+//         BMI088_Gyro.SPI_Request_Gyro();
+//         Gyro_Ready_Flag = false;
+//         return;
+//     }
+//
+//     if (Init_Finished_Flag && Temperature_Transfering_Flag && (SYS_Timestamp.Get_Now_Microsecond() - Temperature_Transfering_Timestamp) >= TRANSFERING_TIMEOUT)
+//     {
+//         // 温度传输超时
+//         Temperature_Transfering_Flag = true;
+//         Temperature_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+//         BMI088_Accel.SPI_Request_Temperature();
+//         Temperature_Ready_Flag = false;
+//         return;
+//     }
+// }
 
 /**
  * @brief 四元数状态转移函数

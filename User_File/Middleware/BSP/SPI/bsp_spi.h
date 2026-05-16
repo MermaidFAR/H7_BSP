@@ -62,7 +62,7 @@ struct Struct_SPI_Manage_Object
 
 /* Exported variables ---------------------------------------------------------*/
 
-extern bool init_finished;
+extern volatile bool init_finished;
 
 extern struct Struct_SPI_Manage_Object SPI1_Manage_Object;
 extern struct Struct_SPI_Manage_Object SPI2_Manage_Object;

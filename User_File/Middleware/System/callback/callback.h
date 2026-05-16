@@ -1,12 +1,11 @@
 /**
  ******************************************************************************
- * @file tim_callback.h
+ * @file callback.h
  * @brief 定时器回调函数声明
  * 
- * 本文件包含定时器中断回调函数的声明和相关类型定义。
- * 用于处理定时器中断事件的回调机制。
+ * 本文件回调函数的声明和相关类型定义。
  * 
- * @author 
+ * @author zzm
  * @date 
  * @version 1.0
  * 
@@ -18,12 +17,16 @@
 
 #ifndef __TIM_CALLBACK_H
 #define __TIM_CALLBACK_H
+
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "sys_timestamp.h"
+
+
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -35,7 +38,7 @@ extern "C" {
 
 
 /* Exported functions prototypes ---------------------------------------------*/
-
+void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length, uint16_t Rx_Length);
 
 #ifdef __cplusplus
 }

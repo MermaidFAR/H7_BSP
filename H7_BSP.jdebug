@@ -5,7 +5,7 @@
 **********************************************************************
 
 File          : 
-Created       : 02. Apr 2026 14:33
+Created       : 16. Apr 2026 20:46
 Ozone Version : V3.40e
 */
 
@@ -28,11 +28,13 @@ void OnProjectLoad (void) {
   Project.SetHostIF ("USB", "30500471");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("4 MHz");
+  Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
+  Project.AddSvdFile ("C:/Users/FAR/AppData/Local/stm32cube/packs/STMicroelectronics/stm32h7xx_dfp/1.2.0/SVD/STM32H723.svd");
   //
   // User settings
   //
-  Project.SetOSPlugin ("FreeRTOSPlugin_Cortex-M");
   File.Open ("$(ProjectDir)/build/Debug/H7_BSP.elf");
+  Project.SetOSPlugin ("FreeRTOSPlugin_Cortex-M");
 }
 
 /*********************************************************************

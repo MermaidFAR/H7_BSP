@@ -23,11 +23,22 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_SPI_Manage_Object SPI1_Manage_Object = {nullptr};
+
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_SPI_Manage_Object SPI2_Manage_Object = {nullptr};
+
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_SPI_Manage_Object SPI3_Manage_Object = {nullptr};
+
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_SPI_Manage_Object SPI4_Manage_Object = {nullptr};
+
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_SPI_Manage_Object SPI5_Manage_Object = {nullptr};
+
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_SPI_Manage_Object SPI6_Manage_Object = {nullptr};
 
 /* Private function declarations ---------------------------------------------*/
@@ -44,31 +55,37 @@ void SPI_Init(SPI_HandleTypeDef *hspi, SPI_Callback Callback_Function)
 {
     if (hspi->Instance == SPI1)
     {
+        memset(&SPI1_Manage_Object, 0, sizeof(SPI1_Manage_Object));
         SPI1_Manage_Object.SPI_Handler = hspi;
         SPI1_Manage_Object.Callback_Function = Callback_Function;
     }
     else if (hspi->Instance == SPI2)
     {
+        memset(&SPI2_Manage_Object, 0, sizeof(SPI2_Manage_Object));
         SPI2_Manage_Object.SPI_Handler = hspi;
         SPI2_Manage_Object.Callback_Function = Callback_Function;
     }
     else if (hspi->Instance == SPI3)
     {
+        memset(&SPI3_Manage_Object, 0, sizeof(SPI3_Manage_Object));
         SPI3_Manage_Object.SPI_Handler = hspi;
         SPI3_Manage_Object.Callback_Function = Callback_Function;
     }
     else if (hspi->Instance == SPI4)
     {
+        memset(&SPI4_Manage_Object, 0, sizeof(SPI4_Manage_Object));
         SPI4_Manage_Object.SPI_Handler = hspi;
         SPI4_Manage_Object.Callback_Function = Callback_Function;
     }
     else if (hspi->Instance == SPI5)
     {
+        memset(&SPI5_Manage_Object, 0, sizeof(SPI5_Manage_Object));
         SPI5_Manage_Object.SPI_Handler = hspi;
         SPI5_Manage_Object.Callback_Function = Callback_Function;
     }
     else if (hspi->Instance == SPI6)
     {
+        memset(&SPI6_Manage_Object, 0, sizeof(SPI6_Manage_Object));
         SPI6_Manage_Object.SPI_Handler = hspi;
         SPI6_Manage_Object.Callback_Function = Callback_Function;
     }
@@ -293,7 +310,7 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
  *
  * @param hspi SPI编号
  */
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+extern "C" void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1)
     {
@@ -386,7 +403,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
  * 
  * @param hspi SPI编号
  */
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+extern "C" void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     // 选择回调函数
     if (hspi->Instance == SPI1)
@@ -499,7 +516,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
         if (SPI5_Manage_Object.Callback_Function != nullptr)
         {
-            SPI5_Manage_Object.Callback_Function(SPI5_Manage_Object.Tx_Buffer, SPI5_Manage_Object.Rx_Buffer, SPI5_Manage_Object.Rx_Buffer_Length, SPI5_Manage_Object.Rx_Buffer_Length);
+            SPI5_Manage_Object.Callback_Function(SPI5_Manage_Object.Tx_Buffer, SPI5_Manage_Object.Rx_Buffer, SPI5_Manage_Object.Tx_Buffer_Length, SPI5_Manage_Object.Rx_Buffer_Length);
         }
 
         SPI5_Manage_Object.Activate_GPIOx = nullptr;

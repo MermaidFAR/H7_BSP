@@ -25,7 +25,6 @@
 #include "mdma.h"
 #include "octospi.h"
 #include "spi.h"
-#include "stm32h7xx_hal_def.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_device.h"
@@ -34,7 +33,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "SEGGER_SYSVIEW.h"
-#include "SYS_Timestamp_C.h"
+#include "Init.h"
 
 /* Forward declaration if header is incomplete */
 
@@ -94,7 +93,7 @@ int main(void)
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
 
-  /* Enable D-Cache---------------------------------------------------------*/  
+  /* Enable D-Cache---------------------------------------------------------*/
   SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -140,12 +139,7 @@ int main(void)
   MX_TIM12_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  SEGGER_SYSVIEW_Conf();
-  SYS_Timestamp_Init(&htim5);
-  HAL_TIM_Base_Start_IT(&htim4);
-  HAL_TIM_Base_Start_IT(&htim5);
-  HAL_TIM_Base_Start_IT(&htim7);
-  HAL_TIM_Base_Start_IT(&htim8);
+  System_Init();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -294,7 +288,7 @@ void MPU_Config(void)
   * @param  htim : TIM handle
   * @retval None
   */
-__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 

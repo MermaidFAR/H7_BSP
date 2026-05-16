@@ -18,7 +18,11 @@
 #include "Gyro/bsp_bmi088_gyro.h"
 #include "alg_quaternion.h"
 #include "alg_filter_ekf.h"
-
+extern "C" {
+#include "FreeRTOS.h"
+#include "task.h"
+#include "cmsis_os.h"
+}
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -67,9 +71,9 @@ public:
 
     void TIM_128ms_Calculate_PeriodElapsedCallback();
 
-    void TIM_125us_Calculate_PeriodElapsedCallback();
+    void EKF_Calculate();
 
-    void TIM_10us_Calculate_PeriodElapsedCallback();
+    // void TIM_10us_Calculate_PeriodElapsedCallback();
 
 protected:
     // 初始化相关常量
@@ -198,6 +202,7 @@ protected:
 /* Exported variables --------------------------------------------------------*/
 
 extern Class_BMI088 BSP_BMI088;
+extern "C" { extern osThreadId_t InsTaskHandle; }
 
 /* Exported function declarations --------------------------------------------*/
 

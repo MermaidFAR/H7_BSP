@@ -97,52 +97,59 @@ void HAL_OSPI_MspInit(OSPI_HandleTypeDef* ospiHandle)
     __HAL_RCC_OCTOSPIM_CLK_ENABLE();
     __HAL_RCC_OSPI2_CLK_ENABLE();
 
-    __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOE_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
     /**OCTOSPI2 GPIO Configuration
-    PC3_C     ------> OCTOSPIM_P1_IO0
+    PA1     ------> OCTOSPIM_P1_IO3
     PA3     ------> OCTOSPIM_P1_IO2
-    PA6     ------> OCTOSPIM_P1_IO3
     PB0     ------> OCTOSPIM_P1_IO1
     PB2     ------> OCTOSPIM_P1_CLK
     PE11     ------> OCTOSPIM_P1_NCS
+    PD11     ------> OCTOSPIM_P1_IO0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    GPIO_InitStruct.Pin = W25Q64_HOLD__OSPI_IO3_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_OCTOSPIM_P1;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(W25Q64_HOLD__OSPI_IO3_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_6;
+    GPIO_InitStruct.Pin = W25Q64_WP__OSPI_IO2_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF6_OCTOSPIM_P1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(W25Q64_WP__OSPI_IO2_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Pin = W25Q64_SO__OSPI_IO1_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_OCTOSPIM_P1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(W25Q64_SO__OSPI_IO1_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_2;
+    GPIO_InitStruct.Pin = W25Q64_CLK__OSPI_CLK_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_OCTOSPIM_P1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(W25Q64_CLK__OSPI_CLK_GPIO_Port, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_11;
+    GPIO_InitStruct.Pin = W25Q64_CS__OSPI_NCS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF11_OCTOSPIM_P1;
-    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+    HAL_GPIO_Init(W25Q64_CS__OSPI_NCS_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = W25Q64_SI__OSPI_IO0_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF9_OCTOSPIM_P1;
+    HAL_GPIO_Init(W25Q64_SI__OSPI_IO0_GPIO_Port, &GPIO_InitStruct);
 
     /* OCTOSPI2 MDMA Init */
     /* OCTOSPI2_FIFO_TH Init */
@@ -195,20 +202,20 @@ void HAL_OSPI_MspDeInit(OSPI_HandleTypeDef* ospiHandle)
     __HAL_RCC_OSPI2_CLK_DISABLE();
 
     /**OCTOSPI2 GPIO Configuration
-    PC3_C     ------> OCTOSPIM_P1_IO0
+    PA1     ------> OCTOSPIM_P1_IO3
     PA3     ------> OCTOSPIM_P1_IO2
-    PA6     ------> OCTOSPIM_P1_IO3
     PB0     ------> OCTOSPIM_P1_IO1
     PB2     ------> OCTOSPIM_P1_CLK
     PE11     ------> OCTOSPIM_P1_NCS
+    PD11     ------> OCTOSPIM_P1_IO0
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_3);
+    HAL_GPIO_DeInit(GPIOA, W25Q64_HOLD__OSPI_IO3_Pin|W25Q64_WP__OSPI_IO2_Pin);
 
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_3|GPIO_PIN_6);
+    HAL_GPIO_DeInit(GPIOB, W25Q64_SO__OSPI_IO1_Pin|W25Q64_CLK__OSPI_CLK_Pin);
 
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_2);
+    HAL_GPIO_DeInit(W25Q64_CS__OSPI_NCS_GPIO_Port, W25Q64_CS__OSPI_NCS_Pin);
 
-    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_11);
+    HAL_GPIO_DeInit(W25Q64_SI__OSPI_IO0_GPIO_Port, W25Q64_SI__OSPI_IO0_Pin);
 
     /* OCTOSPI2 MDMA DeInit */
     HAL_MDMA_DeInit(ospiHandle->hmdma);

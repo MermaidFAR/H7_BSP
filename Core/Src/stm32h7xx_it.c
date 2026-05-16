@@ -59,7 +59,6 @@
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 extern DMA_HandleTypeDef hdma_adc1;
 extern FDCAN_HandleTypeDef hfdcan1;
-extern FDCAN_HandleTypeDef hfdcan2;
 extern FDCAN_HandleTypeDef hfdcan3;
 extern MDMA_HandleTypeDef hmdma_octospi2_fifo_th;
 extern OSPI_HandleTypeDef hospi2;
@@ -304,20 +303,6 @@ void FDCAN1_IT0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles FDCAN2 interrupt 0.
-  */
-void FDCAN2_IT0_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN2_IT0_IRQn 0 */
-
-  /* USER CODE END FDCAN2_IT0_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan2);
-  /* USER CODE BEGIN FDCAN2_IT0_IRQn 1 */
-
-  /* USER CODE END FDCAN2_IT0_IRQn 1 */
-}
-
-/**
   * @brief This function handles FDCAN1 interrupt 1.
   */
 void FDCAN1_IT1_IRQHandler(void)
@@ -329,20 +314,6 @@ void FDCAN1_IT1_IRQHandler(void)
   /* USER CODE BEGIN FDCAN1_IT1_IRQn 1 */
 
   /* USER CODE END FDCAN1_IT1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles FDCAN2 interrupt 1.
-  */
-void FDCAN2_IT1_IRQHandler(void)
-{
-  /* USER CODE BEGIN FDCAN2_IT1_IRQn 0 */
-
-  /* USER CODE END FDCAN2_IT1_IRQn 0 */
-  HAL_FDCAN_IRQHandler(&hfdcan2);
-  /* USER CODE BEGIN FDCAN2_IT1_IRQn 1 */
-
-  /* USER CODE END FDCAN2_IT1_IRQn 1 */
 }
 
 /**
@@ -427,6 +398,21 @@ void USART3_IRQHandler(void)
   /* USER CODE BEGIN USART3_IRQn 1 */
 
   /* USER CODE END USART3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line[15:10] interrupts.
+  */
+void EXTI15_10_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+
+  /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(BMI088_ACCEL__INTERRUPT_Pin);
+  HAL_GPIO_EXTI_IRQHandler(BMI088_GYRO__INTERRUPT_Pin);
+  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+
+  /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
 /**

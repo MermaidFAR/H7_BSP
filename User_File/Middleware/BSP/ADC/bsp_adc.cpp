@@ -19,9 +19,11 @@
 /* Private types -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
-
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_ADC_Manage_Object ADC1_Manage_Object = {nullptr};
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_ADC_Manage_Object ADC2_Manage_Object = {nullptr};
+__attribute__((section(".dma_buffer"), aligned(32)))
 Struct_ADC_Manage_Object ADC3_Manage_Object = {nullptr};
 
 /* Private function declarations ---------------------------------------------*/

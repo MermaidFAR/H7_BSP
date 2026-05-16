@@ -30,11 +30,6 @@ Class_Timestamp SYS_Timestamp;
 
 /* Function prototypes -------------------------------------------------------*/
 
-extern "C" void SYS_Timestamp_Init(TIM_HandleTypeDef *htim)
-{
-    SYS_Timestamp.Init(htim);
-}
-
 /**
  * @brief 初始化时间戳
  *
