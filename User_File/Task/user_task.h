@@ -7,6 +7,8 @@ extern "C" {
 
 void Ins_Task(void *argument);
 void Transport_Task(void *argument);
+void can_tx_task(void *argument);
+void status_task(void *argument);
 
 #ifdef __cplusplus
 }

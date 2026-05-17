@@ -14,6 +14,8 @@
 - 在 `TransportTask` 中接入 `MX_USB_DEVICE_Init()`，USB Device 初始化从 CubeMX 弱任务实现迁移到用户任务实现中。
 - 在 `User_File/Task/user_task.h` 中声明 `Ins_Task()` 与 `Transport_Task()`，使用户任务入口与 FreeRTOS 创建逻辑保持一致。
 - 在根 `CMakeLists.txt` 中注册 `TransportTask.cpp`，任务文件已纳入构建。
+- 新增 `User_File/Task/CanTxTask.cpp` 与 `User_File/Task/StatusTask.cpp`，接管 CubeMX 已创建的 `CanTxTask` 与 `StatusTask` 任务入口。
+- 在 `User_File/Task/user_task.h` 中补充 `can_tx_task()` 与 `status_task()` 声明，并在根 `CMakeLists.txt` 注册新增任务文件。
 
 ### 已完成
 
@@ -22,6 +24,8 @@
 - README 增补 C/C++ 协作设计、Ozone 调试镜像设计、CMake Tools 解析提示说明。
 - README 增补 FreeRTOS 后续任务拆分原则，明确 `InsTask` 只作为姿态数据生产者，云台/底盘/发射通过 `INS_State` 快照和事件通知解耦。
 - README 增补通信任务分层原则，区分 CAN 控制链路、USB/串口遥测、遥控/视觉/裁判系统解析与 `TransportTask` 职责边界。
+- 将 `Core/Src/freertos.c` 中的 `status_task()` 默认实现改为弱符号，避免用户层 `StatusTask.cpp` 强实现产生重复定义。
+- 将 CAN BSP 发送互斥锁迁移到 CMSIS-RTOS V2 API，并在 `MX_FREERTOS_Init()` 任务创建前调用 `BSP_CAN_ConfigInit()` 完成 FDCAN 启动与锁初始化。
 - 将 `cmake/stm32cubemx/CMakeLists.txt` 从混合换行规范化为 CRLF，并清理 `MX_LINK_LIBS` 段尾随空白，以规避 VS Code/CMake Tools 自动分析器误报。
 - 验证新增用户源文件应手动注册到根 `CMakeLists.txt` 的 `target_sources`；临时测试源文件已从构建列表清理。
 - 调整 `.vscode/settings.json`：保留 `cube-cmake`，显式绑定 Debug configure/build preset，移除会触发 unused warning 的 `-DCMAKE_COMMAND=cube-cmake`。
@@ -77,6 +81,26 @@
 - SPI6 当前走阻塞传输，这是因为 BDMA 可访问内存区域限制尚未单独处理。
 - 当前 BMI088 读取策略已经避免在 SPI 完成回调中继续发起新的 DMA 传输，后续修改时应保持这一原则，避免 DMA-in-DMA 竞态复发。
 - 若后续启用 BMI088 加热器，需要先确保 ADC 电压采样和电源组件初始化有效，否则加热功率计算没有可靠输入。
+
+## 2026-05-18
+
+### 新增
+
+- 新增 `.clang-format`，设置 `ColumnLimit: 0`，关闭自动换行，保持长行代码可读性。
+- 在 `bsp_can.c` 中规划新增 `Tx_Msg_Buffer[3]` 静态周期帧缓冲区，每路 CAN 对应一个槽位。
+- 规划 `BSP_CAN_Init_Msg()` 函数，用于初始化三路 CAN 的默认发送帧（ID/len/data 清零）。
+- 规划 `BSP_CAN_SendPer()` 函数，遍历 `Tx_Msg_Buffer[3]` 统一发送三路周期帧，使用 `&=` 汇总成功状态。
+- 规划 `CanTxTask` 任务主循环，以 `vTaskDelayUntil` 实现精确 1ms 周期，结合异步队列处理插队消息。
+
+### 问题发现
+
+- **FDCAN2 配置缺失（重要）**：CubeMX 生成的 `fdcan.c` 中 FDCAN2 的 `TxFifoQueueElmtsNbr` 和 `RxFifo0ElmtsNbr` 均为 0，且未配置 NVIC 中断。通过 `BSP_CAN_SendMsg(&hfdcan2, ...)` 发送将永远返回 `false`。需在 CubeMX 中重新配置 FDCAN2，分配 TX FIFO（8 槽）、RX FIFO0（16 槽）及过滤器，重新生成代码。
+
+### 仍未完成
+
+- FDCAN2 的 CubeMX 配置修复尚未执行，需手动打开 `H7_BSP.ioc` 完成配置。
+- `BSP_CAN_Init_Msg()`、`BSP_CAN_SendPer()` 及 Setter 接口尚未写入 `bsp_can.c`。
+- `CanTxTask` 任务逻辑（周期发送 + 异步队列）尚未实现，当前仍为骨架。
 
 ## 2026-04-10 之前
 

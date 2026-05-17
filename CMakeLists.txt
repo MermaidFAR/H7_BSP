@@ -93,8 +93,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/Init/Init.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/InsTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/CanTxTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.h
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
 )
 
 # Add include paths
@@ -123,6 +127,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/System/Init
         User_File/Task
         User_File/Middleware/System/debug
+        User_File/Middleware/BSP/CAN
 )
 
 # Add project symbols (macros)
