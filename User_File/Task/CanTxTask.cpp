@@ -13,6 +13,7 @@
 extern "C" {
 #include "FreeRTOS.h"
 #include "task.h"
+#include "bsp_can.h"
 }
 
 /* Private macros ------------------------------------------------------------*/
@@ -25,12 +26,13 @@ extern "C" {
 
 /* Function prototypes -------------------------------------------------------*/
 
-extern "C" void can_tx_task(void *argument)
+extern "C" void Can_Tx_Task(void *argument)
 {
-    (void)argument;
 
-    for (;;)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    }
+  for (;;) {
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    vTaskDelayUntil(&xLastWakeTime,
+                    pdMS_TO_TICKS(1)); // 每1ms发送一次CAN消息,根据需要调整频率
+    BSP_CAN_SendPer();
+  }
 }

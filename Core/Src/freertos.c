@@ -84,8 +84,8 @@ const osThreadAttr_t StatusTask_attributes = {
 
 void Transport_Task(void *argument);
 void Ins_Task(void *argument);
-void can_tx_task(void *argument);
-void status_task(void *argument);
+void Can_Tx_Task(void *argument);
+void Status_Task(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -142,10 +142,10 @@ void MX_FREERTOS_Init(void) {
   InsTaskHandle = osThreadNew(Ins_Task, NULL, &InsTask_attributes);
 
   /* creation of CanTxTask */
-  CanTxTaskHandle = osThreadNew(can_tx_task, NULL, &CanTxTask_attributes);
+  CanTxTaskHandle = osThreadNew(Can_Tx_Task, NULL, &CanTxTask_attributes);
 
   /* creation of StatusTask */
-  StatusTaskHandle = osThreadNew(status_task, NULL, &StatusTask_attributes);
+  StatusTaskHandle = osThreadNew(Status_Task, NULL, &StatusTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -195,40 +195,40 @@ __weak void Ins_Task(void *argument)
   /* USER CODE END Ins_Task */
 }
 
-/* USER CODE BEGIN Header_can_tx_task */
+/* USER CODE BEGIN Header_Can_Tx_Task */
 /**
 * @brief Function implementing the CanTxTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_can_tx_task */
-__weak void can_tx_task(void *argument)
+/* USER CODE END Header_Can_Tx_Task */
+__weak void Can_Tx_Task(void *argument)
 {
-  /* USER CODE BEGIN can_tx_task */
+  /* USER CODE BEGIN Can_Tx_Task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END can_tx_task */
+  /* USER CODE END Can_Tx_Task */
 }
 
-/* USER CODE BEGIN Header_status_task */
+/* USER CODE BEGIN Header_Status_Task */
 /**
 * @brief Function implementing the StatusTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_status_task */
-__weak void status_task(void *argument)
+/* USER CODE END Header_Status_Task */
+__weak void Status_Task(void *argument)
 {
-  /* USER CODE BEGIN status_task */
+  /* USER CODE BEGIN Status_Task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END status_task */
+  /* USER CODE END Status_Task */
 }
 
 /* Private application code --------------------------------------------------*/

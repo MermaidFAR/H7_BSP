@@ -8,6 +8,8 @@
  ******************************************************************************
  */
 #include "bsp_can.h"
+#include "stm32h723xx.h"
+#include <stdbool.h>
 
 /* 外部句柄引用 */
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -35,6 +37,26 @@ static const osMutexAttr_t Can2_TxMutex_Attr = {
 static const osMutexAttr_t Can3_TxMutex_Attr = {
     .name = "Can3_TxMutex",
 };
+
+static Struct_CAN_Tx_Msg Tx_Msg_Buffer[3];
+
+static void BSP_CAN_Init_Msg(void) {
+  //
+    Tx_Msg_Buffer[0].hfdcan = &hfdcan1;
+    Tx_Msg_Buffer[0].id = 0x000;
+    Tx_Msg_Buffer[0].len = 0;
+    memset(Tx_Msg_Buffer[0].data, 0, sizeof(Tx_Msg_Buffer[0].data));
+
+    Tx_Msg_Buffer[1].hfdcan = &hfdcan2;
+    Tx_Msg_Buffer[1].id = 0x000;
+    Tx_Msg_Buffer[1].len = 0;
+    memset(Tx_Msg_Buffer[1].data, 0, sizeof(Tx_Msg_Buffer[1].data));
+
+    Tx_Msg_Buffer[2].hfdcan = &hfdcan3;
+    Tx_Msg_Buffer[2].id = 0x000;
+    Tx_Msg_Buffer[2].len = 0;
+    memset(Tx_Msg_Buffer[2].data, 0, sizeof(Tx_Msg_Buffer[2].data));
+}
 
 /**
  * @brief  初始化发送互斥锁
@@ -110,6 +132,7 @@ void BSP_CAN_ConfigInit(void)
     HAL_FDCAN_Start(&hfdcan3);
 
     BSP_CAN_Init_Locks();
+    BSP_CAN_Init_Msg();
 }
 
 /**
@@ -204,7 +227,7 @@ bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* data, uin
     TxHeader.Identifier = id;
     TxHeader.IdType = FDCAN_STANDARD_ID;
     TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-    TxHeader.DataLength = FDCAN_DLC_BYTES_8; // 假设是 8 字节
+    TxHeader.DataLength = (uint32_t)len << 16U; // 假设是 8 字节
     TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
     TxHeader.BitRateSwitch = FDCAN_BRS_OFF;  // 关闭波特率切换 (Classic CAN)
     TxHeader.FDFormat = FDCAN_CLASSIC_CAN;   // 经典模式
@@ -225,4 +248,43 @@ bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* data, uin
     // FIFO 满了，释放锁并返回失败
     osMutexRelease(pMutex);
     return false;
+}
+
+
+
+bool CAN_Tx_Submit(Struct_CAN_Tx_Msg* TxHeader)
+{
+    
+}
+
+bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxHeader) {
+  if (TxHeader == NULL || TxHeader->hfdcan == NULL) {
+    return false;
+  }
+  if (TxHeader->hfdcan == &hfdcan1) {
+    Tx_Msg_Buffer[0] = *TxHeader;
+  }
+  else if (TxHeader->hfdcan == &hfdcan2) {
+    Tx_Msg_Buffer[1] = *TxHeader;
+  }
+  else if (TxHeader->hfdcan == &hfdcan3) {
+    Tx_Msg_Buffer[2] = *TxHeader;
+  }
+  else {
+    return false; // 无效的 CAN 句柄
+  }
+  return true;
+}
+/**
+ * @brief  批量发送预设的 CAN 消息
+ * @return true: 全部发送成功, false: 至少有一条发送失败
+ * @note   此函数会尝试发送 Tx_Msg_Buffer 中的三条消息，并返回整体结果。
+ *         适用于需要同时更新多条消息的场景，减少调用次数。
+ */
+bool BSP_CAN_SendPer(void) {
+  bool success = true;
+   success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[0].hfdcan, Tx_Msg_Buffer[0].id,Tx_Msg_Buffer[0].data, Tx_Msg_Buffer[0].len);
+   success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[1].hfdcan, Tx_Msg_Buffer[1].id,Tx_Msg_Buffer[1].data, Tx_Msg_Buffer[1].len);
+   success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[2].hfdcan, Tx_Msg_Buffer[2].id,Tx_Msg_Buffer[2].data, Tx_Msg_Buffer[2].len);
+   return success;
 }

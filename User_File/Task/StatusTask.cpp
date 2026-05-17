@@ -21,7 +21,7 @@
 
 /* Function prototypes -------------------------------------------------------*/
 
-extern "C" void status_task(void *argument)
+extern "C" void Status_Task(void *argument)
 {
     (void)argument;
 

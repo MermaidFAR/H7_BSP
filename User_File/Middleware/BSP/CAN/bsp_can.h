@@ -53,6 +53,17 @@ typedef struct {
 } CAN_CallbackEntry_t;
 
 /**
+ * @brief  CAN 发送消息结构体
+ */
+typedef struct 
+{
+    FDCAN_HandleTypeDef* hfdcan;
+    uint32_t id;
+    uint8_t data[FDCAN_MAX_PAYLOAD];
+    uint32_t len;
+} Struct_CAN_Tx_Msg;
+
+/**
  * @brief  初始化 CAN 总线硬件及过滤器
  * @note   配置为接收所有标准帧 ID，并初始化互斥锁
  */
@@ -74,6 +85,14 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id, CAN_RxCallback_t pCallback);
  * @return true: 发送成功 (写入 FIFO), false: 发送失败 (超时或 FIFO 满)
  */
 bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* data, uint32_t len);
+
+/**
+ * @brief  批量发送预设的 CAN 消息
+ * @return true: 全部发送成功, false: 至少有一条发送失败
+ * @note   此函数会尝试发送 Tx_Msg_Buffer 中的三条消息，并返回整体结果。
+ *         适用于需要同时更新多条消息的场景，减少调用次数。
+ */
+bool BSP_CAN_SendPer(void);
 
 #ifdef __cplusplus
 }
