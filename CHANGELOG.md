@@ -82,6 +82,26 @@
 - 当前 BMI088 读取策略已经避免在 SPI 完成回调中继续发起新的 DMA 传输，后续修改时应保持这一原则，避免 DMA-in-DMA 竞态复发。
 - 若后续启用 BMI088 加热器，需要先确保 ADC 电压采样和电源组件初始化有效，否则加热功率计算没有可靠输入。
 
+## 2026-05-18
+
+### 新增
+
+- 新增 `.clang-format`，设置 `ColumnLimit: 0`，关闭自动换行，保持长行代码可读性。
+- 在 `bsp_can.c` 中规划新增 `Tx_Msg_Buffer[3]` 静态周期帧缓冲区，每路 CAN 对应一个槽位。
+- 规划 `BSP_CAN_Init_Msg()` 函数，用于初始化三路 CAN 的默认发送帧（ID/len/data 清零）。
+- 规划 `BSP_CAN_SendPer()` 函数，遍历 `Tx_Msg_Buffer[3]` 统一发送三路周期帧，使用 `&=` 汇总成功状态。
+- 规划 `CanTxTask` 任务主循环，以 `vTaskDelayUntil` 实现精确 1ms 周期，结合异步队列处理插队消息。
+
+### 问题发现
+
+- **FDCAN2 配置缺失（重要）**：CubeMX 生成的 `fdcan.c` 中 FDCAN2 的 `TxFifoQueueElmtsNbr` 和 `RxFifo0ElmtsNbr` 均为 0，且未配置 NVIC 中断。通过 `BSP_CAN_SendMsg(&hfdcan2, ...)` 发送将永远返回 `false`。需在 CubeMX 中重新配置 FDCAN2，分配 TX FIFO（8 槽）、RX FIFO0（16 槽）及过滤器，重新生成代码。
+
+### 仍未完成
+
+- FDCAN2 的 CubeMX 配置修复尚未执行，需手动打开 `H7_BSP.ioc` 完成配置。
+- `BSP_CAN_Init_Msg()`、`BSP_CAN_SendPer()` 及 Setter 接口尚未写入 `bsp_can.c`。
+- `CanTxTask` 任务逻辑（周期发送 + 异步队列）尚未实现，当前仍为骨架。
+
 ## 2026-04-10 之前
 
 ### 已有基础
