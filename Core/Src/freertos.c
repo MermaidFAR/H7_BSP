@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_can.h"
 
 /* USER CODE END Includes */
 
@@ -113,6 +114,7 @@ return 0;
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+  BSP_CAN_ConfigInit();
 
   /* USER CODE END Init */
 
@@ -218,7 +220,7 @@ __weak void can_tx_task(void *argument)
 * @retval None
 */
 /* USER CODE END Header_status_task */
-void status_task(void *argument)
+__weak void status_task(void *argument)
 {
   /* USER CODE BEGIN status_task */
   /* Infinite loop */

@@ -135,12 +135,14 @@ STM32H7 的 DTCMRAM 无法被 DMA1/DMA2 直接访问。项目已经为 SPI/ADC D
 
 ### FreeRTOS 配置与任务
 
-当前创建两个 CMSIS-RTOS V2 任务：
+当前创建四个 CMSIS-RTOS V2 任务：
 
 | 任务 | 优先级 | 栈大小 | 当前职责 |
 | --- | --- | ---: | --- |
 | `InsTask` | `osPriorityHigh1` | `2048 * 4` 字节 | 等待陀螺仪 SPI 完成通知，执行 BMI088 EKF 姿态解算 |
-| `TransportTask` | `osPriorityHigh` | `2048 * 4` 字节 | 初始化 USB Device，后续预留通信传输逻辑 |
+| `CanTxTask` | `osPriorityHigh` | `1024 * 4` 字节 | CAN 发送服务骨架，当前等待任务通知 |
+| `TransportTask` | `osPriorityNormal` | `2048 * 4` 字节 | 初始化 USB Device，后续预留通信传输逻辑 |
+| `StatusTask` | `osPriorityLow` | `1024 * 4` 字节 | 系统状态监控骨架，当前 100 ms 周期让出 CPU |
 
 栈溢出保护已经开启：
 
@@ -210,6 +212,8 @@ enum Enum_Solve_Event
 | 遥控/视觉/裁判系统 | 独立输入任务或通信解析任务 | 根据是否参与控制链路设置优先级，解析结果发布为状态快照 |
 
 `TransportTask` 更适合承担 USB CDC、串口遥测、上位机协议和低频调试输出，不应承担高实时电机控制、姿态解算、云台核心控制或底盘核心控制。若后续 `TransportTask` 主要用于 USB/串口遥测，优先级应低于 `InsTask`、`GimbalTask` 和 `ChassisTask`。
+
+当前 CAN BSP 已迁入 `User_File/Middleware/BSP/CAN/`，`BSP_CAN_ConfigInit()` 在 `MX_FREERTOS_Init()` 的任务创建前调用。CAN 发送互斥锁使用 CMSIS-RTOS V2 的 `osMutexId_t`、`osMutexNew()`、`osMutexAcquire()` 和 `osMutexRelease()`，用于保护多个任务同时写入同一个 FDCAN TX FIFO。`BSP_CAN_SendMsg()` 是任务上下文接口，不应在中断回调中直接调用；中断侧如需触发发送，应通知 `CanTxTask`。
 
 ### 系统初始化
 
