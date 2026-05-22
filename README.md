@@ -15,7 +15,7 @@ STM32H723ZG 板级支持包工程，面向 RoboMaster/机器人控制场景。�
 | BMI088 | 已形成主链路 | EXTI 数据就绪触发 SPI DMA 读取，陀螺仪完成后通知 `InsTask` 执行 EKF |
 | DMA 缓冲区 | 已修复关键布局 | SPI/ADC 管理对象放入 `.dma_buffer`，链接到 RAM_D1，MPU 配置为 non-cacheable |
 | TransportTask | 骨架完成 | 当前只初始化 USB Device 并周期让出 CPU，尚无协议和数据收发 |
-| CAN/FDCAN BSP | 未完成 | CubeMX 外设存在，用户层 BSP 抽象尚未迁移 |
+| CAN/FDCAN BSP | 已实现 | `bsp_can` v2 双通道发送架构：周期通道（`CAN_Tx_Perform` + `BSP_CAN_SendPer`）+ 异步队列（`CAN_Tx_Submit` + `BSP_CAN_SendAsync`），`CanTxTask` 1ms 周期执行 |
 
 最近一次本地构建结果：
 
@@ -140,7 +140,7 @@ STM32H7 的 DTCMRAM 无法被 DMA1/DMA2 直接访问。项目已经为 SPI/ADC D
 | 任务 | 优先级 | 栈大小 | 当前职责 |
 | --- | --- | ---: | --- |
 | `InsTask` | `osPriorityHigh1` | `2048 * 4` 字节 | 等待陀螺仪 SPI 完成通知，执行 BMI088 EKF 姿态解算 |
-| `CanTxTask` | `osPriorityHigh` | `1024 * 4` 字节 | CAN 发送服务骨架，当前等待任务通知 |
+| `CanTxTask` | `osPriorityHigh` | `1024 * 4` 字节 | 1ms 周期发送：先排空异步队列（`BSP_CAN_SendAsync`），再发送三路周期帧（`BSP_CAN_SendPer`） |
 | `TransportTask` | `osPriorityNormal` | `2048 * 4` 字节 | 初始化 USB Device，后续预留通信传输逻辑 |
 | `StatusTask` | `osPriorityLow` | `1024 * 4` 字节 | 系统状态监控骨架，当前 100 ms 周期让出 CPU |
 
@@ -213,7 +213,12 @@ enum Enum_Solve_Event
 
 `TransportTask` 更适合承担 USB CDC、串口遥测、上位机协议和低频调试输出，不应承担高实时电机控制、姿态解算、云台核心控制或底盘核心控制。若后续 `TransportTask` 主要用于 USB/串口遥测，优先级应低于 `InsTask`、`GimbalTask` 和 `ChassisTask`。
 
-当前 CAN BSP 已迁入 `User_File/Middleware/BSP/CAN/`，`BSP_CAN_ConfigInit()` 在 `MX_FREERTOS_Init()` 的任务创建前调用。CAN 发送互斥锁使用 CMSIS-RTOS V2 的 `osMutexId_t`、`osMutexNew()`、`osMutexAcquire()` 和 `osMutexRelease()`，用于保护多个任务同时写入同一个 FDCAN TX FIFO。`BSP_CAN_SendMsg()` 是任务上下文接口，不应在中断回调中直接调用；中断侧如需触发发送，应通知 `CanTxTask`。
+当前 CAN BSP 已在 `User_File/Middleware/BSP/CAN/` 完成实现（`bsp_can` v2），采用**双通道发送架构**：
+
+- **周期通道**：`CAN_Tx_Perform()` 写入三路 FDCAN 缓冲区，`BSP_CAN_SendPer()` 在 `CanTxTask` 每个 1ms 周期内批量发送，适用于控制帧（电机指令）。
+- **异步通道**：`CAN_Tx_Submit()` 将消息压入深度为 16 的 RTOS 消息队列（按值拷贝，调用方可用栈变量），`BSP_CAN_SendAsync()` 在 `CanTxTask` 每个周期内排空队列，适用于非实时指令（传感器配置、模式切换）。
+- **底层发送函数** `BSP_CAN_SendMsg()` 已改为 `static`，不再对外暴露；外部统一通过两条通道接口使用。
+- `BSP_CAN_ConfigInit()` 在 RTOS 内核启动后、`MX_FREERTOS_Init()` 任务创建前调用，内部同时创建三路发送互斥锁和异步消息队列。CAN 发送互斥锁使用 CMSIS-RTOS V2 的 `osMutexId_t`，最多等待 **2ms** 后放弃，避免阻塞控制任务。`BSP_CAN_SendMsg()` 是任务上下文接口，不应在中断回调中直接调用。
 
 ### 系统初始化
 
@@ -367,17 +372,14 @@ BMI088 总控已实现：
 - 与 UART/CAN/FDCAN 的桥接或路由。
 - 队列、互斥、事件标志等 RTOS 通信机制。
 
-### CAN/FDCAN 用户层 BSP 尚未迁移
+### CAN 发送通道选择
 
-CubeMX 已生成 FDCAN1/FDCAN2/FDCAN3 外设初始化，但 `User_File/Middleware/BSP/` 下尚无 CAN/FDCAN 抽象层。
+| 场景 | 推荐接口 | 原因 |
+| --- | --- | --- |
+| 电机控制帧（高频、实时） | `CAN_Tx_Perform()` + `BSP_CAN_SendPer()` | 按节拍精确发出，不受队列深度限制 |
+| 传感器配置/使能指令（低频、非实时） | `CAN_Tx_Submit()` | 入队后在下一个 1ms 周期发出，无需关心对象生命周期 |
 
-建议后续完成：
-
-- FDCAN 管理对象。
-- 标准帧/扩展帧发送封装。
-- Rx FIFO 回调分发。
-- 电机、遥控器、底盘/云台等业务协议绑定。
-- 与 `TransportTask` 或独立通信任务的消息队列集成。
+`CAN_Tx_Submit()` 队列满（16 帧）时返回 `false`，调用方应检查返回值。若频繁满队，应改用周期通道或降低提交频率。
 
 ### Power/ADC 尚未纳入系统初始化
 
