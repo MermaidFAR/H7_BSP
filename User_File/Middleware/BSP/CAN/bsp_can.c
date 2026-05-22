@@ -1,15 +1,18 @@
 /**
  ******************************************************************************
  * @file    bsp_can.c
- * @brief   板级支持包：CAN总线驱动实现
+ * @brief   板级支持包：CAN总线驱动实现 (基于 STM32H7 FDCAN)
+ * @details 包含CAN过滤器的配置、中断接收回调的分发管理以及线程安全的发送函数。
  * @author  zzm
- * @date    2025-12-24
- * @todo    处理掉回调中的FOR循环,加入DJI电机过滤器配置,完善注释的讲解
+ * @date    2026-05-18
+ * @version v2.0
  ******************************************************************************
  */
 #include "bsp_can.h"
+#include "cmsis_os2.h"
 #include "stm32h723xx.h"
 #include <stdbool.h>
+#include <string.h>
 
 /* 外部句柄引用 */
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -38,7 +41,10 @@ static const osMutexAttr_t Can3_TxMutex_Attr = {
     .name = "Can3_TxMutex",
 };
 
+// 预设的 CAN 消息缓冲区，用于 CAN_Tx_Perform 和 BSP_CAN_SendPer 函数
 static Struct_CAN_Tx_Msg Tx_Msg_Buffer[3];
+
+static osMessageQueueId_t Can_Tx_Queue = NULL;// CAN 接收消息队列
 
 static void BSP_CAN_Init_Msg(void) {
   //
@@ -133,6 +139,8 @@ void BSP_CAN_ConfigInit(void)
 
     BSP_CAN_Init_Locks();
     BSP_CAN_Init_Msg();
+    // 创建 CAN 发送消息队列
+    Can_Tx_Queue = osMessageQueueNew(16, sizeof(Struct_CAN_Tx_Msg), NULL);
 }
 
 /**
@@ -197,7 +205,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo0ITs)
   * @param  len: 数据长度
   * @return 0: 失败/超时, 1: 成功
   */
-bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* data, uint32_t len)
+static bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* data, uint32_t len)
 {
     FDCAN_TxHeaderTypeDef TxHeader;
     osMutexId_t pMutex = NULL;
@@ -251,12 +259,26 @@ bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* data, uin
 }
 
 
-
-bool CAN_Tx_Submit(Struct_CAN_Tx_Msg* TxHeader)
-{
-    
+/**
+ * @brief  提交预设的 CAN 消息进行发送
+ * @param  TxHeader: 包含 CAN 句柄、ID、数据和长度的结构体指针
+ * @return true: 消息成功提交到发送队列, false: 提交失败 (如无效参数或总线拥堵)
+ * @note   此函数操作的是异步发送,再使用非实时性要求的设备时调用。
+ */
+bool CAN_Tx_Submit(Struct_CAN_Tx_Msg *TxHeader) {
+    if (TxHeader == NULL || TxHeader->hfdcan == NULL) {
+        return false;
+    }
+    return (osMessageQueuePut(Can_Tx_Queue, TxHeader, 0, 0) == osOK);
 }
 
+/**
+ * @brief  更新预设的 CAN 消息并发送
+ * @param  TxHeader: 包含 CAN 句柄、ID、数据和长度的结构体指针
+ * @return true: 消息成功提交到发送队列, false: 提交失败 (如无效参数或总线拥堵)
+ * @note   此函数会更新 Tx_Msg_Buffer 中对应 CAN 句柄的消息内容，并尝试发送。
+ *         适用于需要频繁更新同一条消息内容的场景，减少调用 BSP_CAN_SendMsg 的次数。
+ */
 bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxHeader) {
   if (TxHeader == NULL || TxHeader->hfdcan == NULL) {
     return false;
@@ -280,6 +302,7 @@ bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxHeader) {
  * @return true: 全部发送成功, false: 至少有一条发送失败
  * @note   此函数会尝试发送 Tx_Msg_Buffer 中的三条消息，并返回整体结果。
  *         适用于需要同时更新多条消息的场景，减少调用次数。
+ *         
  */
 bool BSP_CAN_SendPer(void) {
   bool success = true;
@@ -287,4 +310,15 @@ bool BSP_CAN_SendPer(void) {
    success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[1].hfdcan, Tx_Msg_Buffer[1].id,Tx_Msg_Buffer[1].data, Tx_Msg_Buffer[1].len);
    success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[2].hfdcan, Tx_Msg_Buffer[2].id,Tx_Msg_Buffer[2].data, Tx_Msg_Buffer[2].len);
    return success;
+}
+
+/**
+ * @brief  CAN 发送任务的消息处理函数
+ * @note   此函数应在一个独立的 FreeRTOS 任务中运行，持续监听发送队列并处理消息。
+ */
+void BSP_CAN_SendAsync(void) {
+  Struct_CAN_Tx_Msg msg;
+  while (osMessageQueueGet(Can_Tx_Queue, &msg, NULL, 0) == osOK) {
+    BSP_CAN_SendMsg(msg.hfdcan, msg.id, msg.data, msg.len);
+  }
 }
