@@ -210,7 +210,7 @@ static bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* da
     FDCAN_TxHeaderTypeDef TxHeader;
     osMutexId_t pMutex = NULL;
 
-    if (len > FDCAN_MAX_PAYLOAD)
+    if (len > FDCAN_MAX_PAYLOAD || len == 0 || data == NULL || hfdcan == NULL)
     {
         return false;
     }
