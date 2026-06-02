@@ -98,6 +98,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/debug/sys_debug.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/USB/bsp_usb.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/OSPI/bsp_ospi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/W25Q64JV/bsp_w25q64jv_register.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/W25Q64JV/bsp_w25q64jv.cpp
@@ -135,6 +136,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/System/debug
         User_File/Middleware/BSP/CAN
         User_File/Middleware/BSP/UART
+        User_File/Middleware/BSP/USB
         User_File/Middleware/BSP/OSPI
         User_File/Device/Onboard/W25Q64JV
         User_File/Device/Onboard/Buzzer
