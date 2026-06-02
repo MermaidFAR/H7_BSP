@@ -630,3 +630,33 @@ VS Code 工作区设置保留 `cmake.cmakePath = cube-cmake`，并显式绑定 `
 - 把 ISR/任务共享标志做并发语义收口。
 - 对 SPI BSP 做一次系统性重构，降低重复分支和边界错误概率。
 - 对 `InsTask` 做栈水位观测，确认 EKF 在 Debug 和 Release 下的运行余量。
+
+## 待迁移模块（对比 dm02_test 模板）
+
+与达妙 MC-02 模板工程（`damiao_mc02_bsp/dm02_test`）对比，以下模块尚未迁移，按优先级排列：
+
+### 🔴 高优先级
+
+| 模块 | 模板路径 | 说明 |
+| --- | --- | --- |
+| DJI 电机 | `2_Device/Motor/Motor_DJI/dvc_motor_dji` | C610/C620/M3508/M2006，CAN 总线控制，机器人核心执行器 |
+| 达妙电机 | `2_Device/Motor/Motor_DM/dvc_motor_dm` | DM 系列电机，CAN 总线控制 |
+
+### 🟡 中优先级
+
+| 模块 | 模板路径 | 说明 |
+| --- | --- | --- |
+| W25Q64JV 接线 | `Init.cpp` | OSPI 通道层和器件层已迁移，仍需在 `Init.cpp` 调用 `OSPI_Init` + `BSP_W25Q64JV.Init()` |
+| USB CDC 封装 | `1_Middleware/Driver/USB/drv_usb` | 底层协议栈（`USB_DEVICE/`）已由 CubeMX 生成，缺统一封装层 |
+| Vofa+ 上位机 | `2_Device/Plotter/Vofa/dvc_vofa` | 调试期数据可视化工具，通过 USB/UART 发送帧格式数据 |
+| 功率计 | `2_Device/Powermeter/dvc_powermeter` | 裁判系统功率监控 |
+
+### 🟢 低优先级
+
+| 模块 | 模板路径 | 说明 |
+| --- | --- | --- |
+| 蜂鸣器 | `2_Device/BSP/Buzzer/bsp_buzzer` | PWM 驱动蜂鸣器 |
+| 按键 | `2_Device/BSP/Key/bsp_key` | GPIO 按键防抖 |
+| WS2812 RGB LED | `2_Device/BSP/WS2812/bsp_ws2812` | 全彩 LED 灯带，SPI/DMA 驱动 |
+| 看门狗 WDG | `1_Middleware/Driver/WDG/drv_wdg` | 独立看门狗，防止程序死锁 |
+| Serialplot | `2_Device/Plotter/Serialplot/dvc_serialplot` | 另一种上位机调试工具 |
