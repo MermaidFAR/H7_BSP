@@ -104,6 +104,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Buzzer/bsp_buzzer.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Key/bsp_key.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/WS2812/bsp_ws2812.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Plotter/Vofa/dvc_vofa.cpp
 )
 
 # Add include paths
@@ -139,6 +140,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Onboard/Buzzer
         User_File/Device/Onboard/Key
         User_File/Device/Onboard/WS2812
+        User_File/Device/Plotter/Vofa
 )
 
 # Add project symbols (macros)
