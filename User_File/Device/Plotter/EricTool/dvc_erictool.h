@@ -1,17 +1,17 @@
 /**
- * @file dvc_vofa.h
+ * @file dvc_erictool.h
  * @author yssickjgd (1345578933@qq.com)
- * @brief Vofa+ justfloat 串口调试，仅 UART 版本
+ * @brief EricTool justfloat 串口调试，仅 UART 版本
  * @version 0.2
  * @date 2025-09-22 0.1 新建（dm02_test）
- * @date 2026-06-01 0.2 适配 H7_BSP：移除 USB 版本，修正 UART 管理对象命名
+ * @date 2026-06-01 0.2 适配 H7_BSP：移除 USB 版本，修正 UART 管理对象命名，重命名为 EricTool
  *
  * @copyright USTC-RoboWalker (c) 2025-2026
  *
  */
 
-#ifndef __DVC_VOFA_H
-#define __DVC_VOFA_H
+#ifndef __DVC_ERICTOOL_H
+#define __DVC_ERICTOOL_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -21,16 +21,16 @@
 
 /* Exported macros -----------------------------------------------------------*/
 
-#define VOFA_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH (100)
+#define ERICTOOL_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH (100)
 
 /* Exported types ------------------------------------------------------------*/
 
 /**
- * @brief Reusable, Vofa+ justfloat 串口调试工具（UART 版本）
+ * @brief Reusable, EricTool justfloat 串口调试工具（UART 版本）
  * @note  上行：justfloat 帧（N×float + 4B 帧尾 0x7f800000）
  *        下行：文本指令 "variable=value#"，解析后写入变量字典
  */
-class Class_Vofa_UART
+class Class_EricTool_UART
 {
 public:
     void Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num = 0, const char **__Rx_Variable_Assignment_List = nullptr, const uint32_t &__Frame_Tail = 0x7f800000);
@@ -99,7 +99,7 @@ protected:
  *
  * @return int32_t 指令编号，-1 表示未匹配
  */
-inline int32_t Class_Vofa_UART::Get_Variable_Index() const
+inline int32_t Class_EricTool_UART::Get_Variable_Index() const
 {
     return (Variable_Index);
 }
@@ -109,7 +109,7 @@ inline int32_t Class_Vofa_UART::Get_Variable_Index() const
  *
  * @return float 指令数值
  */
-inline float Class_Vofa_UART::Get_Variable_Value() const
+inline float Class_EricTool_UART::Get_Variable_Value() const
 {
     return (Variable_Value);
 }
@@ -120,7 +120,7 @@ inline float Class_Vofa_UART::Get_Variable_Value() const
  * @param Number 数据数量
  * @param ...    各变量的指针（float*）
  */
-inline void Class_Vofa_UART::Set_Data(const int &Number, ...)
+inline void Class_EricTool_UART::Set_Data(const int &Number, ...)
 {
     va_list data_ptr;
     va_start(data_ptr, Number);
@@ -132,6 +132,6 @@ inline void Class_Vofa_UART::Set_Data(const int &Number, ...)
     Data_Number = Number;
 }
 
-#endif // !__DVC_VOFA_H
+#endif // !__DVC_ERICTOOL_H
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

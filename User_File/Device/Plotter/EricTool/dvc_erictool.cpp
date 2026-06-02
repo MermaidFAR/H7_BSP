@@ -1,10 +1,10 @@
 /**
- * @file dvc_vofa.cpp
+ * @file dvc_erictool.cpp
  * @author yssickjgd (1345578933@qq.com)
- * @brief Vofa+ justfloat 串口调试，仅 UART 版本
+ * @brief EricTool justfloat 串口调试，仅 UART 版本
  * @version 0.2
  * @date 2025-09-22 0.1 新建（dm02_test）
- * @date 2026-06-01 0.2 适配 H7_BSP：UART 管理对象重命名，bzero→memset，移除 USB
+ * @date 2026-06-01 0.2 适配 H7_BSP：UART 管理对象重命名，bzero→memset，移除 USB，重命名为 EricTool
  *
  * @copyright USTC-RoboWalker (c) 2025-2026
  *
@@ -12,7 +12,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "dvc_vofa.h"
+#include "dvc_erictool.h"
 #include <math.h>
 #include <string.h>
 
@@ -34,7 +34,7 @@
  * @param __Rx_Variable_Assignment_List 接收指令字典列表指针（字符串数组，每项 100 字节）
  * @param __Frame_Tail                 帧尾（justfloat 默认 0x7f800000）
  */
-void Class_Vofa_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num, const char **__Rx_Variable_Assignment_List, const uint32_t &__Frame_Tail)
+void Class_EricTool_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num, const char **__Rx_Variable_Assignment_List, const uint32_t &__Frame_Tail)
 {
     // H7_BSP bsp_uart 接管 7 路：USART1/2/3, UART5, USART6, UART7, USART10
     if (huart->Instance == USART1)
@@ -77,7 +77,7 @@ void Class_Vofa_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_
  * @param Rx_Data 接收完毕的缓冲区指针
  * @param Length  本帧字节长度
  */
-void Class_Vofa_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, const uint16_t &Length)
+void Class_EricTool_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, const uint16_t &Length)
 {
     Data_Process(Length);
 }
@@ -86,7 +86,7 @@ void Class_Vofa_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, const uint16_t
  * @brief TIM 1ms 定时中断：打包并发送 justfloat 帧
  *
  */
-void Class_Vofa_UART::TIM_1ms_Write_PeriodElapsedCallback()
+void Class_EricTool_UART::TIM_1ms_Write_PeriodElapsedCallback()
 {
     Output();
     UART_Transmit_Data(UART_Manage_Object->UART_Handler, Tx_Buffer, Data_Number * sizeof(float) + sizeof(uint32_t));
@@ -97,7 +97,7 @@ void Class_Vofa_UART::TIM_1ms_Write_PeriodElapsedCallback()
  *
  * @param Length 帧长度
  */
-void Class_Vofa_UART::Data_Process(const uint16_t &Length)
+void Class_EricTool_UART::Data_Process(const uint16_t &Length)
 {
     int flag = _Judge_Variable_Name(Length);
     _Judge_Variable_Value(Length, flag);
@@ -109,9 +109,9 @@ void Class_Vofa_UART::Data_Process(const uint16_t &Length)
  * @param Length 帧长度
  * @return uint8_t 等号后第一个字符的下标
  */
-uint8_t Class_Vofa_UART::_Judge_Variable_Name(const uint16_t &Length)
+uint8_t Class_EricTool_UART::_Judge_Variable_Name(const uint16_t &Length)
 {
-    char tmp_variable_name[VOFA_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH];
+    char tmp_variable_name[ERICTOOL_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH];
     int flag;
 
     for (flag = 0; UART_Manage_Object->Rx_Buffer_Ready[flag] != '=' && flag < Length && UART_Manage_Object->Rx_Buffer_Ready[flag] != 0; flag++)
@@ -122,7 +122,7 @@ uint8_t Class_Vofa_UART::_Judge_Variable_Name(const uint16_t &Length)
 
     for (int i = 0; i < Rx_Variable_Num; i++)
     {
-        if (strcmp(tmp_variable_name, (char *) ((int) Rx_Variable_List + VOFA_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH * i)) == 0)
+        if (strcmp(tmp_variable_name, (char *) ((int) Rx_Variable_List + ERICTOOL_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH * i)) == 0)
         {
             Variable_Index = i;
             return (flag + 1);
@@ -138,7 +138,7 @@ uint8_t Class_Vofa_UART::_Judge_Variable_Name(const uint16_t &Length)
  * @param Length 帧长度
  * @param flag   等号后第一个字符的下标
  */
-void Class_Vofa_UART::_Judge_Variable_Value(const uint16_t &Length, int flag)
+void Class_EricTool_UART::_Judge_Variable_Value(const uint16_t &Length, int flag)
 {
     int tmp_dot_flag, tmp_sign_coefficient, i;
 
@@ -181,7 +181,7 @@ void Class_Vofa_UART::_Judge_Variable_Value(const uint16_t &Length, int flag)
  * @brief 将 Data[] 中的变量打包成 justfloat 帧写入 Tx_Buffer
  *
  */
-void Class_Vofa_UART::Output()
+void Class_EricTool_UART::Output()
 {
     uint8_t *tmp_buffer = Tx_Buffer;
 
