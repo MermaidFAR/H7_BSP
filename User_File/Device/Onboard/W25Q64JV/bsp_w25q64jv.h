@@ -17,6 +17,8 @@
 
 #include "bsp_w25q64jv_register.h"
 #include "bsp_ospi.h"
+#include "cmsis_os.h"
+#include <SEGGER_RTT.h>
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -37,6 +39,8 @@ class Class_W25Q64JV
 public:
     void Init(const Enum_W25Q64JV_Mode &__Flash_Mode = W25Q64JV_Mode_Normal);
 
+    void Enable_Quad_Mode();
+
     inline void Get_Buffer(const uint32_t &Address, const uint8_t &Length);
 
     inline void Set_Write_Enable();
@@ -51,6 +55,12 @@ public:
 
     inline void Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint8_t &Length);
 
+    bool Is_Ready() { return !Is_Busy(); }
+
+    inline void Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length);
+
+    inline void Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length);
+
     void OSPI_StatusMatchCallback();
 
     void OSPI_RxCallback();
@@ -59,7 +69,7 @@ public:
 
     void TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 绑定的OSPI管理对象
     Struct_OSPI_Manage_Object *OSPI_Manage_Object;
     // Flash工作模式
@@ -81,7 +91,7 @@ protected:
         .AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
         .AlternateBytesSize = 0,
         .AlternateBytesDtrMode = HAL_OSPI_ALTERNATE_BYTES_DTR_DISABLE,
-        .DataMode = HAL_OSPI_DATA_1_LINE,
+        .DataMode = HAL_OSPI_DATA_NONE,
         .NbData = 0,
         .DataDtrMode = HAL_OSPI_DATA_DTR_DISABLE,
         .DummyCycles = 0,
@@ -120,6 +130,8 @@ protected:
     uint64_t Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
     // 轮询超时错误计数
     uint32_t Auto_Polling_Error_Count = 0;
+    // 抑制 Tx/Rx 回调中的自动轮询（Enable_Quad_Mode 手动轮询 WIP 时使用）
+    bool Suppress_AutoPolling = false;
 
     bool Is_Busy()
     {
@@ -127,6 +139,7 @@ protected:
         {
             if (SYS_Timestamp.Get_Current_Timestamp() - Busy_Timestamp > Current_Auto_Polling_Timeout)
             {
+                SEGGER_RTT_printf(0, "TIMEOUT! Instr=%02X\n", Current_Instruction);
                 Busy_Flag = false;
                 Auto_Polling_Error_Count++;
                 return false;
@@ -366,10 +379,63 @@ inline void Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Ad
     Command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
     Command.DataMode = HAL_OSPI_DATA_4_LINES;
     Command.NbData = Length;
+    memcpy(OSPI_Manage_Object->Tx_Buffer, Buffer, Length);
     OSPI_Command_Transmit_Data(OSPI_Manage_Object->OSPI_Handler, &Command);
 
     Current_Instruction = W25Q64JV_Command_QUAD_INPUT_PAGE_PROGRAM;
     Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
+}
+
+/**
+ * @brief 同步读取任意长度数据（分次 DMA 接收，自动等待）
+ *
+ */
+inline void Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length)
+{
+    uint8_t *dst = static_cast<uint8_t *>(Dest);
+    uint32_t addr = Address;
+    uint32_t remaining = Length;
+
+    while (remaining > 0)
+    {
+        uint32_t chunk = (remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining;
+
+        Get_Buffer(addr, chunk);
+        while (!Is_Ready()) { osDelay(1); }
+
+        memcpy(dst, OSPI_Manage_Object->Rx_Buffer, chunk);
+
+        dst += chunk;
+        addr += chunk;
+        remaining -= chunk;
+    }
+}
+
+/**
+ * @brief 同步写入任意长度数据（自动处理页边界和写使能）
+ *
+ */
+inline void Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length)
+{
+    const uint8_t *src = static_cast<const uint8_t *>(Src);
+    uint32_t addr = Address;
+    uint32_t remaining = Length;
+
+    while (remaining > 0)
+    {
+        uint32_t page_remain = 256 - (addr % 256);
+        uint32_t chunk = (remaining > page_remain) ? page_remain : remaining;
+
+        Set_Write_Enable();
+        while (!Is_Ready()) { osDelay(1); }
+
+        Set_Buffer(src, addr, chunk);
+        while (!Is_Ready()) { osDelay(1); }
+
+        src += chunk;
+        addr += chunk;
+        remaining -= chunk;
+    }
 }
 
 #endif /* __BSP_W25Q64JV_H */

@@ -14,6 +14,8 @@
 
 #include "bsp_ospi.h"
 
+#include <SEGGER_RTT.h>
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -156,6 +158,8 @@ void OSPI_Command_Transmit_Receive_Data(OSPI_HandleTypeDef *hospi, OSPI_RegularC
  */
 extern "C" void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
 {
+    SEGGER_RTT_printf(0, "OSPI SM IRQ\n");
+
     if (hospi->Instance == OCTOSPI1)
     {
         OSPI1_Manage_Object.Auto_Polling_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
@@ -210,6 +214,8 @@ extern "C" void HAL_OSPI_RxCpltCallback(OSPI_HandleTypeDef *hospi)
  */
 extern "C" void HAL_OSPI_TxCpltCallback(OSPI_HandleTypeDef *hospi)
 {
+    SEGGER_RTT_printf(0, "OSPI TX IRQ\n");
+
     if (hospi->Instance == OCTOSPI1)
     {
         if (OSPI1_Manage_Object.Tx_Callback_Function != nullptr)
