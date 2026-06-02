@@ -39,8 +39,7 @@ extern "C" void System_Init(void)
     BSP_W25Q64JV.Init();
     ADC_Init(&hadc1, 1);
     BSP_Power.Init(false, false, false);
-    BSP_CAN_ConfigInit();
-    
+
     init_finished = true;
 
 }
