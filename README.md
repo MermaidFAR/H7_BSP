@@ -15,7 +15,8 @@ STM32H723ZG 板级支持包工程，面向 RoboMaster/机器人控制场景。�
 | BMI088 | 已形成主链路 | EXTI 数据就绪触发 SPI DMA 读取，陀螺仪完成后通知 `InsTask` 执行 EKF |
 | DMA 缓冲区 | 已修复关键布局 | SPI/ADC 管理对象放入 `.dma_buffer`，链接到 RAM_D1，MPU 配置为 non-cacheable |
 | TransportTask | 骨架完成 | 当前只初始化 USB Device 并周期让出 CPU，尚无协议和数据收发 |
-| CAN/FDCAN BSP | 已实现 | `bsp_can` v2 双通道发送架构：周期通道（`CAN_Tx_Perform` + `BSP_CAN_SendPer`）+ 异步队列（`CAN_Tx_Submit` + `BSP_CAN_SendAsync`），`CanTxTask` 1ms 周期执行 |
+| CAN/FDCAN BSP | 已实现 | `bsp_can` v2 双通道发送架构：周期通道（`CAN_Tx_Perform` + `BSP_CAN_SendPer`）+ 异步队列（`CAN_Tx_Submit` + `BSP_CAN_SendAsync`），`CanTxTask` 1ms 周期执行。已修复 FDCAN2 Message RAM 重叠（`MessageRAMOffset` 0→853，三路均匀三等分 0/853/1706）、`BSP_CAN_SendMsg` 缺 `len==0` 保护、`CanTxTask` 的 `vTaskDelayUntil` 周期写法（`xLastWakeTime` 移出循环）。待确认：FDCAN2 `AutoRetransmission=DISABLE` 与 FDCAN1/3 不一致 |
+| UART BSP | 已实现（未接入设备） | `bsp_uart` 双缓冲 DMA 接收：`HAL_UARTEx_ReceiveToIdle_DMA` + IDLE 中断 + `Rx_Buffer_0/1` 交替收不定长帧。接管 7 路有 RX DMA 的口（USART1/2/3、UART5、USART6、UART7、USART10）；UART4/8/9 因 DMA stream 占满不接管；UART5 无 TX DMA 时发送自动回退阻塞。管理对象入 `.dma_buffer`。回调用 `UART_Init(huart, cb)` 绑定，可传 `nullptr` 退化轮询。尚未在 `Init.cpp` 接入具体设备 |
 
 最近一次本地构建结果：
 
@@ -263,6 +264,25 @@ SPI BSP 当前采用 C 风格管理对象 + 自由函数：
 - HAL 完成回调中会拉回片选电平、记录接收时间戳，并调用注册的业务回调。
 
 当前 SPI2 已服务 BMI088，SPI6 预留给 WS2812。
+
+### UART BSP
+
+UART BSP 采用双缓冲 DMA 接收范式（仿 SCUT-Robotlab / 达妙 `drv_uart` 改写）：
+
+- 每个被接管的 UART 有一个 `Struct_UART_Manage_Object`，含 HAL handle、双缓冲 `Rx_Buffer_0/1`、Active/Ready 指针、`Rx_Timestamp` 和业务回调。
+- 接收用 `HAL_UARTEx_ReceiveToIdle_DMA`，IDLE 中断触发 `HAL_UARTEx_RxEventCallback`：先切换双缓冲、重启 DMA，再调用业务回调，实现收不定长帧且不丢数据。
+- 仅接管具备 RX DMA 的 7 路：USART1/2/3、UART5、USART6、UART7、USART10。**UART4/8/9 因 STM32H7 DMA1+DMA2 共 16 条 stream 已被占满（7 路 UART 收发 + SPI + ADC），分不到 DMA，未接管**；如需使用应改中断/阻塞方式单独实现。
+- UART5 仅有 RX DMA、无 TX DMA，`UART_Transmit_Data()` 检测 `huart->hdmatx == nullptr` 时自动回退 `HAL_UART_Transmit()` 阻塞发送。
+- 管理对象（含双 512B 缓冲）放入 `.dma_buffer`，落入 RAM_D1。
+- HAL 回调（`HAL_UARTEx_RxEventCallback` / `HAL_UART_ErrorCallback`）显式用 `extern "C"` 以正确覆写 HAL 弱符号。
+
+回调注册模型与 SPI BSP 同构（「实例分支 + 单回调」），区别于 CAN BSP 的「CAN ID 查表」注册表模型：
+
+- `UART_Init(huart, callback)` 把 `void(uint8_t*, uint16_t)` 回调绑定到对应管理对象，同时启动 DMA 接收。
+- 回调可传 `nullptr` 退化为轮询模式：DMA 照常接收、双缓冲照常切换、`Rx_Timestamp` 照常更新，但不触发回调，由任务自行轮询 `Rx_Buffer_Ready`。
+- 错误中断 `HAL_UART_ErrorCallback` 统一调用 `UART_Reinit()` 重启接收。
+
+当前 UART BSP 是「可用模块」，但尚未在 `System_Init()` / `Init.cpp` 中调用 `UART_Init()` 绑定具体设备（取决于实际外接的 DBUS 遥控器 / 裁判系统等）。
 
 ### ADC BSP
 

@@ -99,6 +99,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
 )
 
 # Add include paths
@@ -128,6 +129,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Task
         User_File/Middleware/System/debug
         User_File/Middleware/BSP/CAN
+        User_File/Middleware/BSP/UART
 )
 
 # Add project symbols (macros)

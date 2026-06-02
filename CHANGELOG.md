@@ -4,6 +4,31 @@
 
 格式遵循“日期 + 分类”的方式维护。当前项目尚未形成正式版本号，因此先使用日期条目。
 
+## 2026-06-01
+
+### 已修复
+
+- 修复 FDCAN2 Message RAM 重叠（重要）：CubeMX 生成的 `fdcan.c` 中 `hfdcan2.Init.MessageRAMOffset` 原为 `0`，与 FDCAN1 的 Message RAM 区段完全重叠（FDCAN1/FDCAN2 在 STM32H723 上共享同一块 Message RAM）。双路同时收发会互相覆盖 Filter Table / RxFIFO / TxFIFO，行为未定义。现按三等分布局改为 `853`（FDCAN1=0、FDCAN2=853、FDCAN3=1706），三段均匀且互不重叠。
+- `BSP_CAN_SendMsg()` 增加 `len == 0 || data == NULL || hfdcan == NULL` 入参保护：原本仅检查 `len > FDCAN_MAX_PAYLOAD`，未拦截 `len == 0`，导致 `CanTxTask` 启动后会每 1ms 向三路总线发送 DLC=0、ID=0x000 的空帧。
+- `CanTxTask` 的 `vTaskDelayUntil` 周期失效：`xLastWakeTime` 原在 `for` 循环体内声明并每次 `xTaskGetTickCount()` 重置，退化为 `vTaskDelay(1) + 执行时间`，失去固定周期补偿。已将 `xLastWakeTime` 移到循环外初始化一次。
+
+### 新增
+
+- 新增 UART BSP 抽象（`User_File/Middleware/BSP/UART/bsp_uart.cpp/.h`），仿 SCUT-Robotlab / 达妙 `drv_uart` 双缓冲范式改写并适配本工程：
+  - 接收采用 `HAL_UARTEx_ReceiveToIdle_DMA` + IDLE 中断 + 双缓冲（`Rx_Buffer_0/1` 交替），收不定长帧；切缓冲后记录 `Rx_Timestamp`。
+  - 仅接管具备 RX DMA 的 7 路：USART1/2/3、UART5、USART6、UART7、USART10。UART4/8/9 因 STM32H7 DMA1+DMA2 共 16 条 stream 已被占满（7 路 UART 收发 + SPI + ADC），分不到 DMA，暂不接管。
+  - UART5 仅有 RX DMA、无 TX DMA，`UART_Transmit_Data()` 检测 `huart->hdmatx == nullptr` 时自动回退阻塞发送。
+  - 管理对象（含双 512B DMA 缓冲）全部加 `__attribute__((section(".dma_buffer"), aligned(32)))`，落入 RAM_D1（DMA 可访问、MPU non-cacheable）。
+  - 相比模板：抽出 `UART_Get_Manage_Object()` 辅助函数消除 10 路重复 if-else；HAL 回调（`HAL_UARTEx_RxEventCallback` / `HAL_UART_ErrorCallback`）显式用 `extern "C"` 以正确覆写 HAL 弱符号（对齐 `bsp_spi` 约定）。
+  - 回调注册模型为「实例分支 + 单回调」（与 `bsp_spi` 同构，区别于 `bsp_can` 的「CAN ID 查表」注册表模型）：`UART_Init(huart, callback)` 把 `void(uint8_t*,uint16_t)` 回调绑定到对应管理对象；回调可传 `nullptr` 退化为轮询模式（DMA 照常收、不触发回调）。
+  - 已在根 `CMakeLists.txt` 注册 source 与 include 目录，`Debug` 构建链接通过（RAM_D1 占用约 13.7 KB / 320 KB）。
+
+### 备注
+
+- 上述三项 CAN bug 与 UART 封装的 CubeMX 侧 RX DMA 改 NORMAL 由作者完成，本条目记录最终结论与设计要点。
+- 待确认：FDCAN2 `AutoRetransmission = DISABLE` 与 FDCAN1/FDCAN3 的 `ENABLE` 不一致，需确认是否有意为之。
+- 尚未接入：各路 UART 的用户级回调与 `Init.cpp` 中的 `UART_Init` 绑定（取决于实际外接设备：DBUS 遥控器 / 裁判系统等）。
+
 ## 2026-05-16
 
 ### 新增
@@ -95,12 +120,11 @@
 ### 问题发现
 
 - **FDCAN2 配置缺失（重要）**：CubeMX 生成的 `fdcan.c` 中 FDCAN2 的 `TxFifoQueueElmtsNbr` 和 `RxFifo0ElmtsNbr` 均为 0，且未配置 NVIC 中断。通过 `BSP_CAN_SendMsg(&hfdcan2, ...)` 发送将永远返回 `false`。需在 CubeMX 中重新配置 FDCAN2，分配 TX FIFO（8 槽）、RX FIFO0（16 槽）及过滤器，重新生成代码。
+  - **更新（2026-06-01 已解决）**：`fdcan.c` 现已配置 FDCAN2 `RxFifo0ElmtsNbr = 16`、`TxFifoQueueElmtsNbr = 8`，并在 `HAL_FDCAN_MspInit` 中配置了 `FDCAN2_IT0/IT1` 的 NVIC。随后发现并修复了由此暴露的 Message RAM 重叠问题（见 2026-06-01 条目）。
 
 ### 仍未完成
 
-- FDCAN2 的 CubeMX 配置修复尚未执行，需手动打开 `H7_BSP.ioc` 完成配置。
-- `BSP_CAN_Init_Msg()`、`BSP_CAN_SendPer()` 及 Setter 接口尚未写入 `bsp_can.c`。
-- `CanTxTask` 任务逻辑（周期发送 + 异步队列）尚未实现，当前仍为骨架。
+- `BSP_CAN_Init_Msg()`、`BSP_CAN_SendPer()`、`CanTxTask` 周期发送 + 异步队列逻辑均已写入实现（见 `bsp_can.c` / `CanTxTask.cpp`），但 `SendMsg` 的 `len == 0` 保护与 `vTaskDelayUntil` 周期写法仍待收口（见 2026-06-01 条目）。
 
 ## 2026-04-10 之前
 
