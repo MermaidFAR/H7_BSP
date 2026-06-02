@@ -87,6 +87,7 @@ static void BSP_CAN_Init_Locks(void)
 }
 /**
  * @brief  配置并启动所有 FDCAN 实例
+ * @note   由于作者不同该can库函数需要在RTOS启动后调用，以确保互斥锁和消息队列的正确创建。
  */
 void BSP_CAN_ConfigInit(void)
 {
