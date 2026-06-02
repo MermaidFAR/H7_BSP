@@ -121,6 +121,21 @@ protected:
     // 轮询超时错误计数
     uint32_t Auto_Polling_Error_Count = 0;
 
+    bool Is_Busy()
+    {
+        if (Busy_Flag)
+        {
+            if (SYS_Timestamp.Get_Current_Timestamp() - Busy_Timestamp > Current_Auto_Polling_Timeout)
+            {
+                Busy_Flag = false;
+                Auto_Polling_Error_Count++;
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     void Auto_Polling_With_Timeout();
 };
 
@@ -138,7 +153,7 @@ extern Class_W25Q64JV BSP_W25Q64JV;
  */
 inline void Class_W25Q64JV::Get_Buffer(const uint32_t &Address, const uint8_t &Length)
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }
@@ -163,7 +178,7 @@ inline void Class_W25Q64JV::Get_Buffer(const uint32_t &Address, const uint8_t &L
  */
 inline void Class_W25Q64JV::Set_Write_Enable()
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }
@@ -185,7 +200,7 @@ inline void Class_W25Q64JV::Set_Write_Enable()
  */
 inline void Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }
@@ -221,7 +236,7 @@ inline void Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
  */
 inline void Class_W25Q64JV::Set_Bolck_Erased_32K(const uint32_t &Address)
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }
@@ -257,7 +272,7 @@ inline void Class_W25Q64JV::Set_Bolck_Erased_32K(const uint32_t &Address)
  */
 inline void Class_W25Q64JV::Set_Bolck_Erased_64K(const uint32_t &Address)
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }
@@ -293,7 +308,7 @@ inline void Class_W25Q64JV::Set_Bolck_Erased_64K(const uint32_t &Address)
  */
 inline void Class_W25Q64JV::Set_Chip_Erased()
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }
@@ -325,7 +340,7 @@ inline void Class_W25Q64JV::Set_Chip_Erased()
  */
 inline void Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint8_t &Length)
 {
-    if (Busy_Flag)
+    if (Is_Busy())
     {
         return;
     }

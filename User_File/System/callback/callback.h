@@ -40,6 +40,10 @@ extern "C" {
 /* Exported functions prototypes ---------------------------------------------*/
 void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length, uint16_t Rx_Length);
 
+void OSPI2_Polling_Callback();
+void OSPI2_Rx_Callback(uint8_t *Buffer);
+void OSPI2_Tx_Callback(uint8_t *Buffer);
+
 #ifdef __cplusplus
 }
 #endif

@@ -16,6 +16,7 @@
 
 #include "callback.h"
 #include "bsp_bmi088.h"
+#include "bsp_w25q64jv.h"
 #include "sys_timestamp.h"
 
 /**
@@ -96,4 +97,19 @@ extern "C" void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t T
        SPI2_Manage_Object.Activate_GPIO_Pin == BMI088_GYRO__SPI_CS_Pin)) {
     BSP_BMI088.SPI_RxCpltCallback();
   }
+}
+
+void OSPI2_Polling_Callback()
+{
+  BSP_W25Q64JV.OSPI_StatusMatchCallback();
+}
+
+void OSPI2_Rx_Callback(uint8_t *Buffer)
+{
+  BSP_W25Q64JV.OSPI_RxCallback();
+}
+
+void OSPI2_Tx_Callback(uint8_t *Buffer)
+{
+  BSP_W25Q64JV.OSPI_TxCallback();
 }
