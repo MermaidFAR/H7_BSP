@@ -1,14 +1,15 @@
 /**
- * @file    tim_callback.cpp
- * @brief   定时器回调函数实现
+ * @file    callback.cpp
+ * @brief   中断回调统一分发中心
  * @author  zzm
  * @version 1.0
  * @date    2026-04-09
  *
- * @details 本文件包含定时器中断回调函数的实现
- *          用于处理定时器相关的中断事件
+ * @details 本文件集中实现 HAL 弱回调的覆写与分发，
+ *          包括 GPIO 外部中断(EXTI)、定时器(TIM)周期中断与 SPI 完成回调，
+ *          按外设实例路由到对应的设备层处理函数
  *
- * @note    使用前请确保已正确配置定时器外设
+ * @note    使用前请确保相关外设已正确初始化，且 init_finished 已置位
  *
  * @copyright Copyright (c) 2024
  */

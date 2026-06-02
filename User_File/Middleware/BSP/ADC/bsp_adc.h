@@ -1,5 +1,5 @@
 /**
- * @file drv_adc.h
+ * @file bsp_adc.h
  * @author yssickjgd (1345578933@qq.com)
  * @brief 仿照SCUT-Robotlab改写的ADC初始化与配置流程
  * @version 1.1

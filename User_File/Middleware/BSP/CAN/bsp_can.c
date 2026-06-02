@@ -189,7 +189,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo0ITs)
                 if ((g_CanCallbacks[i].is_used) && (g_CanCallbacks[i].ID == rxHeader.Identifier))
                 {
                     // 3. 调用注册进来的函数
-                    g_CanCallbacks[i].func(hfdcan, rxHeader.Identifier, rxData, 8); // 默认长度为8
+                    g_CanCallbacks[i].func(hfdcan, rxHeader.Identifier, rxData, rxHeader.DataLength >> 16);
                     break; // 找到后退出
                 }
             }
@@ -205,59 +205,65 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo0ITs)
   * @param  len: 数据长度
   * @return 0: 失败/超时, 1: 成功
   */
-static bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan,uint32_t id, uint8_t* data, uint32_t len)
-{
-    FDCAN_TxHeaderTypeDef TxHeader;
-    osMutexId_t pMutex = NULL;
+static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
+   FDCAN_HandleTypeDef* hfdcan = TxMsg->hfdcan;
+   uint32_t id = TxMsg->id;
+   uint8_t* data = TxMsg->data;
+   uint32_t len = TxMsg->len;
 
-    if (len > FDCAN_MAX_PAYLOAD || len == 0 || data == NULL || hfdcan == NULL)
-    {
-        return false;
-    }
+   if (hfdcan == NULL || data == NULL || len == 0 || len > FDCAN_MAX_PAYLOAD) {
+     return false; // 参数无效
+   }
+  FDCAN_TxHeaderTypeDef TxHeader;
+  osMutexId_t pMutex = NULL;
 
-    // 1. 根据句柄选择对应的锁
-    if (hfdcan == &hfdcan1) pMutex = Can1_TxMutex;
-    else if (hfdcan == &hfdcan2) pMutex = Can2_TxMutex;
-    else if (hfdcan == &hfdcan3) pMutex = Can3_TxMutex;
-
-    if (pMutex == NULL)
-    {
-        return false;
-    }
-
-    // 2. 获取锁 (等待 2ms，如果总线太忙拿不到锁就放弃，防止卡死控制环)
-    if (osMutexAcquire(pMutex, 2U) != osOK)
-    {
-        return false; // 获取锁失败（总线拥堵）
-    }
-
-    // 3. 配置发送头 (针对 H7 FDCAN)
-    TxHeader.Identifier = id;
-    TxHeader.IdType = FDCAN_STANDARD_ID;
-    TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-    TxHeader.DataLength = (uint32_t)len << 16U; // 假设是 8 字节
-    TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-    TxHeader.BitRateSwitch = FDCAN_BRS_OFF;  // 关闭波特率切换 (Classic CAN)
-    TxHeader.FDFormat = FDCAN_CLASSIC_CAN;   // 经典模式
-    TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-    TxHeader.MessageMarker = 0;
-
-    // 4. 检查 FIFO 是否有空位
-    if ((HAL_FDCAN_GetTxFifoFreeLevel(hfdcan)) > 0)
-    {
-        // 放入发送队列
-        HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &TxHeader, data);
-
-        // 5. 释放锁
-        osMutexRelease(pMutex);
-        return (status == HAL_OK);
-    }
-
-    // FIFO 满了，释放锁并返回失败
-    osMutexRelease(pMutex);
+  if (len > FDCAN_MAX_PAYLOAD || len == 0 || data == NULL || hfdcan == NULL) {
     return false;
-}
+  }
 
+  // 1. 根据句柄选择对应的锁
+  if (hfdcan == &hfdcan1)
+    pMutex = Can1_TxMutex;
+  else if (hfdcan == &hfdcan2)
+    pMutex = Can2_TxMutex;
+  else if (hfdcan == &hfdcan3)
+    pMutex = Can3_TxMutex;
+
+  if (pMutex == NULL) {
+    return false;
+  }
+
+  // 2. 获取锁 (等待 2ms，如果总线太忙拿不到锁就放弃，防止卡死控制环)
+  if (osMutexAcquire(pMutex, 2U) != osOK) {
+    return false; // 获取锁失败（总线拥堵）
+  }
+
+  // 3. 配置发送头 (针对 H7 FDCAN)
+  TxHeader.Identifier = id;
+  TxHeader.IdType = FDCAN_STANDARD_ID;
+  TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+  TxHeader.DataLength = (uint32_t)len << 16U; // 假设是 8 字节
+  TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+  TxHeader.BitRateSwitch = FDCAN_BRS_OFF; // 关闭波特率切换 (Classic CAN)
+  TxHeader.FDFormat = FDCAN_CLASSIC_CAN;  // 经典模式
+  TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  TxHeader.MessageMarker = 0;
+
+  // 4. 检查 FIFO 是否有空位
+  if ((HAL_FDCAN_GetTxFifoFreeLevel(hfdcan)) > 0) {
+    // 放入发送队列
+    HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &TxHeader, data);
+
+    TxMsg->timestamp[1] = HAL_GetTick();
+    // 5. 释放锁
+    osMutexRelease(pMutex);
+    return (status == HAL_OK);
+  }
+
+  // FIFO 满了，释放锁并返回失败
+  osMutexRelease(pMutex);
+  return false;
+}
 
 /**
  * @brief  提交预设的 CAN 消息进行发送
@@ -279,18 +285,19 @@ bool CAN_Tx_Submit(Struct_CAN_Tx_Msg *TxHeader) {
  * @note   此函数会更新 Tx_Msg_Buffer 中对应 CAN 句柄的消息内容，并尝试发送。
  *         适用于需要频繁更新同一条消息内容的场景，减少调用 BSP_CAN_SendMsg 的次数。
  */
-bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxHeader) {
-  if (TxHeader == NULL || TxHeader->hfdcan == NULL) {
+bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxMsg) {
+  
+  if (TxMsg == NULL || TxMsg->hfdcan == NULL|| TxMsg->timestamp[0] < TxMsg->timestamp[1]) {
     return false;
   }
-  if (TxHeader->hfdcan == &hfdcan1) {
-    Tx_Msg_Buffer[0] = *TxHeader;
+  if (TxMsg->hfdcan == &hfdcan1) {
+    Tx_Msg_Buffer[0] = *TxMsg;
   }
-  else if (TxHeader->hfdcan == &hfdcan2) {
-    Tx_Msg_Buffer[1] = *TxHeader;
+  else if (TxMsg->hfdcan == &hfdcan2) {
+    Tx_Msg_Buffer[1] = *TxMsg;
   }
-  else if (TxHeader->hfdcan == &hfdcan3) {
-    Tx_Msg_Buffer[2] = *TxHeader;
+  else if (TxMsg->hfdcan == &hfdcan3) {
+    Tx_Msg_Buffer[2] = *TxMsg;
   }
   else {
     return false; // 无效的 CAN 句柄
@@ -305,11 +312,10 @@ bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxHeader) {
  *         
  */
 bool BSP_CAN_SendPer(void) {
-  bool success = true;
-   success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[0].hfdcan, Tx_Msg_Buffer[0].id,Tx_Msg_Buffer[0].data, Tx_Msg_Buffer[0].len);
-   success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[1].hfdcan, Tx_Msg_Buffer[1].id,Tx_Msg_Buffer[1].data, Tx_Msg_Buffer[1].len);
-   success &=  BSP_CAN_SendMsg(Tx_Msg_Buffer[2].hfdcan, Tx_Msg_Buffer[2].id,Tx_Msg_Buffer[2].data, Tx_Msg_Buffer[2].len);
-   return success;
+  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[0])) return false;
+  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[1])) return false;
+  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[2])) return false;
+  return true;
 }
 
 /**
@@ -319,6 +325,6 @@ bool BSP_CAN_SendPer(void) {
 void BSP_CAN_SendAsync(void) {
   Struct_CAN_Tx_Msg msg;
   while (osMessageQueueGet(Can_Tx_Queue, &msg, NULL, 0) == osOK) {
-    BSP_CAN_SendMsg(msg.hfdcan, msg.id, msg.data, msg.len);
+    BSP_CAN_SendMsg(&msg);
   }
 }

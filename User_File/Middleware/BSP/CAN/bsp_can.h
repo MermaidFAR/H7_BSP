@@ -11,6 +11,7 @@
 #ifndef BSP_CAN_H
 #define BSP_CAN_H
 
+#include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
 #include "fdcan.h"
@@ -65,8 +66,18 @@ typedef struct
     uint32_t id;
     uint8_t data[FDCAN_MAX_PAYLOAD];
     uint32_t len;
+    uint64_t timestamp[2]; // 可选：发送时间戳，单位为微秒
 } Struct_CAN_Tx_Msg;
 
+/**
+ * @brief  CAN 状态枚举类型
+ */
+typedef enum {
+  CAN_OK = 0x00,
+  CAN_ERROR = 0x01,
+  CAN_BUSY = 0x02,
+  CAN_TIMEOUT = 0x03
+} CAN_StatusTypeDef;
 //=====================对外接口========================
 
 /**

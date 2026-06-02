@@ -1,5 +1,5 @@
 /**
- * @file drv_spi.cpp
+ * @file bsp_spi.cpp
  * @author yssickjgd (1345578933@qq.com)
  * @brief 仿照SCUT-Robotlab改写的SPI通信初始化与配置流程
  * @version 3.1

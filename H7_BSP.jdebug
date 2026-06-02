@@ -5,7 +5,7 @@
 **********************************************************************
 
 File          : 
-Created       : 16. Apr 2026 20:46
+Created       : 02. Jun 2026 22:42
 Ozone Version : V3.40e
 */
 
@@ -22,17 +22,17 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
-  Project.AddPathSubstitute ("D:/KnowledgeBase/MyProject/BSP/H7_BSP", "$(ProjectDir)");
-  Project.AddPathSubstitute ("d:/knowledgebase/myproject/bsp/h7_bsp", "$(ProjectDir)");
   Project.SetDevice ("Cortex-M7");
   Project.SetHostIF ("USB", "30500471");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("4 MHz");
+  Project.AddPathSubstitute ("D:/KnowledgeBase/MyProject/BSP/H7_BSP", "$(ProjectDir)");
+  Project.AddPathSubstitute ("d:/knowledgebase/myproject/bsp/h7_bsp", "$(ProjectDir)");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
-  Project.AddSvdFile ("C:/Users/FAR/AppData/Local/stm32cube/packs/STMicroelectronics/stm32h7xx_dfp/1.2.0/SVD/STM32H723.svd");
   //
   // User settings
   //
+  Edit.SysVar (VAR_HSS_SPEED, FREQ_5_KHZ);
   File.Open ("$(ProjectDir)/build/Debug/H7_BSP.elf");
   Project.SetOSPlugin ("FreeRTOSPlugin_Cortex-M");
 }

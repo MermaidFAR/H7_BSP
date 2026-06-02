@@ -76,33 +76,34 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Slope/alg_slope.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/ADC/bsp_adc.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/SPI/bsp_spi.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/callback/callback.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/Timestamp/sys_timestamp.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/Power/bsp_power.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/bsp_bmi088.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Accel/bsp_bmi088_accel_register.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/BMI088/Gyro/bsp_bmi088_gyro_register.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/callback/callback.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Timestamp/sys_timestamp.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Power/bsp_power.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/bsp_bmi088.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/Accel/bsp_bmi088_accel.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/Accel/bsp_bmi088_accel_register.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/Gyro/bsp_bmi088_gyro.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/Gyro/bsp_bmi088_gyro_register.cpp
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_SYSVIEW.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT_printf.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/SEGGER_SYSVIEW_FreeRTOS.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/Init/Init.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Init/Init.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/InsTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/CanTxTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/System/debug/sys_debug.h
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/debug/sys_debug.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/OSPI/bsp_ospi.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/W25Q64JV/bsp_w25q64jv_register.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/W25Q64JV/bsp_w25q64jv.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/W25Q64JV/bsp_w25q64jv_register.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/W25Q64JV/bsp_w25q64jv.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Buzzer/bsp_buzzer.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Key/bsp_key.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/WS2812/bsp_ws2812.cpp
 )
 
 # Add include paths
@@ -121,20 +122,23 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Slope
         User_File/Middleware/BSP/ADC
         User_File/Middleware/BSP/SPI
-        User_File/Middleware/System/callback
-        User_File/Middleware/System/Timestamp
-        User_File/Device/Components/Power
-        User_File/Device/Components/BMI088
-        User_File/Device/Components/BMI088/Accel
-        User_File/Device/Components/BMI088/Gyro
+        User_File/System/callback
+        User_File/System/Timestamp
+        User_File/Device/Onboard/Power
+        User_File/Device/Onboard/BMI088
+        User_File/Device/Onboard/BMI088/Accel
+        User_File/Device/Onboard/BMI088/Gyro
         Middlewares/ST/ARM/DSP/Inc
-        User_File/Middleware/System/Init
+        User_File/System/Init
         User_File/Task
-        User_File/Middleware/System/debug
+        User_File/System/debug
         User_File/Middleware/BSP/CAN
         User_File/Middleware/BSP/UART
         User_File/Middleware/BSP/OSPI
-        User_File/Device/Components/W25Q64JV
+        User_File/Device/Onboard/W25Q64JV
+        User_File/Device/Onboard/Buzzer
+        User_File/Device/Onboard/Key
+        User_File/Device/Onboard/WS2812
 )
 
 # Add project symbols (macros)
