@@ -101,6 +101,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/OSPI/bsp_ospi.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/W25Q64JV/bsp_w25q64jv_register.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Components/W25Q64JV/bsp_w25q64jv.cpp
 )
 
 # Add include paths
@@ -132,6 +134,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/BSP/CAN
         User_File/Middleware/BSP/UART
         User_File/Middleware/BSP/OSPI
+        User_File/Device/Components/W25Q64JV
 )
 
 # Add project symbols (macros)
