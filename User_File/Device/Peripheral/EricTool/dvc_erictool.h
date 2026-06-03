@@ -223,6 +223,9 @@ inline void Class_EricTool_USB::Set_Data(const int &Number, ...)
     Data_Number = Number;
 }
 
+extern Class_EricTool_USB EricTool_USB;
+extern Class_EricTool_UART EricTool_UART;
+void EricTool_Send_Telemetry(void);
 #endif // !__DVC_ERICTOOL_H
 
-/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+    /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

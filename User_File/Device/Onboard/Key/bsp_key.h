@@ -92,5 +92,12 @@ inline Enum_BSP_Key_Status Class_Key::Get_Key_Status() const
 }
 
 #endif
-
-/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+#ifdef __cplusplus
+extern "C" {
+#endif
+void BSP_Key_TIM_1ms_Process_PeriodElapsedCallback();
+void BSP_Key_TIM_50ms_Process_PeriodElapsedCallback();
+#ifdef __cplusplus
+}
+#endif
+    /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

@@ -18,7 +18,8 @@
 #include <string.h>
 
 /* Private macros ------------------------------------------------------------*/
-
+Class_EricTool_USB EricTool_USB;
+Class_EricTool_UART EricTool_UART;
 /* Private types -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
@@ -334,4 +335,9 @@ void Class_EricTool_USB::Output()
     memcpy(tmp_buffer + Data_Number * sizeof(uint32_t), &Frame_Tail, sizeof(uint32_t));
 }
 
-/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+void EricTool_Send_Telemetry(void) {
+  EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback();  // USB 遥测
+  EricTool_UART.TIM_1ms_Write_PeriodElapsedCallback(); // UART justfloat
+}
+
+    /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

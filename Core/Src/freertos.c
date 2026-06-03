@@ -76,6 +76,13 @@ const osThreadAttr_t StatusTask_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for TIM_1ms_Task */
+osThreadId_t TIM_1ms_TaskHandle;
+const osThreadAttr_t TIM_1ms_Task_attributes = {
+  .name = "TIM_1ms_Task",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -86,6 +93,7 @@ void Transport_Task(void *argument);
 void Ins_Task(void *argument);
 void Can_Tx_Task(void *argument);
 void Status_Task(void *argument);
+void TIM1msTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -146,6 +154,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of StatusTask */
   StatusTaskHandle = osThreadNew(Status_Task, NULL, &StatusTask_attributes);
+
+  /* creation of TIM_1ms_Task */
+  TIM_1ms_TaskHandle = osThreadNew(TIM1msTask, NULL, &TIM_1ms_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -229,6 +240,24 @@ __weak void Status_Task(void *argument)
     osDelay(1);
   }
   /* USER CODE END Status_Task */
+}
+
+/* USER CODE BEGIN Header_TIM1msTask */
+/**
+* @brief Function implementing the TIM_1ms_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_TIM1msTask */
+__weak void TIM1msTask(void *argument)
+{
+  /* USER CODE BEGIN TIM1msTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END TIM1msTask */
 }
 
 /* Private application code --------------------------------------------------*/

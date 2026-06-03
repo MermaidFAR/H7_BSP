@@ -8,6 +8,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "dvc_erictool.h"
 #include "user_task.h"
 #include "cmsis_os.h"
 
@@ -25,8 +26,8 @@ extern "C" void Status_Task(void *argument)
 {
     (void)argument;
 
-    for (;;)
-    {
-        osDelay(50);
+    for (;;) {
+        EricTool_Send_Telemetry(); // 发送遥测数据
+        osDelay(1);
     }
 }

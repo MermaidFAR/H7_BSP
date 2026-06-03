@@ -106,6 +106,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Key/bsp_key.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/WS2812/bsp_ws2812.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
 )
 
 # Add include paths

@@ -1,14 +1,24 @@
 #ifndef __USER_TASK_H
 #define __USER_TASK_H
 
+#include <cstdint>
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct
+{
+  uint32_t timesmode;
+  uint8_t timesnum;
+  void (*task)(void);
+} timesmode_t;
 
 void Ins_Task(void *argument);
 void Transport_Task(void *argument);
 void can_tx_task(void *argument);
 void status_task(void *argument);
+void mode(uint8_t timesnum, void (*task)(void));
 
 #ifdef __cplusplus
 }

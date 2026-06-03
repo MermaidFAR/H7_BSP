@@ -12,6 +12,7 @@
 #include "bsp_w25q64jv.h"
 #include "bsp_ws2812.h"
 #include "callback.h"
+#include "dvc_erictool.h"
 #include "sys_timestamp.h"
 // 全局初始化完成标志位
 volatile bool init_finished = false;
@@ -41,6 +42,7 @@ extern "C" void System_Init(void)
     ADC_Init(&hadc1, 1);
     BSP_Power.Init(false, false, false);
 
+    EricTool_USB.Init();
     init_finished = true;
 
 }

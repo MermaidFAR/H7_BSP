@@ -73,5 +73,19 @@ void Class_Key::TIM_50ms_Read_PeriodElapsedCallback()
 {
     Now_GPIO_State = HAL_GPIO_ReadPin(KEY__INPUT_GPIO_Port, KEY__INPUT_Pin);
 }
+#ifdef __cplusplus
+// 这段代码只有 C++ 编译器能看到
+extern "C" {
+#endif
+    void BSP_Key_TIM_1ms_Process_PeriodElapsedCallback() {
+        BSP_Key.TIM_1ms_Process_PeriodElapsedCallback();
+    }
+    void BSP_Key_TIM_50ms_Read_PeriodElapsedCallback() {
+        BSP_Key.TIM_50ms_Read_PeriodElapsedCallback();
+    }
+
+#ifdef __cplusplus
+}   
+#endif
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
