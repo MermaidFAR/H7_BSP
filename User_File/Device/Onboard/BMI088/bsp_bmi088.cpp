@@ -530,4 +530,16 @@ void Class_BMI088::Accel_Chi_Square_Calculate()
     Accel_Chi_Square_Loss = (vector_error.Get_Transpose() * matrix_d.Get_Inverse() * vector_error)[0][0];
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void BMI088_TIM_128ms_Calculate_PeriodElapsedCallback()
+{
+    BSP_BMI088.TIM_128ms_Calculate_PeriodElapsedCallback();
+}
+
+#ifdef __cplusplus
+}
+#endif
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

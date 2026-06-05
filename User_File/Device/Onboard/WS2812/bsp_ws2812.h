@@ -158,4 +158,14 @@ inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &__Color, const fl
 
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback();
+
+#ifdef __cplusplus
+}
+#endif
+
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

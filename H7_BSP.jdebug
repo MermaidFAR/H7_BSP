@@ -29,6 +29,7 @@ void OnProjectLoad (void) {
   Project.AddPathSubstitute ("D:/KnowledgeBase/MyProject/BSP/H7_BSP", "$(ProjectDir)");
   Project.AddPathSubstitute ("d:/knowledgebase/myproject/bsp/h7_bsp", "$(ProjectDir)");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
+  Project.AddSvdFile ("$(InstallDir)/Config/Peripherals/STM32H723.svd");
   //
   // User settings
   //

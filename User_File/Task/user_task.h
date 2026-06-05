@@ -1,8 +1,11 @@
 #ifndef __USER_TASK_H
 #define __USER_TASK_H
 
+#include "bsp_key.h"
 #include <cstdint>
 #include <sys/types.h>
+#include "bsp_ws2812.h"
+#include "bsp_bmi088.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -80,4 +80,15 @@ void Class_WS2812::TIM_10ms_Write_PeriodElapsedCallback() const
     SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, nullptr, 0, GPIO_PIN_SET, 25);
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback() {
+  BSP_WS2812.TIM_10ms_Write_PeriodElapsedCallback();
+}
+
+#ifdef __cplusplus
+}
+#endif
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

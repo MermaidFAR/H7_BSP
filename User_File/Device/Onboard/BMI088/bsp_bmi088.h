@@ -323,4 +323,14 @@ inline uint64_t Class_BMI088::Get_Calculating_Time() const
 
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void BMI088_TIM_128ms_Calculate_PeriodElapsedCallback();
+
+#ifdef __cplusplus
+}
+#endif
+
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
