@@ -20,7 +20,6 @@
 
 #include "app_tuner.h"
 
-#include "bsp_w25q64jv.h"
 #include <cmath>
 
 #ifdef __cplusplus
@@ -32,6 +31,9 @@ PID_Tuner_Manager_t PID_Tuner;
 
 /** @brief EricTool 下行指令数量 */
 static const uint8_t RX_DICT_NUM = 11;
+
+/** @brief USB CDC 接收完成标记 (ISR 置位, App_Tuner_RX 清零) */
+static volatile bool eric_rx_pending = false;
 
 /**
  * @brief EricTool 下行指令字典
@@ -155,6 +157,7 @@ void App_Tuner_Register_PID(uint8_t index, Class_PID *pid, uint32_t flash_addr) 
 void App_Tuner_Init(void) {
     USB_Init([](uint8_t *Buffer, uint16_t Length) {
         EricTool_USB.USB_RxCallback(Buffer, Length);
+        eric_rx_pending = true;
     });
     EricTool_USB.Init(RX_DICT_NUM, (const char **)EricTool_RX_Dict);
 
@@ -194,7 +197,12 @@ void App_Tuner_TX(void) {
 }
 
 void App_Tuner_RX(void) {
+    if (!eric_rx_pending) return;
+    eric_rx_pending = false;
+
     int32_t idx = EricTool_USB.Get_Variable_Index();
+    if (idx < 0) return;
+
     float val = EricTool_USB.Get_Variable_Value();
     PID_Tuner_Instance_t *a = &PID_Tuner.instance[PID_Tuner.active_index];
 

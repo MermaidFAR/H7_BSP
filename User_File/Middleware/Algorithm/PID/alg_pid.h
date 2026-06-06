@@ -15,8 +15,6 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "alg_basic.h"
-#include "portmacro.h"
-#include <sys/types.h>
 
 /* Exported macros -----------------------------------------------------------*/
 
