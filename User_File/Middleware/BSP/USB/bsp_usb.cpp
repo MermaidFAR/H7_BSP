@@ -61,7 +61,18 @@ uint8_t USB_Transmit_Data(uint8_t *Data, uint16_t Length)
         return USBD_FAIL;
     }
 
-    return CDC_Transmit_HS(Data, Length);
+    uint32_t timeout = 10000;
+    uint8_t result;
+    do
+    {
+        result = CDC_Transmit_HS(Data, Length);
+        if (result != USBD_BUSY)
+        {
+            break;
+        }
+    } while (--timeout > 0);
+
+    return result;
 }
 
 /**

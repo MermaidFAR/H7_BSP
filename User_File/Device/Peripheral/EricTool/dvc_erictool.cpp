@@ -256,7 +256,7 @@ uint8_t Class_EricTool_USB::_Judge_Variable_Name(const uint16_t &Length)
     char tmp_variable_name[ERICTOOL_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH];
     int flag;
 
-    for (flag = 0; USB_Manage_Object->Rx_Buffer_Ready[flag] != '=' && flag < Length && USB_Manage_Object->Rx_Buffer_Ready[flag] != 0; flag++)
+    for (flag = 0; USB_Manage_Object->Rx_Buffer_Ready[flag] != '=' && USB_Manage_Object->Rx_Buffer_Ready[flag] != ':' && flag < Length && USB_Manage_Object->Rx_Buffer_Ready[flag] != 0; flag++)
     {
         tmp_variable_name[flag] = USB_Manage_Object->Rx_Buffer_Ready[flag];
     }
