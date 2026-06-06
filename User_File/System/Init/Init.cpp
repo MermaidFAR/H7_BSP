@@ -15,7 +15,8 @@
 #include "dvc_erictool.h"
 #include "sys_timestamp.h"
 #include "usart.h"
-// 全局初始化完成标志位
+#include "sys_debug.h"
+    // 全局初始化完成标志位
 volatile bool init_finished = false;
 
 extern "C" void System_Init(void)
@@ -56,5 +57,4 @@ extern "C" void System_Init(void)
 
     EricTool_USB.Init();
     init_finished = true;
-
 }

@@ -25,7 +25,7 @@
 extern "C" void Transport_Task(void *argument)
 {
     MX_USB_DEVICE_Init();
-
+    
     for (;;)
     {
         osDelay(1);

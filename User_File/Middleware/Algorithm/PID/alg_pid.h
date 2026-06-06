@@ -15,10 +15,13 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "alg_basic.h"
+#include "portmacro.h"
+#include <sys/types.h>
 
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
+
 
 /**
  * @brief 微分先行
@@ -121,7 +124,7 @@ protected:
     float I_Separate_Threshold = 0.0f;
 
     // 目标值
-    float Target = 0.0f;
+    float Target = 0.0f; 
     // 当前值
     float Now = 0.0f;
 

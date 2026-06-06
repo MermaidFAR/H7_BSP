@@ -1,11 +1,14 @@
 #ifndef __USER_TASK_H
 #define __USER_TASK_H
-
+#include "bsp_bmi088.h"
 #include "bsp_key.h"
+#include "bsp_usb.h" // USB_Init 声明
+#include "bsp_ws2812.h"
+#include "cmsis_os.h"
+#include "dvc_erictool.h"
 #include <cstdint>
 #include <sys/types.h>
-#include "bsp_ws2812.h"
-#include "bsp_bmi088.h"
+#include "sys_debug.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +23,8 @@ typedef struct
 void Ins_Task(void *argument);
 void Transport_Task(void *argument);
 void can_tx_task(void *argument);
-void status_task(void *argument);
-void mode(uint8_t timesnum, void (*task)(void));
+void Status_Task(void *argument);
+void pulse(uint8_t timesnum, const int &Number, ...);
 
 #ifdef __cplusplus
 }

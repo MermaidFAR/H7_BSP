@@ -70,24 +70,11 @@ extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (!init_finished) {
     return;
   }
-
-  // 选择回调函数
-  // if (htim->Instance == TIM4)
-  // {
-  //     Task10us_Callback();
-  // }
-
   else if (htim->Instance == TIM5) {
     Task3600s_Callback();
   } else if (htim->Instance == TIM6) {
     Task1s_Callback();
-  } else if (htim->Instance == TIM7) {
-    // Task1ms_Callback();
-  }
-  // else if (htim->Instance == TIM8)
-  // {
-  //     Task125us_Callback();
-  // }
+  } 
 }
 
 extern "C" void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length,

@@ -90,8 +90,9 @@ void Class_EricTool_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, const uint
  */
 void Class_EricTool_UART::TIM_1ms_Write_PeriodElapsedCallback()
 {
-    Output();
-    UART_Transmit_Data(UART_Manage_Object->UART_Handler, Tx_Buffer, Data_Number * sizeof(float) + sizeof(uint32_t));
+  if (UART_Manage_Object == nullptr) return;
+  Output();
+  UART_Transmit_Data(UART_Manage_Object->UART_Handler, Tx_Buffer, Data_Number * sizeof(float) + sizeof(uint32_t));
 }
 
 /**
