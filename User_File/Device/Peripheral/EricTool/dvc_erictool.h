@@ -19,21 +19,21 @@
 #include "alg_basic.h"
 #include "bsp_uart.h"
 #include "bsp_usb.h"
+#include "stm32_hal_legacy.h"
 #include <stdarg.h>
 
 /* Exported macros -----------------------------------------------------------*/
 
 #define ERICTOOL_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH (100)
 
-/* Exported types ------------------------------------------------------------*/
+    /* Exported types ------------------------------------------------------------*/
 
-/**
- * @brief Reusable, EricTool justfloat 串口调试工具（UART 版本）
- * @note  上行：justfloat 帧（N×float + 4B 帧尾 0x7f800000）
- *        下行：文本指令 "variable=value#"，解析后写入变量字典
- */
-class Class_EricTool_UART
-{
+    /**
+     * @brief Reusable, EricTool justfloat 串口调试工具（UART 版本）
+     * @note  上行：justfloat 帧（N×float + 4B 帧尾 0x7f800000）
+     *        下行：文本指令 "variable=value#"，解析后写入变量字典
+     */
+    class Class_EricTool_UART {
 public:
     void Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num = 0, const char **__Rx_Variable_Assignment_List = nullptr, const uint32_t &__Frame_Tail = 0x7f800000);
 
@@ -51,45 +51,45 @@ protected:
     // 初始化相关常量
 
     // 绑定的 UART 管理对象
-    Struct_UART_Manage_Object *UART_Manage_Object;
-    // 接收指令字典数量
-    uint8_t Rx_Variable_Num;
-    // 接收指令字典列表指针
-    char **Rx_Variable_List;
-    // 数据包尾标（justfloat 默认 0x7f800000）
-    uint32_t Frame_Tail;
+  Struct_UART_Manage_Object *UART_Manage_Object = nullptr;
+  // 接收指令字典数量
+  uint8_t Rx_Variable_Num;
+  // 接收指令字典列表指针
+  char **Rx_Variable_List;
+  // 数据包尾标（justfloat 默认 0x7f800000）
+  uint32_t Frame_Tail;
 
-    // 常量
+  // 常量
 
-    // 内部变量
+  // 内部变量
 
-    // 发送缓冲区
-    uint8_t Tx_Buffer[UART_BUFFER_SIZE];
+  // 发送缓冲区
+  uint8_t Tx_Buffer[UART_BUFFER_SIZE];
 
-    // 需要绘图的各个变量数据地址（最多 24 个通道）
-    const void *Data[24];
-    // 当前发送的数据数量
-    uint8_t Data_Number = 0;
-    // 当前接收的指令在指令字典中的编号（-1 表示未匹配）
-    int32_t Variable_Index = 0;
-    // 当前接收的指令值
-    float Variable_Value = 0.0f;
+  // 需要绘图的各个变量数据地址（最多 24 个通道）
+  const void *Data[24];
+  // 当前发送的数据数量
+  uint8_t Data_Number = 0;
+  // 当前接收的指令在指令字典中的编号（-1 表示未匹配）
+  int32_t Variable_Index = 0;
+  // 当前接收的指令值
+  float Variable_Value = 0.0f;
 
-    // 读变量
+  // 读变量
 
-    // 写变量
+  // 写变量
 
-    // 读写变量
+  // 读写变量
 
-    // 内部函数
+  // 内部函数
 
-    void Data_Process(const uint16_t &Length);
+  void Data_Process(const uint16_t &Length);
 
-    uint8_t _Judge_Variable_Name(const uint16_t &Length);
+  uint8_t _Judge_Variable_Name(const uint16_t &Length);
 
-    void _Judge_Variable_Value(const uint16_t &Length, int flag);
+  void _Judge_Variable_Value(const uint16_t &Length, int flag);
 
-    void Output();
+  void Output();
 };
 
 /**
