@@ -168,7 +168,7 @@ void App_Tuner_Init(void) {
 
         BSP_W25Q64JV.Read_Data(&inst->flash, inst->flash_addr, sizeof(Flash_PID_Params_t));
 
-        if (std::isnan(inst->flash.K_P)) {
+        if (std::isnan(inst->flash.K_P) || std::isnan(inst->flash.D_T)) {
             Write_Flash_Defaults(inst);
         }
 
