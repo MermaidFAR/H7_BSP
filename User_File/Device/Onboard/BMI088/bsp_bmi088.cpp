@@ -25,9 +25,6 @@ extern "C" { extern osThreadId_t InsTaskHandle; }
 Class_BMI088 BSP_BMI088;
 
 // Ozone graphing: plain global floats for Timeline Data Plot
-volatile float ozone_accel[3] = {0};
-volatile float ozone_gyro[3] = {0};
-volatile float ozone_euler[3] = {0};
 
 /* Private function declarations ---------------------------------------------*/
 
@@ -282,15 +279,6 @@ void Class_BMI088::EKF_Calculate()
             Vector_Pre_Original_Gyro = Vector_Original_Gyro;
         }
         EKF_Pre_Timestamp = EKF_Now_Timestamp;
-
-        // Update Ozone graphing variables
-        extern volatile float ozone_accel[3], ozone_gyro[3], ozone_euler[3];
-        for (int i = 0; i < 3; i++)
-        {
-            ozone_accel[i] = Vector_Original_Accel[i][0];
-            ozone_gyro[i] = Vector_Original_Gyro[i][0];
-            ozone_euler[i] = Vector_Euler_Angle[i][0];
-        }
     }
 }
 
