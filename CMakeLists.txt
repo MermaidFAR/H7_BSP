@@ -108,6 +108,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Tuner/app_tuner.cpp
+        User_File/Device/Peripheral/Motor/QDrive/QD4310.c
 )
 
 # Add include paths

@@ -83,6 +83,9 @@ extern "C" {
     void BSP_Key_TIM_50ms_Read_PeriodElapsedCallback() {
         BSP_Key.TIM_50ms_Read_PeriodElapsedCallback();
     }
+    void BSP_Key_TIM_50ms_Process_PeriodElapsedCallback() {
+        BSP_Key.TIM_50ms_Read_PeriodElapsedCallback();
+    }
 
 #ifdef __cplusplus
 }   

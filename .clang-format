@@ -1,2 +1,19 @@
 BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
 ColumnLimit: 0
+
+BreakBeforeBraces: Allman
+
+PointerAlignment: Left
+
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: ControlStatements
+
+SortIncludes: true
+IncludeBlocks: Regroup
+
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false

@@ -4,7 +4,7 @@
 #include "bsp_key.h"
 #include "bsp_usb.h" // USB_Init 声明
 #include "bsp_ws2812.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "dvc_erictool.h"
 #include <cstdint>
 #include <sys/types.h>

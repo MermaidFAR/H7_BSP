@@ -9,7 +9,6 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "user_task.h"
-#include "cmsis_os.h"
 #include "usb_device.h"
 #include "app_tuner.h"
 

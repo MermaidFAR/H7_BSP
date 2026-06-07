@@ -17,7 +17,7 @@
 
 #include "bsp_w25q64jv_register.h"
 #include "bsp_ospi.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include <SEGGER_RTT.h>
 
 /* Private macros ------------------------------------------------------------*/

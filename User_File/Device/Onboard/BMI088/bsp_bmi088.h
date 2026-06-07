@@ -19,9 +19,7 @@
 #include "alg_quaternion.h"
 #include "alg_filter_ekf.h"
 extern "C" {
-#include "FreeRTOS.h"
-#include "task.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 }
 /* Exported macros -----------------------------------------------------------*/
 

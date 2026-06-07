@@ -14,7 +14,6 @@
 
 #include "bsp_w25q64jv.h"
 
-#include "cmsis_os.h"
 #include <SEGGER_RTT.h>
 
 /* Private macros ------------------------------------------------------------*/

@@ -1,4 +1,5 @@
 #include "Init.h"
+
 #include "SEGGER_SYSVIEW.h"
 #include "bsp_adc.h"
 #include "bsp_bmi088.h"
@@ -13,17 +14,17 @@
 #include "bsp_ws2812.h"
 #include "callback.h"
 #include "dvc_erictool.h"
+#include "sys_debug.h"
 #include "sys_timestamp.h"
 #include "usart.h"
-#include "sys_debug.h"
-    // 全局初始化完成标志位
+// 全局初始化完成标志位
 volatile bool init_finished = false;
 
 extern "C" void System_Init(void)
 {
     SEGGER_SYSVIEW_Conf();
-    SYS_Timestamp.Init(&htim5); 
-
+    // SEGGER_SYSVIEW_Stop();
+    SYS_Timestamp.Init(&htim5);
     HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
 
     UART_Init(&huart1, nullptr);
@@ -53,7 +54,7 @@ extern "C" void System_Init(void)
     BSP_Key.Init();
     BSP_W25Q64JV.Init();
     ADC_Init(&hadc1, 1);
-    BSP_Power.Init(false, false, false);
+    BSP_Power.Init(true, true, false);
 
     EricTool_USB.Init();
     init_finished = true;

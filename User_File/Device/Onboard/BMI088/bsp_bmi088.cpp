@@ -81,9 +81,7 @@ void Class_BMI088::SPI_RxCpltCallback()
             Gyro_Update_Flag = true;
             Gyro_Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
 
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-            vTaskNotifyGiveFromISR((TaskHandle_t)InsTaskHandle, &xHigherPriorityTaskWoken);
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+            osThreadFlagsSet(InsTaskHandle, 0x0001);
         }
     }
 

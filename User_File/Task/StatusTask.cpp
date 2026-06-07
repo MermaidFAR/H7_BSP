@@ -29,14 +29,6 @@
  */
 extern "C" void Status_Task(void *argument)
 {
-EricTool_USB.Set_Data(6,
-                        (int)&Debug_IMU_Data.Gyro_X_rad_s,
-                        (int)&Debug_IMU_Data.Gyro_Y_rad_s,
-                        (int)&Debug_IMU_Data.Gyro_Z_rad_s,
-                        (int)&Debug_IMU_Data.Euler_Yaw_rad,
-                        (int)&Debug_IMU_Data.Euler_Pitch_rad,
-                        (int)&Debug_IMU_Data.Euler_Roll_rad);
-  
   for (;;) {
     EricTool_Send_Telemetry(); // 发送遥测数据
     osDelay(1);
