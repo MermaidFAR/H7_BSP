@@ -10,6 +10,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define MOTOR_IDX (16) // 最大支持16个电机实例
 
@@ -85,6 +89,8 @@ void QD4310_SetCurrent(QD4310_t *motor, float current);
 
 void QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value);
 
+void QD4310_Init(QD4310_t* motor, uint8_t id, FDCAN_HandleTypeDef* hfdcan);
+
 // 数学常数定义
 #define QD4310_PI (3.14159265358979323846f)
 #define QD4310_TWO_PI (2.0f * QD4310_PI)
@@ -97,5 +103,8 @@ void QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value);
 #define QD4310_MAX_STEPANGLE (QD4310_TWO_PI)
 #define QD4310_MIN_STEPANGLE (-QD4310_TWO_PI)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //QD4310_H
