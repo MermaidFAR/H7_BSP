@@ -11,6 +11,7 @@
 #include "bsp_can.h"
 #include "cmsis_os2.h"
 #include "stm32h723xx.h"
+#include "sys_timestamp.h"
 #include <stdbool.h>
 #include <string.h>
 
@@ -44,7 +45,7 @@ static const osMutexAttr_t Can3_TxMutex_Attr = {
 // 预设的 CAN 消息缓冲区，用于 CAN_Tx_Perform 和 BSP_CAN_SendPer 函数
 static Struct_CAN_Tx_Msg Tx_Msg_Buffer[3];
 
-static osMessageQueueId_t Can_Tx_Queue = NULL;// CAN 接收消息队列
+static osMessageQueueId_t Can_Tx_Queue = NULL;// CAN 发送消息队列
 
 static void BSP_CAN_Init_Msg(void) {
   //
@@ -212,15 +213,11 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
    uint8_t* data = TxMsg->data;
    uint32_t len = TxMsg->len;
 
-   if (hfdcan == NULL || data == NULL || len == 0 || len > FDCAN_MAX_PAYLOAD) {
-     return false; // 参数无效
-   }
-  FDCAN_TxHeaderTypeDef TxHeader;
-  osMutexId_t pMutex = NULL;
-
-  if (len > FDCAN_MAX_PAYLOAD || len == 0 || data == NULL || hfdcan == NULL) {
+  if (hfdcan == NULL || data == NULL || len == 0 || len > FDCAN_MAX_PAYLOAD) {
     return false;
   }
+  FDCAN_TxHeaderTypeDef TxHeader;
+  osMutexId_t pMutex = NULL;
 
   // 1. 根据句柄选择对应的锁
   if (hfdcan == &hfdcan1)
@@ -255,7 +252,7 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
     // 放入发送队列
     HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &TxHeader, data);
 
-    TxMsg->timestamp[1] = HAL_GetTick();
+    TxMsg->timestamp[1] = SYS_Timestamp_Get_Microsecond();
     // 5. 释放锁
     osMutexRelease(pMutex);
     return (status == HAL_OK);
@@ -280,24 +277,28 @@ bool CAN_Tx_Submit(Struct_CAN_Tx_Msg *TxHeader) {
 }
 
 /**
- * @brief  更新预设的 CAN 消息并发送
- * @param  TxHeader: 包含 CAN 句柄、ID、数据和长度的结构体指针
- * @return true: 消息成功提交到发送队列, false: 提交失败 (如无效参数或总线拥堵)
- * @note   此函数会更新 Tx_Msg_Buffer 中对应 CAN 句柄的消息内容，并尝试发送。
- *         适用于需要频繁更新同一条消息内容的场景，减少调用 BSP_CAN_SendMsg 的次数。
+ * @brief  更新预设的 CAN 消息并提交发送
+ * @param  TxMsg: 包含 CAN 句柄、ID、数据和长度的结构体指针
+ * @return true: 消息成功提交, false: 提交失败 (如无效参数、总线拥堵或 timestamp[0] 早于上次发送时间)
+ * @note   timestamp 语义: [0]=本次提交时间, [1]=上一次 BSP_CAN_SendMsg 实际发送完成时间。
+ *         若 timestamp[0] < timestamp[1] 说明这是旧数据, 拒绝覆盖, 返回 false。
+ *         提交前先从 Tx_Msg_Buffer 回写 timestamp[1], 使调用者下次可通过更新 timestamp[0] 触发重新提交。
  */
 bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxMsg) {
-  
+   
   if (TxMsg == NULL || TxMsg->hfdcan == NULL|| TxMsg->timestamp[0] < TxMsg->timestamp[1]) {
     return false;
   }
   if (TxMsg->hfdcan == &hfdcan1) {
+    TxMsg->timestamp[1] = Tx_Msg_Buffer[0].timestamp[1];  // 回写上次实际发送时间
     Tx_Msg_Buffer[0] = *TxMsg;
   }
   else if (TxMsg->hfdcan == &hfdcan2) {
+    TxMsg->timestamp[1] = Tx_Msg_Buffer[1].timestamp[1];
     Tx_Msg_Buffer[1] = *TxMsg;
   }
   else if (TxMsg->hfdcan == &hfdcan3) {
+    TxMsg->timestamp[1] = Tx_Msg_Buffer[2].timestamp[1];
     Tx_Msg_Buffer[2] = *TxMsg;
   }
   else {

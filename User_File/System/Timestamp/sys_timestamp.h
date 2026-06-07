@@ -229,6 +229,21 @@ protected:
 
 extern Class_Timestamp SYS_Timestamp;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief  C 语言可用的时间戳获取函数 (微秒)
+ * @return uint64_t 当前时间戳, 单位微秒
+ * @note   供纯 C 模块 (bsp_can, QD4310 等) 调用
+ */
+uint64_t SYS_Timestamp_Get_Microsecond(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 namespace Namespace_SYS_Timestamp
 {
     void Delay_Second(const uint32_t &Second);

@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "fdcan.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +59,9 @@ typedef struct {
 
 /**
  * @brief  CAN 发送消息结构体
+ * @note   timestamp 语义:
+ *         - [0] 本次提交时间 (调用方在 CAN_Tx_Perform 前设置)
+ *         - [1] 上一次 BSP_CAN_SendMsg 实际发送完成时间 (CAN_Tx_Perform 自动回写)
  */
 typedef struct 
 {
@@ -66,7 +69,7 @@ typedef struct
     uint32_t id;
     uint8_t data[FDCAN_MAX_PAYLOAD];
     uint32_t len;
-    uint64_t timestamp[2]; // 可选：发送时间戳，单位为微秒
+    uint64_t timestamp[2];
 } Struct_CAN_Tx_Msg;
 
 /**

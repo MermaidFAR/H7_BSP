@@ -108,4 +108,14 @@ void Namespace_SYS_Timestamp::Delay_Microsecond(const uint32_t &Microsecond)
     }
 }
 
+/**
+ * @brief  C 语言可用的时间戳获取函数 (微秒)
+ * @return uint64_t 当前时间戳, 单位微秒
+ * @note   纯 C 包装, 内部调用 SYS_Timestamp.Get_Now_Microsecond()
+ */
+extern "C" uint64_t SYS_Timestamp_Get_Microsecond(void)
+{
+    return SYS_Timestamp.Get_Now_Microsecond();
+}
+
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
