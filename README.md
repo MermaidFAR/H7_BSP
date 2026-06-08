@@ -2,7 +2,7 @@
 
 STM32H723ZG 板级支持包工程，面向 RoboMaster/机器人控制场景。项目使用 STM32CubeMX 生成的 HAL 外设初始化作为底层基础，在 `User_File/` 中维护用户态 C++ BSP、设备组件、中间件算法与 FreeRTOS 任务。
 
-当前工程已经不是纯 CubeMX 框架：系统初始化、回调分发、BMI088 姿态解算链路、DMA 可访问内存段、SystemView 集成、FreeRTOS 任务入口已经接通。仍未完成的重点集中在通信传输任务、CAN/FDCAN BSP 抽象、电源/ADC 的系统级接入、以及部分并发标志和边角问题收口。
+当前工程已经不是纯 CubeMX 框架：系统初始化、回调分发、BMI088 姿态解算链路、DMA 可访问内存段、SystemView 集成、FreeRTOS 任务入口、CAN/UART BSP 均已接通。仍未完成的重点集中在通信传输任务、电源/ADC 的系统级接入、以及部分并发标志和边角问题收口。
 
 ## 当前状态
 
@@ -38,11 +38,13 @@ Middlewares/                  ST/FreeRTOS/USB 等第三方中间件
 SystemView/                   SEGGER SystemView 与 RTT 支持
 USB_DEVICE/                   STM32 USB Device CDC 相关代码
 User_Config/                  工具与补丁配置，包含 FreeRTOS patched port
-User_File/Device/             具体硬件器件封装
-User_File/Middleware/BSP/     外设 BSP 抽象层
-User_File/Middleware/System/  系统服务，如初始化、回调、时间戳
-User_File/Middleware/Algorithm/算法组件，如矩阵、PID、EKF、四元数等
-User_File/Task/               FreeRTOS 用户任务
+ User_File/Device/Onboard/      板载器件封装（BMI088、WS2812、Buzzer 等）
+ User_File/Device/Peripheral/  外接器件（QD4310 电机、EricTool 等）
+ User_File/Middleware/BSP/     外设 BSP 抽象层
+ User_File/System/             系统服务，如初始化、回调、时间戳
+ User_File/Middleware/Algorithm/算法组件，如矩阵、PID、EKF、四元数等
+ User_File/Task/               FreeRTOS 用户任务
+ User_File/Application/        应用层（Tuner 在线调参）
 ```
 
 ## 启动与运行链路
@@ -136,12 +138,13 @@ STM32H7 的 DTCMRAM 无法被 DMA1/DMA2 直接访问。项目已经为 SPI/ADC D
 
 ### FreeRTOS 配置与任务
 
-当前创建四个 CMSIS-RTOS V2 任务：
+当前创建五个 CMSIS-RTOS V2 任务：
 
 | 任务 | 优先级 | 栈大小 | 当前职责 |
 | --- | --- | ---: | --- |
 | `InsTask` | `osPriorityHigh1` | `2048 * 4` 字节 | 等待陀螺仪 SPI 完成通知，执行 BMI088 EKF 姿态解算 |
 | `CanTxTask` | `osPriorityHigh` | `1024 * 4` 字节 | 1ms 周期发送：先排空异步队列（`BSP_CAN_SendAsync`），再发送三路周期帧（`BSP_CAN_SendPer`） |
+| `TIM_1ms_Task` | `osPriorityLow` | — | 1ms 模式分频器：pulse() 调度 1ms/10ms/50ms/128ms 周期回调 |
 | `TransportTask` | `osPriorityNormal` | `2048 * 4` 字节 | 初始化 USB Device，后续预留通信传输逻辑 |
 | `StatusTask` | `osPriorityLow` | `1024 * 4` 字节 | 系统状态监控骨架，当前 100 ms 周期让出 CPU |
 
@@ -236,7 +239,7 @@ enum Enum_Solve_Event
 
 ### 回调分发中心
 
-`User_File/Middleware/System/callback/callback.cpp` 当前提供统一 HAL 回调分发：
+`User_File/System/callback/callback.cpp` 当前提供统一 HAL 回调分发：
 
 - `HAL_GPIO_EXTI_Callback()`：过滤 BMI088 加速度计和陀螺仪数据就绪引脚，转交给 `BSP_BMI088.EXTI_Flag_Callback()`。
 - `HAL_TIM_PeriodElapsedCallback()`：保留 TIM2 HAL Tick 递增，TIM5 用于时间戳小时级溢出计数，TIM6/TIM7 分支仍为空或注释。
@@ -282,7 +285,7 @@ UART BSP 采用双缓冲 DMA 接收范式（仿 SCUT-Robotlab / 达妙 `drv_uart
 - 回调可传 `nullptr` 退化为轮询模式：DMA 照常接收、双缓冲照常切换、`Rx_Timestamp` 照常更新，但不触发回调，由任务自行轮询 `Rx_Buffer_Ready`。
 - 错误中断 `HAL_UART_ErrorCallback` 统一调用 `UART_Reinit()` 重启接收。
 
-当前 UART BSP 是「可用模块」，但尚未在 `System_Init()` / `Init.cpp` 中调用 `UART_Init()` 绑定具体设备（取决于实际外接的 DBUS 遥控器 / 裁判系统等）。
+当前 UART BSP 已在 `System_Init()` 中以轮询模式（`nullptr` 回调）初始化全部 10 路 UART。具体设备的业务回调绑定（如 DBUS 遥控器 / 裁判系统）待后续按实际外接配置接入。
 
 ### ADC BSP
 
@@ -401,23 +404,23 @@ BMI088 总控已实现：
 
 `CAN_Tx_Submit()` 队列满（16 帧）时返回 `false`，调用方应检查返回值。若频繁满队，应改用周期通道或降低提交频率。
 
-### Power/ADC 尚未纳入系统初始化
+### Power/ADC 已接入系统初始化
 
-Power 和 ADC 模块代码已经存在，但启动链路还没接上：
+Power 和 ADC 模块已在 `System_Init()` 中调用初始化：
 
-- `ADC_Init(&hadc1, sample_count)` 尚未在 `System_Init()` 中调用。
-- `BSP_Power.Init()` 尚未在 `System_Init()` 中调用。
-- 电源电压读取目前依赖 ADC 缓冲区，如果 ADC DMA 未启动，读取值没有实际意义。
+- `ADC_Init(&hadc1, 1)`：启动 ADC1 DMA 采样。
+- `BSP_Power.Init(true, true, false)`：使能两个 24V 输出，5V 暂不使能。
 
-### BMI088 温控未形成周期闭环
+电源电压检测依赖 ADC 缓冲区数据，当前链路已接通。
 
-加速度计温度读取和加热 PID 代码已经实现，但当前主初始化中 `BMI088_Accel.Init(false)` 关闭了加热器。
+### BMI088 温控已形成基本闭环
 
-此外：
+加速度计温度读取和加热 PID 代码已经实现。`BMI088_TIM_128ms_Calculate_PeriodElapsedCallback()` 已接入 `TIM_1ms_Task` 的 `pulse(128, ...)` 调度。
 
-- `TIM_128ms_Calculate_PeriodElapsedCallback()` 没有接入当前定时回调分支。
-- 温度定期读取和加热 PID 周期调用还没有形成完整调度。
-- 若后续启用加热器，需要同时确保 `BSP_Power` 和 ADC 电压采样有效。
+注意：
+
+- 加热器默认关闭（`Init(false)`），若启用需确保 `BSP_Power` 和 ADC 电压采样有效（当前链路已接通）。
+- 温度定期读取和加热 PID 已接入 128 ms 调度。
 
 ### 定时器回调仍有空分支
 
@@ -536,8 +539,8 @@ Ozone 直接观察 C++ class、模板矩阵和嵌套对象时会很冗长。推�
 建议后续新增：
 
 ```text
-User_File/Middleware/System/Debug/sys_debug_ozone.h
-User_File/Middleware/System/Debug/sys_debug_ozone.cpp
+User_File/System/Debug/sys_debug_ozone.h
+User_File/System/Debug/sys_debug_ozone.cpp
 ```
 
 推荐数据形式：
@@ -626,7 +629,6 @@ VS Code 工作区设置保留 `cmake.cmakePath = cube-cmake`，并显式绑定 `
 - 完成 `TransportTask` 的 USB CDC 或串口通信协议。
 - 接入 `ADC_Init()` 与 `BSP_Power.Init()`，让电源电压检测和 BMI088 温控有真实数据来源。
 - 决定 BMI088 加热器是否启用，并把 128 ms 温控周期接入回调或 RTOS timer。
-- 迁移 CAN/FDCAN BSP，打通机器人控制核心通信链路。
 - 把 ISR/任务共享标志做并发语义收口。
 - 对 SPI BSP 做一次系统性重构，降低重复分支和边界错误概率。
 - 对 `InsTask` 做栈水位观测，确认 EKF 在 Debug 和 Release 下的运行余量。
@@ -646,7 +648,6 @@ VS Code 工作区设置保留 `cmake.cmakePath = cube-cmake`，并显式绑定 `
 
 | 模块 | 模板路径 | 说明 |
 | --- | --- | --- |
-| W25Q64JV 接线 | `Init.cpp` | OSPI 通道层和器件层已迁移，仍需在 `Init.cpp` 调用 `OSPI_Init` + `BSP_W25Q64JV.Init()` |
 | USB CDC 封装 | `1_Middleware/Driver/USB/drv_usb` | 底层协议栈（`USB_DEVICE/`）已由 CubeMX 生成，缺统一封装层 |
 | Vofa+ 上位机 | `2_Device/Plotter/Vofa/dvc_vofa` | 调试期数据可视化工具，通过 USB/UART 发送帧格式数据 |
 | 功率计 | `2_Device/Powermeter/dvc_powermeter` | 裁判系统功率监控 |
@@ -655,8 +656,5 @@ VS Code 工作区设置保留 `cmake.cmakePath = cube-cmake`，并显式绑定 `
 
 | 模块 | 模板路径 | 说明 |
 | --- | --- | --- |
-| 蜂鸣器 | `2_Device/BSP/Buzzer/bsp_buzzer` | PWM 驱动蜂鸣器 |
-| 按键 | `2_Device/BSP/Key/bsp_key` | GPIO 按键防抖 |
-| WS2812 RGB LED | `2_Device/BSP/WS2812/bsp_ws2812` | 全彩 LED 灯带，SPI/DMA 驱动 |
 | 看门狗 WDG | `1_Middleware/Driver/WDG/drv_wdg` | 独立看门狗，防止程序死锁 |
 | Serialplot | `2_Device/Plotter/Serialplot/dvc_serialplot` | 另一种上位机调试工具 |

@@ -92,7 +92,7 @@
 ### 仍未完成
 
 - `TransportTask` 仍只有 USB Device 初始化和 `osDelay(1)` 循环，尚无实际通信协议、收发队列、遥测输出或命令解析。
-- CAN/FDCAN 用户层 BSP 尚未迁移，当前只有 CubeMX 外设初始化。
+- ~~CAN/FDCAN 用户层 BSP 尚未迁移~~ → **已于 2026-06-01 完成**：`bsp_can` v2 双通道架构（周期 + 异步）实现并修复三处 Bug。
 - Power/ADC 模块已有代码，但 `System_Init()` 尚未调用 `ADC_Init()` 与 `BSP_Power.Init()`。
 - BMI088 加热器默认关闭，温度读取与 128 ms PID 温控周期尚未接入当前调度链路。
 - `Task1s_Callback()`、TIM7 1 ms 分支等周期任务仍为空或注释状态。
