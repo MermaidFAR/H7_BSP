@@ -240,7 +240,7 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
   TxHeader.Identifier = id;
   TxHeader.IdType = FDCAN_STANDARD_ID;
   TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeader.DataLength = (uint32_t)len << 16U; // 假设是 8 字节
+  TxHeader.DataLength = len;
   TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
   TxHeader.BitRateSwitch = FDCAN_BRS_OFF; // 关闭波特率切换 (Classic CAN)
   TxHeader.FDFormat = FDCAN_CLASSIC_CAN;  // 经典模式

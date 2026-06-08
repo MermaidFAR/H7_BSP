@@ -147,6 +147,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Onboard/WS2812
         User_File/Device/Peripheral/EricTool
         User_File/Application/Tuner
+        User_File/Device/Peripheral/Motor/QDrive
 )
 
 # Add project symbols (macros)
