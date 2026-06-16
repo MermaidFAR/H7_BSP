@@ -2,8 +2,9 @@
  * @file app_tuner.cpp
  * @author zzm
  * @brief PID 在线调参模块实现 (appTuner)
- * @version 2.0
+ * @version 2.1
  * @date 2026-06-06 2.0 多实例 / 独立 Flash 任务 / Erase 前 Set_Write_Enable
+ * @date 2026-06-16 2.1 Flash 版本机制: version 字段替代 NaN 检测, 代码默认值变更自动覆盖旧数据
  *
  * @details
  * EricTool 下行指令字典 (11 项):
@@ -19,8 +20,6 @@
  */
 
 #include "app_tuner.h"
-
-#include <cmath>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,54 +75,28 @@ static void Push_Flash_Params_To_PID(PID_Tuner_Instance_t *inst) {
 }
 
 /**
- * @brief 写入默认 PID 参数到 Flash (首次上电)
+ * @brief 将当前 PID 对象的参数拉取到 Flash 镜像并写入 Flash
  *
- * @param inst 目标实例指针
- * @note  流程: Set_Write_Enable → Erase Sector → Write → 更新 RAM 镜像
+ * @param inst  目标实例指针
+ * @note  用于版本不匹配时, 从代码默认值同步到 Flash
  */
-static void Write_Flash_Defaults(PID_Tuner_Instance_t *inst) {
-    Flash_PID_Params_t defaults = {
-        .K_P = 1.0f,
-        .K_I = 0.0f,
-        .K_D = 0.0f,
-        .K_F = 0.0f,
-        .I_Out_Max = 0.0f,
-        .Out_Max = 0.0f,
-        .I_Variable_Speed_A = 0.0f,
-        .I_Variable_Speed_B = 0.0f,
-        .I_Separate_Threshold = 0.0f,
-        .D_First = PID_D_First_DISABLE,
-        .D_T = 0.001f
-    };
-
-    BSP_W25Q64JV.Set_Write_Enable();
-    while (!BSP_W25Q64JV.Is_Ready()) {
-        osDelay(1);
-    }
-
-    BSP_W25Q64JV.Set_Sector_Erased(inst->flash_addr);
-    while (!BSP_W25Q64JV.Is_Ready()) {
-        osDelay(1);
-    }
-
-    BSP_W25Q64JV.Write_Data(&defaults, inst->flash_addr, sizeof(Flash_PID_Params_t));
-    while (!BSP_W25Q64JV.Is_Ready()) {
-        osDelay(1);
-    }
-
-    inst->flash = defaults;
-}
-
-/**
- * @brief 提交单个实例的 dirty 数据到 Flash
- *
- * @param inst 目标实例指针
- * @note  需在独立 Flash 任务中调用, 不在 ISR 或 1ms 周期内调用
- */
-static void Commit_Flash(PID_Tuner_Instance_t *inst) {
-    if (!inst->dirty) return;
+static void Pull_PID_To_Flash(PID_Tuner_Instance_t *inst) {
     if (!inst->pid) return;
-    if (!BSP_W25Q64JV.Is_Ready()) return;
+
+    inst->flash.version = FLASH_PID_PARAMS_VERSION;
+    inst->flash.K_P = inst->pid->Get_K_P();
+    inst->flash.K_I = inst->pid->Get_K_I();
+    inst->flash.K_D = inst->pid->Get_K_D();
+    inst->flash.K_F = inst->pid->Get_K_F();
+    inst->flash.I_Out_Max = inst->pid->Get_I_Out_Max();
+    inst->flash.Out_Max = inst->pid->Get_Out_Max();
+    inst->flash.I_Variable_Speed_A = inst->pid->Get_I_Variable_Speed_A();
+    inst->flash.I_Variable_Speed_B = inst->pid->Get_I_Variable_Speed_B();
+    inst->flash.I_Separate_Threshold = inst->pid->Get_I_Separate_Threshold();
+    inst->flash.D_First = inst->pid->Get_D_First();
+    inst->flash.D_T = inst->pid->Get_D_T();
+
+    uint32_t err_before = BSP_W25Q64JV.Get_Auto_Polling_Error_Count();
 
     BSP_W25Q64JV.Set_Write_Enable();
     while (!BSP_W25Q64JV.Is_Ready()) {
@@ -138,6 +111,45 @@ static void Commit_Flash(PID_Tuner_Instance_t *inst) {
     BSP_W25Q64JV.Write_Data(&inst->flash, inst->flash_addr, sizeof(Flash_PID_Params_t));
     while (!BSP_W25Q64JV.Is_Ready()) {
         osDelay(1);
+    }
+
+    if (BSP_W25Q64JV.Get_Auto_Polling_Error_Count() != err_before) {
+        return;
+    }
+
+    inst->dirty = false;
+}
+
+/**
+ * @brief 提交单个实例的 dirty 数据到 Flash
+ *
+ * @param inst 目标实例指针
+ * @note  需在独立 Flash 任务中调用, 不在 ISR 或 1ms 周期内调用
+ */
+static void Commit_Flash(PID_Tuner_Instance_t *inst) {
+    if (!inst->dirty) return;
+    if (!inst->pid) return;
+    if (!BSP_W25Q64JV.Is_Ready()) return;
+
+    uint32_t err_before = BSP_W25Q64JV.Get_Auto_Polling_Error_Count();
+
+    BSP_W25Q64JV.Set_Write_Enable();
+    while (!BSP_W25Q64JV.Is_Ready()) {
+        osDelay(1);
+    }
+
+    BSP_W25Q64JV.Set_Sector_Erased(inst->flash_addr);
+    while (!BSP_W25Q64JV.Is_Ready()) {
+        osDelay(1);
+    }
+
+    BSP_W25Q64JV.Write_Data(&inst->flash, inst->flash_addr, sizeof(Flash_PID_Params_t));
+    while (!BSP_W25Q64JV.Is_Ready()) {
+        osDelay(1);
+    }
+
+    if (BSP_W25Q64JV.Get_Auto_Polling_Error_Count() != err_before) {
+        return;
     }
 
     inst->dirty = false;
@@ -155,6 +167,8 @@ void App_Tuner_Register_PID(uint8_t index, Class_PID *pid, uint32_t flash_addr) 
 }
 
 void App_Tuner_Init(void) {
+    BSP_W25Q64JV.Enable_Quad_Mode();
+
     USB_Init([](uint8_t *Buffer, uint16_t Length) {
         EricTool_USB.USB_RxCallback(Buffer, Length);
         eric_rx_pending = true;
@@ -168,11 +182,11 @@ void App_Tuner_Init(void) {
 
         BSP_W25Q64JV.Read_Data(&inst->flash, inst->flash_addr, sizeof(Flash_PID_Params_t));
 
-        if (std::isnan(inst->flash.K_P) || std::isnan(inst->flash.D_T)) {
-            Write_Flash_Defaults(inst);
+        if (inst->flash.version != FLASH_PID_PARAMS_VERSION) {
+            Pull_PID_To_Flash(inst);
+        } else {
+            Push_Flash_Params_To_PID(inst);
         }
-
-        Push_Flash_Params_To_PID(inst);
     }
 }
 

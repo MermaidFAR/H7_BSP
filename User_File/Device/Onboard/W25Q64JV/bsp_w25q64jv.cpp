@@ -244,6 +244,7 @@ void Class_W25Q64JV::TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback()
 void Class_W25Q64JV::Auto_Polling_With_Timeout()
 {
     SEGGER_RTT_printf(0, "AP start\n");
+    OSPI_Manage_Object->Auto_Polling_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
     Command = COMMAND_DEFAULT_CONFIG;

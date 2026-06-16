@@ -278,6 +278,28 @@ inline void Class_PID::Set_Integral_Error(const float &__Integral_Error)
     Integral_Error = __Integral_Error;
 }
 
+inline float Class_PID::Get_K_P() const { return K_P; }
+
+inline float Class_PID::Get_K_I() const { return K_I; }
+
+inline float Class_PID::Get_K_D() const { return K_D; }
+
+inline float Class_PID::Get_K_F() const { return K_F; }
+
+inline float Class_PID::Get_I_Out_Max() const { return I_Out_Max; }
+
+inline float Class_PID::Get_Out_Max() const { return Out_Max; }
+
+inline float Class_PID::Get_I_Variable_Speed_A() const { return I_Variable_Speed_A; }
+
+inline float Class_PID::Get_I_Variable_Speed_B() const { return I_Variable_Speed_B; }
+
+inline float Class_PID::Get_I_Separate_Threshold() const { return I_Separate_Threshold; }
+
+inline float Class_PID::Get_D_T() const { return D_T; }
+
+inline Enum_PID_D_First Class_PID::Get_D_First() const { return D_First; }
+
 #endif
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

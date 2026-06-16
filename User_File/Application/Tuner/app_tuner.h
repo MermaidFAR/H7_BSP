@@ -2,8 +2,9 @@
  * @file app_tuner.h
  * @author zzm
  * @brief PID 在线调参模块 (appTuner)
- * @version 2.0
+ * @version 2.1
  * @date 2026-06-06 2.0 多实例支持, Flash 异步任务, 独立写入隔离
+ * @date 2026-06-16 2.1 Flash 版本机制: version 字段替代 NaN 检测, 代码默认值变更自动覆盖旧数据
  *
  * @details
  * 数据分区:
@@ -14,8 +15,16 @@
  * 工作流:
  *   - EricTool RX → 改 active 实例的 RAM 缓冲 → 立即推入 PID → 标记 dirty
  *   - Flash Task (独立 RTOS 任务) → Erase Sector → Write 全量 → 清 dirty
- *   - 上电 Init → 逐个读 Flash → NaN 检测 → 首次写默认值 → 推入 PID
+ *   - 上电 Init → 逐个读 Flash → 版本校验 → 不匹配则从 PID 拉默认值写入 Flash → 匹配则推入 PID
  *   - App_Tuner_TX 只调 Set_Data, EricTool_Send_Telemetry 由 StatusTask 调
+ *
+ * 版本机制 (FLASH_PID_PARAMS_VERSION):
+ *   - 每个 Flash Sector 首位存 version 字段
+ *   - 上电读回 version 与宏对比, 不匹配则视为无效, 从 PID 对象回读当前值重新写入 Flash
+ *   - 以下情况需将 FLASH_PID_PARAMS_VERSION +1:
+ *     * 修改了 Class_PID::Init() 的默认参数
+ *     * 增删或重排 Flash_PID_Params_t 的字段
+ *   - 不需要改 version 的情况: 只改逻辑代码不变默认值、增删非持久化的 RAM 字段
  *
  * @note  每个 PID 实例独占一个 Flash Sector (4KB)
  * @note  Now 不被 EricTool 写入, 由电机控制等外部代码回填
@@ -40,12 +49,24 @@ extern "C" {
 #define PID_TUNER_MAX 4
 
 /**
+ * @brief Flash 参数结构版本号
+ *
+ * @note  改 Class_PID::Init() 默认参数 或 改 Flash_PID_Params_t 字段 → +1
+ * @note  上电初版 version 不匹配 → 自动从 PID 回读默认值写入 Flash
+ * @note  不需改 version: 只改逻辑代码不变默认值、增删非持久化字段
+ */
+#define FLASH_PID_PARAMS_VERSION 2
+
+/**
  * @brief Flash 持久化的 PID 参数
  *
+ * @note  version 字段位于首位, 上电时与 FLASH_PID_PARAMS_VERSION 对比
+ * @note  不匹配 → 视为无效数据 → 从 PID 对象回读并重写整个 Sector
  * @note  一个 Sector (4KB) 可容纳约 100 个此结构体
  * @note  多实例各占独立 Sector, 无需 RMW
  */
 typedef struct {
+    uint32_t version;               ///< 结构版本 (FLASH_PID_PARAMS_VERSION)
     float K_P;                      ///< 比例系数
     float K_I;                      ///< 积分系数
     float K_D;                      ///< 微分系数
@@ -100,8 +121,9 @@ void App_Tuner_Register_PID(uint8_t index, Class_PID *pid, uint32_t flash_addr);
 /**
  * @brief 模块初始化
  *
- * @note  遍历所有已注册实例, 逐个读 Flash 校验
- * @note  Flash 空值检测: K_P == NaN → 芯片从未写入 → 写默认参数
+ * @note  遍历所有已注册实例, 逐个读 Flash 做版本校验
+ * @note  version != FLASH_PID_PARAMS_VERSION → 视为无效 → 从 PID 回读默认值写入 Flash (Pull_PID_To_Flash)
+ * @note  version 匹配 → 从 Flash 恢复参数到 PID (Push_Flash_Params_To_PID)
  */
 void App_Tuner_Init(void);
 

@@ -57,6 +57,8 @@ public:
 
     bool Is_Ready() { return !Is_Busy(); }
 
+    uint32_t Get_Auto_Polling_Error_Count() { return Auto_Polling_Error_Count; }
+
     inline void Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length);
 
     inline void Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length);
@@ -110,7 +112,7 @@ public:
 
     // 轮询超时时间（微秒）
     const uint64_t AUTOPOLLING_DEFAULT_TIMEOUT = 5000000;           // 5000ms
-    const uint64_t AUTOPOLLING_SECTOR_ERASED_TIMEOUT = 400000;      // 400ms
+    const uint64_t AUTOPOLLING_SECTOR_ERASED_TIMEOUT = 800000;      // 800ms (2x tSE_max=400ms)
     const uint64_t AUTOPOLLING_BLOCK_ERASED_32K_TIMEOUT = 1600000;  // 1600ms
     const uint64_t AUTOPOLLING_BLOCK_ERASED_64K_TIMEOUT = 2000000;  // 2000ms
     const uint64_t AUTOPOLLING_CHIP_ERASED_TIMEOUT = 100000000;     // 100000ms
