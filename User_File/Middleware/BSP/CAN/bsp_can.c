@@ -213,7 +213,9 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
    uint8_t* data = TxMsg->data;
    uint32_t len = TxMsg->len;
 
-  if (hfdcan == NULL || data == NULL || len == 0 || len > FDCAN_MAX_PAYLOAD) {
+   if (hfdcan == NULL || data == NULL || len == 0 || len > FDCAN_MAX_PAYLOAD)
+   {
+    TxMsg->status = CAN_NULL;
     return false;
   }
   FDCAN_TxHeaderTypeDef TxHeader;
@@ -227,12 +229,16 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
   else if (hfdcan == &hfdcan3)
     pMutex = Can3_TxMutex;
 
-  if (pMutex == NULL) {
+  if (pMutex == NULL)
+  {
+      TxMsg->status = CAN_LOCK;
     return false;
   }
 
   // 2. 获取锁 (等待 2ms，如果总线太忙拿不到锁就放弃，防止卡死控制环)
-  if (osMutexAcquire(pMutex, 2U) != osOK) {
+  if (osMutexAcquire(pMutex, 2U) != osOK)
+  {
+      TxMsg->status = CAN_BUSY;
     return false; // 获取锁失败（总线拥堵）
   }
 
@@ -255,11 +261,13 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
     TxMsg->timestamp[1] = SYS_Timestamp_Get_Microsecond();
     // 5. 释放锁
     osMutexRelease(pMutex);
+    TxMsg->status = (status == HAL_OK) ? CAN_OK : CAN_ERROR;
     return (status == HAL_OK);
   }
 
   // FIFO 满了，释放锁并返回失败
   osMutexRelease(pMutex);
+  TxMsg->status = CAN_BUSY;
   return false;
 }
 
@@ -271,6 +279,9 @@ static bool BSP_CAN_SendMsg(Struct_CAN_Tx_Msg *TxMsg) {
  */
 bool CAN_Tx_Submit(Struct_CAN_Tx_Msg *TxHeader) {
     if (TxHeader == NULL || TxHeader->hfdcan == NULL) {
+        if (TxHeader != NULL) {
+            TxHeader->status = CAN_NULL;
+        }
         return false;
     }
     return (osMessageQueuePut(Can_Tx_Queue, TxHeader, 0, 0) == osOK);
@@ -285,8 +296,9 @@ bool CAN_Tx_Submit(Struct_CAN_Tx_Msg *TxHeader) {
  *         提交前先从 Tx_Msg_Buffer 回写 timestamp[1], 使调用者下次可通过更新 timestamp[0] 触发重新提交。
  */
 bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxMsg) {
-   
-  if (TxMsg == NULL || TxMsg->hfdcan == NULL|| TxMsg->timestamp[0] < TxMsg->timestamp[1]) {
+
+    if (TxMsg == NULL || TxMsg->hfdcan == NULL || TxMsg->timestamp[0] < TxMsg->timestamp[1])
+    {
     return false;
   }
   if (TxMsg->hfdcan == &hfdcan1) {
@@ -301,9 +313,12 @@ bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxMsg) {
     TxMsg->timestamp[1] = Tx_Msg_Buffer[2].timestamp[1];
     Tx_Msg_Buffer[2] = *TxMsg;
   }
-  else {
+  else
+  {
+      TxMsg->status = CAN_NULL;
     return false; // 无效的 CAN 句柄
   }
+  TxMsg->status = CAN_OK;
   return true;
 }
 /**
@@ -314,9 +329,9 @@ bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxMsg) {
  *         
  */
 bool BSP_CAN_SendPer(void) {
-  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[0])) return false;
-  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[1])) return false;
-  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[2])) return false;
+  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[0])) return Tx_Msg_Buffer[0].status == CAN_OK;
+  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[1])) return Tx_Msg_Buffer[1].status == CAN_OK;
+  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[2])) return Tx_Msg_Buffer[2].status == CAN_OK;
   return true;
 }
 

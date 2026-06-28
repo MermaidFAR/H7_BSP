@@ -28,7 +28,6 @@ extern "C" void Transport_Task(void *argument)
     
     for (;;)
     {
-        App_Tuner_RX();
         osDelay(1);
     }
 }

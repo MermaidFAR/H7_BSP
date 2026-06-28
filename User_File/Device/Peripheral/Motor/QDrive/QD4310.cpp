@@ -35,8 +35,8 @@ QD4310_t* g_QD4310Instances[MOTOR_IDX] = {0};
 Struct_CAN_Tx_Msg Q_msg = {
     .hfdcan = NULL,
     .id = 0x000,
-    .len = 0,
-    .data = {0}
+    .data = {0},
+    .len = 0
 };
 
 /**

@@ -44,6 +44,28 @@ public:
 
     inline float Get_Out() const;
 
+    inline float Get_K_P() const;
+
+    inline float Get_K_I() const;
+
+    inline float Get_K_D() const;
+
+    inline float Get_K_F() const;
+
+    inline float Get_I_Out_Max() const;
+
+    inline float Get_Out_Max() const;
+
+    inline float Get_I_Variable_Speed_A() const;
+
+    inline float Get_I_Variable_Speed_B() const;
+
+    inline float Get_I_Separate_Threshold() const;
+
+    inline float Get_D_T() const;
+
+    inline Enum_PID_D_First Get_D_First() const;
+
     inline void Set_K_P(const float &__K_P);
 
     inline void Set_K_I(const float &__K_I);

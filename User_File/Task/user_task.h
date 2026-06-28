@@ -9,22 +9,18 @@
 #include <cstdint>
 #include <sys/types.h>
 #include "sys_debug.h"
+#include "alg_pulse.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct
-{
-  uint32_t timesmode;
-  uint8_t timesnum;
-  void (*task)(void);
-} timesmode_t;
+
 
 void Ins_Task(void *argument);
 void Transport_Task(void *argument);
 void can_tx_task(void *argument);
 void Status_Task(void *argument);
-void pulse(uint8_t timesnum, const int &Number, ...);
+
 
 #ifdef __cplusplus
 }

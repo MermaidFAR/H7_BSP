@@ -144,6 +144,7 @@ int main(void)
   MX_UART9_Init();
   /* USER CODE BEGIN 2 */
   System_Init();
+  
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -303,7 +304,7 @@ void MPU_Config(void)
 //     HAL_IncTick();
 //   }
 //   /* USER CODE BEGIN Callback 1 */
-
+  
 //   /* USER CODE END Callback 1 */
 // }
 

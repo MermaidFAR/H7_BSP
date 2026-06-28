@@ -69,18 +69,25 @@ const osThreadAttr_t CanTxTask_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for StatusTask */
-osThreadId_t StatusTaskHandle;
-const osThreadAttr_t StatusTask_attributes = {
-  .name = "StatusTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for TIM_1ms_Task */
 osThreadId_t TIM_1ms_TaskHandle;
 const osThreadAttr_t TIM_1ms_Task_attributes = {
   .name = "TIM_1ms_Task",
   .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for BMI088Task */
+osThreadId_t BMI088TaskHandle;
+const osThreadAttr_t BMI088Task_attributes = {
+  .name = "BMI088Task",
+  .stack_size = 2048 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for GimbalTask */
+osThreadId_t GimbalTaskHandle;
+const osThreadAttr_t GimbalTask_attributes = {
+  .name = "GimbalTask",
+  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 
@@ -92,8 +99,9 @@ const osThreadAttr_t TIM_1ms_Task_attributes = {
 void Transport_Task(void *argument);
 void Ins_Task(void *argument);
 void Can_Tx_Task(void *argument);
-void Status_Task(void *argument);
 void TIM1msTask(void *argument);
+void BMI088_Task(void *argument);
+void Gimbal_Task(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -152,11 +160,14 @@ void MX_FREERTOS_Init(void) {
   /* creation of CanTxTask */
   CanTxTaskHandle = osThreadNew(Can_Tx_Task, NULL, &CanTxTask_attributes);
 
-  /* creation of StatusTask */
-  StatusTaskHandle = osThreadNew(Status_Task, NULL, &StatusTask_attributes);
-
   /* creation of TIM_1ms_Task */
   TIM_1ms_TaskHandle = osThreadNew(TIM1msTask, NULL, &TIM_1ms_Task_attributes);
+
+  /* creation of BMI088Task */
+  BMI088TaskHandle = osThreadNew(BMI088_Task, NULL, &BMI088Task_attributes);
+
+  /* creation of GimbalTask */
+  GimbalTaskHandle = osThreadNew(Gimbal_Task, NULL, &GimbalTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -224,24 +235,6 @@ __weak void Can_Tx_Task(void *argument)
   /* USER CODE END Can_Tx_Task */
 }
 
-/* USER CODE BEGIN Header_Status_Task */
-/**
-* @brief Function implementing the StatusTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Status_Task */
-__weak void Status_Task(void *argument)
-{
-  /* USER CODE BEGIN Status_Task */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END Status_Task */
-}
-
 /* USER CODE BEGIN Header_TIM1msTask */
 /**
 * @brief Function implementing the TIM_1ms_Task thread.
@@ -258,6 +251,42 @@ __weak void TIM1msTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END TIM1msTask */
+}
+
+/* USER CODE BEGIN Header_BMI088_Task */
+/**
+* @brief Function implementing the BMI088Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_BMI088_Task */
+__weak void BMI088_Task(void *argument)
+{
+  /* USER CODE BEGIN BMI088_Task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END BMI088_Task */
+}
+
+/* USER CODE BEGIN Header_Gimbal_Task */
+/**
+* @brief Function implementing the GimbalTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Gimbal_Task */
+__weak void Gimbal_Task(void *argument)
+{
+  /* USER CODE BEGIN Gimbal_Task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END Gimbal_Task */
 }
 
 /* Private application code --------------------------------------------------*/

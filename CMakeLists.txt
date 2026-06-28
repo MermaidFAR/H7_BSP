@@ -94,7 +94,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/InsTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/CanTxTask.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/debug/sys_debug.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
@@ -108,7 +107,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Tuner/app_tuner.cpp
-        User_File/Device/Peripheral/Motor/QDrive/QD4310.c
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
+        User_File/Task/Gimbal_Task.cpp
+        User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
+
 )
 
 # Add include paths
@@ -148,6 +150,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Peripheral/EricTool
         User_File/Application/Tuner
         User_File/Device/Peripheral/Motor/QDrive
+        User_File/Middleware/Algorithm/Pulse/
 )
 
 # Add project symbols (macros)
