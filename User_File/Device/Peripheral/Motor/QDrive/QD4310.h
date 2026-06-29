@@ -18,7 +18,8 @@ extern "C" {
 #define MOTOR_IDX (16) // 最大支持16个电机实例
 
 // 命令枚举
-typedef enum {
+typedef enum
+{
     QD4310_CMD_NOP = 0x00,
     QD4310_CMD_ENABLE = 0x01,
     QD4310_CMD_DISABLE = 0x02,
@@ -26,7 +27,11 @@ typedef enum {
     QD4310_CMD_SPEED = 0x04,
     QD4310_CMD_ANGLE = 0x05,
     QD4310_CMD_LOW_SPEED = 0x06,
-    QD4310_CMD_STEP_ANGLE = 0x07
+    QD4310_CMD_STEP_ANGLE = 0x07,
+    QD4310_CMD_ZERO_ANGLE = 0xFE,
+    QD4310_CMD_RESET = 0xFF,
+    QD4310_CMD_CLEAR_ERROR = 0xFB
+    
 } QD4310_Command_t;
 
 // QD4310电机结构体

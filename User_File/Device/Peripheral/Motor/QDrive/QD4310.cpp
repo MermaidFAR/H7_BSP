@@ -205,3 +205,12 @@ void QD4310_SetCurrent(QD4310_t *motor, float current) {
     int16_t current_value = (int16_t)(current / QD4310_MAX_CURRENT * INT16_MAX);
     QD4310_SendCommand(motor, QD4310_CMD_CURRENT, current_value);
 }
+
+/**
+ * @brief  设置电机0点角度 (校准模式)
+ * @param  motor 电机实例指针
+ *
+ */
+void QD4310_SetZeroAngle(QD4310_t *motor) {
+    QD4310_SendCommand(motor, QD4310_CMD_ZERO_ANGLE, 0x0000);
+    }   
