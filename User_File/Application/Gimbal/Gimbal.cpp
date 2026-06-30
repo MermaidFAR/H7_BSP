@@ -10,11 +10,11 @@
 QDGimbal_t Gimbal;
 
 PID_InitTypeDef Yaw_Speed_PID_Init = {
-    .K_P = 0.01013f,
-    .K_I = 0.12f,
-    .K_D = 0.000119f,
+    .K_P = 0.0233081734326577,
+    .K_I = 0.00592569056314091,
+    .K_D = -0.00119710062161879,
     .K_F = 0.0f,
-    .I_Out_Max = 100.0f,
+    .I_Out_Max = 1.2f,
     .Out_Max = 1.65f,
     .D_T = 0.001f,
     .Dead_Zone = 0.0f,
