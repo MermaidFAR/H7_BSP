@@ -10,9 +10,9 @@
 QDGimbal_t Gimbal;
 
 PID_InitTypeDef Yaw_Speed_PID_Init = {
-    .K_P = 0.0233081734326577,
-    .K_I = 0.00592569056314091,
-    .K_D = -0.00119710062161879,
+    .K_P = 0.035f,
+    .K_I = 0.348f,
+    .K_D = 0.000f,
     .K_F = 0.0f,
     .I_Out_Max = 1.2f,
     .Out_Max = 1.65f,
@@ -23,21 +23,21 @@ PID_InitTypeDef Yaw_Speed_PID_Init = {
     .I_Separate_Threshold = 0.0f,
     .D_First = PID_D_First_DISABLE};
 
-PID_InitTypeDef Pitch_Speed_PID_Init = {
-    .K_P = 0.1f,
-    .K_I = 0.0f,
-    .K_D = 0.0f,
+PID_InitTypeDef Yaw_Angle_PID_Init = {
+    .K_P = 296.832f,
+    .K_I = 607.502f,
+    .K_D = 16.038f,
     .K_F = 0.0f,
     .I_Out_Max = 0.0f,
-    .Out_Max = 10000.0f,
+    .Out_Max = 1000.0f,
     .D_T = 0.001f,
     .Dead_Zone = 0.0f,
     .I_Variable_Speed_A = 0.0f,
     .I_Variable_Speed_B = 0.0f,
     .I_Separate_Threshold = 0.0f,
     .D_First = PID_D_First_DISABLE};
-PID_InitTypeDef Yaw_Angle_PID_Init = {
-    .K_P = 0.01f,
+PID_InitTypeDef Pitch_Speed_PID_Init = {
+    .K_P = 0.1f,
     .K_I = 0.0f,
     .K_D = 0.0f,
     .K_F = 0.0f,
@@ -94,11 +94,31 @@ void Gimbal_Init(void)
                                 Pitch_Speed_PID_Init.I_Variable_Speed_B,
                                 Pitch_Speed_PID_Init.I_Separate_Threshold,
                                 Pitch_Speed_PID_Init.D_First);
+
+    Gimbal.Yaw_Angle_PID.Init(Yaw_Angle_PID_Init.K_P,
+                              Yaw_Angle_PID_Init.K_I,
+                              Yaw_Angle_PID_Init.K_D,
+                              Yaw_Angle_PID_Init.K_F,
+                              Yaw_Angle_PID_Init.I_Out_Max,
+                              Yaw_Angle_PID_Init.Out_Max,
+                              Yaw_Angle_PID_Init.D_T,
+                              Yaw_Angle_PID_Init.Dead_Zone,
+                              Yaw_Angle_PID_Init.I_Variable_Speed_A,
+                              Yaw_Angle_PID_Init.I_Variable_Speed_B,
+                              Yaw_Angle_PID_Init.I_Separate_Threshold,
+                              Yaw_Angle_PID_Init.D_First);
+
+    // Pitch_Angle_PID 暂未整定, 待 pitch 辨识后启用
+    // Gimbal.Pitch_Angle_PID.Init(Pitch_Angle_PID_Init.K_P, ...);
     
     Gimbal.Target_Pitch_Angle = 0.0f;
     Gimbal.Target_Yaw_Angle = 0.0f;
     Gimbal.Target_Pitch_Speed = 0.0f;
-    Gimbal.Target_Yaw_Speed = 2.0f;
+    Gimbal.Target_Yaw_Speed = 0.0f;
+
+    Gimbal.Yaw_Speed_Filter.Init(0.0f, 0.0f, Filter_Frequency_Type_LOWPASS, 50.0f, 0.0f, 1000.0f);
+
+    Gimbal.Yaw_Angle_Filter.Init(0.0f, 0.0f, Filter_Frequency_Type_LOWPASS, 15.0f, 0.0f, 1000.0f);
 
 RESET:
     if (!Gimbal.Pitch_Motor.enabled)
