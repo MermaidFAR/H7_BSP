@@ -106,10 +106,13 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/WS2812/bsp_ws2812.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/BMI088_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Tuner/app_tuner.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
         User_File/Task/Gimbal_Task.cpp
         User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
+        User_File/Application/Gimbal/Gimbal.cpp
+
 
 )
 
@@ -151,6 +154,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Application/Tuner
         User_File/Device/Peripheral/Motor/QDrive
         User_File/Middleware/Algorithm/Pulse/
+        User_File/Application/Gimbal/
 )
 
 # Add project symbols (macros)

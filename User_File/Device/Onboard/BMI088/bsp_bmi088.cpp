@@ -14,7 +14,7 @@
 #include "bsp_bmi088.h"
 
 
-extern "C" { extern osThreadId_t InsTaskHandle; }
+extern "C" { extern osThreadId_t BMI088TaskHandle; }
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -81,7 +81,7 @@ void Class_BMI088::SPI_RxCpltCallback()
             Gyro_Update_Flag = true;
             Gyro_Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
 
-            osThreadFlagsSet(InsTaskHandle, 0x0001);
+            osThreadFlagsSet(BMI088TaskHandle, 0x0001);
         }
     }
 

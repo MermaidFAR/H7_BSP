@@ -18,7 +18,12 @@
 #include "SEGGER_RTT.h"
 #include "bsp_bmi088.h"
 #include "bsp_w25q64jv.h"
+#include "cmsis_os2.h"
 #include "sys_timestamp.h"
+
+extern "C" {
+    extern osThreadId_t GimbalTaskHandle;
+}
 
 /**
  * @brief 每3600s调用一次
@@ -43,14 +48,13 @@ void Task1s_Callback() {}
 // }
 
 /**
- * @brief 每10us调用一次
+ * @brief 每1ms调用一次
  * @note
- * 已废弃,原因过高频率中断打断MCU影响RTOS使用,实际实现极为优雅,仅是不兼容RTOS
  */
-// void Task10us_Callback()
-// {
-//     BSP_BMI088.TIM_10us_Calculate_PeriodElapsedCallback();
-// }
+void Task1ms_Callback()
+{
+    osThreadFlagsSet(GimbalTaskHandle, 0x0001);
+}
 
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (!init_finished) {
@@ -63,18 +67,28 @@ extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   }
 }
 
-extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  if (htim->Instance == TIM2) {
-    HAL_IncTick();
-  }
-  if (!init_finished) {
-    return;
-  }
-  else if (htim->Instance == TIM5) {
-    Task3600s_Callback();
-  } else if (htim->Instance == TIM6) {
-    Task1s_Callback();
-  } 
+extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
+    if (htim->Instance == TIM2)
+    {
+        HAL_IncTick();
+    }
+    if (!init_finished)
+    {
+        return;
+    }
+    else if (htim->Instance == TIM4)
+    {
+        Task1ms_Callback();
+    }
+    else if (htim->Instance == TIM5)
+    {
+        Task3600s_Callback();
+    }
+    else if (htim->Instance == TIM6)
+    {
+        Task1s_Callback();
+    }
 }
 
 extern "C" void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length,
