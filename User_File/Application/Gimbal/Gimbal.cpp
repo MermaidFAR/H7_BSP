@@ -17,18 +17,21 @@ PID_InitTypeDef Yaw_Speed_PID_Init = {
     .I_Out_Max = 1.2f,
     .Out_Max = 1.65f,
     .D_T = 0.001f,
-    .Dead_Zone = 0.0f,
+    .Dead_Zone = 0.01f,
     .I_Variable_Speed_A = 0.0f,
     .I_Variable_Speed_B = 0.0f,
     .I_Separate_Threshold = 0.0f,
     .D_First = PID_D_First_DISABLE};
 
 PID_InitTypeDef Yaw_Angle_PID_Init = {
-    .K_P = 296.832f,
-    .K_I = 607.502f,
-    .K_D = 16.038f,
+    .K_P = 0.0448f,
+    // .K_P = 296.832f,
+    .K_I = 1.011f,
+    // .K_I = 607.502f,
+    // .K_D = 16.038f,
+    .K_D = 0.0f,
     .K_F = 0.0f,
-    .I_Out_Max = 0.0f,
+    .I_Out_Max = 200.0f,
     .Out_Max = 1000.0f,
     .D_T = 0.001f,
     .Dead_Zone = 0.0f,
@@ -114,11 +117,8 @@ void Gimbal_Init(void)
     Gimbal.Target_Pitch_Angle = 0.0f;
     Gimbal.Target_Yaw_Angle = 0.0f;
     Gimbal.Target_Pitch_Speed = 0.0f;
-    Gimbal.Target_Yaw_Speed = 0.0f;
+    Gimbal.Target_Yaw_Speed = 2.0f;
 
-    Gimbal.Yaw_Speed_Filter.Init(0.0f, 0.0f, Filter_Frequency_Type_LOWPASS, 50.0f, 0.0f, 1000.0f);
-
-    Gimbal.Yaw_Angle_Filter.Init(0.0f, 0.0f, Filter_Frequency_Type_LOWPASS, 15.0f, 0.0f, 1000.0f);
 
 RESET:
     if (!Gimbal.Pitch_Motor.enabled)
@@ -154,12 +154,30 @@ void Gimbal_SetTargetSpeed(float yaw_speed, float pitch_speed)
 
 void Gimbal_Loop(void)
 {
+    static uint32_t time = SYS_Timestamp.Get_Now_Millisecond();
+    
+    if ((BSP_BMI088.Get_Euler_Angle().Data[0]>1.57f || BSP_BMI088.Get_Euler_Angle().Data[0]<-1.57f)&&SYS_Timestamp.Get_Now_Millisecond()-time>2000)
+    {
+        time = SYS_Timestamp.Get_Now_Millisecond();
+        Gimbal.Target_Yaw_Speed = -Gimbal.Target_Yaw_Speed;
+    }
+
+    // Gimbal.Yaw_Angle_PID.Set_Target(Gimbal.Target_Yaw_Angle);
+    // Gimbal.Pitch_Angle_PID.Set_Target(Gimbal.Target_Pitch_Angle);
+    // Gimbal.Yaw_Angle_PID.Set_Now(BSP_BMI088.Get_Euler_Angle().Data[0]);
+    // Gimbal.Pitch_Angle_PID.Set_Now(BSP_BMI088.Get_Euler_Angle().Data[1]);
+    // Gimbal.Yaw_Angle_PID.TIM_Calculate_PeriodElapsedCallback();
+    // Gimbal.Pitch_Angle_PID.TIM_Calculate_PeriodElapsedCallback();
+    // Gimbal.Target_Yaw_Speed = Gimbal.Yaw_Angle_PID.Get_Out();
+    // Gimbal.Target_Pitch_Speed = Gimbal.Pitch_Angle_PID.Get_Out();
+
     Gimbal.Yaw_Speed_PID.Set_Target(Gimbal.Target_Yaw_Speed);
     Gimbal.Pitch_Speed_PID.Set_Target(Gimbal.Target_Pitch_Speed);
     Gimbal.Yaw_Speed_PID.Set_Now(BSP_BMI088.Get_Gyro_Body().Data[2]);
     Gimbal.Pitch_Speed_PID.Set_Now(BSP_BMI088.Get_Gyro_Body().Data[1]);
     Gimbal.Yaw_Speed_PID.TIM_Calculate_PeriodElapsedCallback();
     Gimbal.Pitch_Speed_PID.TIM_Calculate_PeriodElapsedCallback();
+
     QD4310_SetCurrent(&Gimbal.Yaw_Motor, Gimbal.Yaw_Speed_PID.Get_Out());
     QD4310_SetCurrent(&Gimbal.Pitch_Motor, Gimbal.Pitch_Speed_PID.Get_Out());
 }
