@@ -1,0 +1,465 @@
+[33m WARN[0m [2mprobe_rs::rtt[0m[2m:[0m Buffer for up channel 2 not initialized
+[33m WARN[0m [2mprobe_rs::rtt[0m[2m:[0m Buffer for down channel 2 not initialized
+[Terminal] Rx CB
+23:48:12.272: AP start
+23:48:12.272: OSPI SM IRQ
+23:48:12.272: Polling CB
+23:48:12.272: StatMatch Busy=0 Instr=00
+23:48:12.272: Angle Tgt:0 Now:-1 Err:1 SpdOut:0 SpdNow:-14 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-1 Err:1 SpdOut:0 SpdNow:3 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-2 Err:2 SpdOut:0 SpdNow:5 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-3 Err:3 SpdOut:0 SpdNow:10 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-4 Err:4 SpdOut:1 SpdNow:-10 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-5 Err:5 SpdOut:2 SpdNow:14 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-6 Err:6 SpdOut:2 SpdNow:-3 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-5 Err:5 SpdOut:3 SpdNow:2 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-7 Err:7 SpdOut:4 SpdNow:20 YawOut:0
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:5 SpdNow:-14 YawOut:2
+23:48:12.272: Angle Tgt:0 Now:-9 Err:9 SpdOut:6 SpdNow:5 YawOut:1
+23:48:12.272: Angle Tgt:0 Now:-8 Err:8 SpdOut:7 SpdNow:-16 YawOut:3
+23:48:12.272: Angle Tgt:0 Now:-8 Err:8 SpdOut:7 SpdNow:0 YawOut:1
+23:48:12.272: Angle Tgt:0 Now:-9 Err:9 SpdOut:8 SpdNow:2 YawOut:2
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:9 SpdNow:-16 YawOut:4
+23:48:12.272: Angle Tgt:0 Now:-9 Err:9 SpdOut:10 SpdNow:11 YawOut:2
+23:48:12.272: Angle Tgt:0 Now:-9 Err:9 SpdOut:11 SpdNow:10 YawOut:3
+23:48:12.272: Angle Tgt:0 Now:-9 Err:9 SpdOut:12 SpdNow:-9 YawOut:5
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:13 SpdNow:-8 YawOut:5
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:14 SpdNow:-1 YawOut:5
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:16 SpdNow:-5 YawOut:7
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:17 SpdNow:-4 YawOut:7
+23:48:12.272: Angle Tgt:0 Now:-12 Err:12 SpdOut:18 SpdNow:-31 YawOut:12
+23:48:12.272: Angle Tgt:0 Now:-12 Err:12 SpdOut:19 SpdNow:0 YawOut:8
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:20 SpdNow:-8 YawOut:10
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:22 SpdNow:17 YawOut:8
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:23 SpdNow:-2 YawOut:11
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:24 SpdNow:-3 YawOut:13
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:25 SpdNow:-14 YawOut:15
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:26 SpdNow:6 YawOut:13
+23:48:12.272: Angle Tgt:0 Now:-12 Err:12 SpdOut:27 SpdNow:-11 YawOut:17
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:28 SpdNow:21 YawOut:14
+23:48:12.272: Angle Tgt:0 Now:-9 Err:9 SpdOut:29 SpdNow:5 YawOut:17
+23:48:12.272: Angle Tgt:0 Now:-12 Err:12 SpdOut:30 SpdNow:14 YawOut:17
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:31 SpdNow:4 YawOut:20
+23:48:12.272: Angle Tgt:0 Now:-11 Err:11 SpdOut:33 SpdNow:-5 YawOut:22
+23:48:12.272: Angle Tgt:0 Now:-10 Err:10 SpdOut:34 SpdNow:15 YawOut:20
+23:48:12.272: Angle Tgt:0 Now:-7 Err:7 SpdOut:34 SpdNow:7 YawOut:23
+23:48:12.272: Angle Tgt:0 Now:-7 Err:7 SpdOut:35 SpdNow:-1 YawOut:25
+23:48:12.272: Angle Tgt:0 Now:-6 Err:6 SpdOut:36 SpdNow:3 YawOut:26
+23:48:12.272: Angle Tgt:0 Now:-6 Err:6 SpdOut:37 SpdNow:6 YawOut:27
+23:48:12.272: Angle Tgt:0 Now:-5 Err:5 SpdOut:37 SpdNow:17 YawOut:26
+23:48:12.272: Angle Tgt:0 Now:-4 Err:4 SpdOut:37 SpdNow:19 YawOut:26
+[Terminal] 23:48:12.284: Angle Tgt:0 Now:-2 Err:2 SpdOut:37 SpdNow:4 YawOut:30
+[Terminal] 23:48:12.408: Angle Tgt:0 Now:0 Err:0 SpdOut:38 SpdNow:18 YawOut:29
+[Terminal] 23:48:12.532: Angle Tgt:0 Now:0 Err:0 SpdOut:38 SpdNow:39 YawOut:28
+[Terminal] 23:48:12.548: Angle Tgt:0 Now:1 Err:-1 SpdOut:37 SpdNow:-14 YawOut:36
+[Terminal] 23:48:12.674: Angle Tgt:0 Now:3 Err:-3 SpdOut:37 SpdNow:20 YawOut:31
+[Terminal] 23:48:12.799: Angle Tgt:0 Now:4 Err:-4 SpdOut:37 SpdNow:39 YawOut:31
+[Terminal] 23:48:12.924: Angle Tgt:0 Now:6 Err:-6 SpdOut:36 SpdNow:35 YawOut:31
+[Terminal] 23:48:13.056: Angle Tgt:1000 Now:10 Err:989 SpdOut:83 SpdNow:44 YawOut:36
+23:48:13.056: Angle Tgt:1000 Now:21 Err:978 SpdOut:182 SpdNow:154 YawOut:35
+[Terminal] 23:48:13.180: Angle Tgt:1000 Now:41 Err:958 SpdOut:279 SpdNow:264 YawOut:34
+[Terminal] 23:48:13.304: Angle Tgt:1000 Now:61 Err:938 SpdOut:374 SpdNow:380 YawOut:33
+[Terminal] 23:48:13.426: Angle Tgt:1000 Now:95 Err:904 SpdOut:466 SpdNow:525 YawOut:24
+[Terminal] 23:48:13.561: Angle Tgt:1000 Now:136 Err:863 SpdOut:553 SpdNow:574 YawOut:25
+23:48:13.561: Angle Tgt:1000 Now:193 Err:806 SpdOut:635 SpdNow:642 YawOut:27
+[Terminal] 23:48:13.685: Angle Tgt:1000 Now:254 Err:745 SpdOut:711 SpdNow:707 YawOut:29
+[Terminal] 23:48:13.810: Angle Tgt:1000 Now:326 Err:673 SpdOut:780 SpdNow:807 YawOut:27
+[Terminal] 23:48:13.934: Angle Tgt:1000 Now:407 Err:592 SpdOut:840 SpdNow:851 YawOut:27
+[Terminal] 23:48:13.950: Angle Tgt:-1000 Now:488 Err:-1488 SpdOut:797 SpdNow:822 YawOut:26
+[Terminal] 23:48:14.073: Angle Tgt:-1000 Now:553 Err:-1553 SpdOut:640 SpdNow:655 YawOut:27
+[Terminal] 23:48:14.197: Angle Tgt:-1000 Now:610 Err:-1610 SpdOut:477 SpdNow:556 YawOut:16
+[Terminal] 23:48:14.321: Angle Tgt:-1000 Now:647 Err:-1647 SpdOut:311 SpdNow:293 YawOut:26
+[Terminal] 23:48:14.447: Angle Tgt:-1000 Now:672 Err:-1672 SpdOut:142 SpdNow:159 YawOut:23
+23:48:14.447: Angle Tgt:-1000 Now:681 Err:-1681 SpdOut:-27 SpdNow:-3 YawOut:20
+[Terminal] 23:48:14.572: Angle Tgt:-1000 Now:679 Err:-1679 SpdOut:-197 SpdNow:-68 YawOut:0
+[Terminal] 23:48:14.700: Angle Tgt:-1000 Now:668 Err:-1668 SpdOut:-366 SpdNow:-191 YawOut:-16
+[Terminal] 23:48:14.824: Angle Tgt:-1000 Now:640 Err:-1640 SpdOut:-532 SpdNow:-412 YawOut:-18
+[Terminal] 23:48:14.950: Angle Tgt:-1000 Now:595 Err:-1595 SpdOut:-694 SpdNow:-522 YawOut:-35
+23:48:14.950: Angle Tgt:1000 Now:529 Err:470 SpdOut:-753 SpdNow:-784 YawOut:-14
+[Terminal] 23:48:15.076: Angle Tgt:1000 Now:459 Err:540 SpdOut:-699 SpdNow:-674 YawOut:-20
+[Terminal] 23:48:15.200: Angle Tgt:1000 Now:398 Err:601 SpdOut:-639 SpdNow:-573 YawOut:-28
+[Terminal] 23:48:15.323: Angle Tgt:1000 Now:344 Err:655 SpdOut:-573 SpdNow:-522 YawOut:-29
+[Terminal] 23:48:15.450: Angle Tgt:1000 Now:299 Err:700 SpdOut:-502 SpdNow:-457 YawOut:-31
+23:48:15.450: Angle Tgt:1000 Now:249 Err:750 SpdOut:-426 SpdNow:-459 YawOut:-20
+[Terminal] 23:48:15.574: Angle Tgt:1000 Now:210 Err:789 SpdOut:-347 SpdNow:-401 YawOut:-16
+[Terminal] 23:48:15.700: Angle Tgt:1000 Now:175 Err:824 SpdOut:-263 SpdNow:-258 YawOut:-21
+[Terminal] 23:48:15.825: Angle Tgt:1000 Now:157 Err:842 SpdOut:-178 SpdNow:-135 YawOut:-27
+[Terminal] 23:48:15.952: Angle Tgt:1000 Now:148 Err:851 SpdOut:-92 SpdNow:-68 YawOut:-27
+23:48:15.952: Angle Tgt:-500 Now:146 Err:-646 SpdOut:-77 SpdNow:19 YawOut:-39
+[Terminal] 23:48:16.077: Angle Tgt:-500 Now:139 Err:-639 SpdOut:-142 SpdNow:-94 YawOut:-33
+[Terminal] 23:48:16.205: Angle Tgt:-500 Now:123 Err:-623 SpdOut:-205 SpdNow:-208 YawOut:-27
+[Terminal] 23:48:16.328: Angle Tgt:-500 Now:99 Err:-599 SpdOut:-266 SpdNow:-236 YawOut:-31
+[Terminal] 23:48:16.454: Angle Tgt:-500 Now:76 Err:-576 SpdOut:-325 SpdNow:-257 YawOut:-40
+23:48:16.454: Angle Tgt:-500 Now:45 Err:-545 SpdOut:-380 SpdNow:-387 YawOut:-33
+[Terminal] 23:48:16.581: Angle Tgt:-500 Now:0 Err:-499 SpdOut:-431 SpdNow:-483 YawOut:-24
+[Terminal] 23:48:16.707: Angle Tgt:-500 Now:-51 Err:-448 SpdOut:-476 SpdNow:-531 YawOut:-20
+[Terminal] 23:48:16.833: Angle Tgt:-500 Now:-104 Err:-395 SpdOut:-517 SpdNow:-492 YawOut:-28
+[Terminal] 23:48:16.848: Angle Tgt:-500 Now:-151 Err:-348 SpdOut:-552 SpdNow:-494 YawOut:-35
+[Terminal] 23:48:16.974: Angle Tgt:500 Now:-202 Err:702 SpdOut:-535 SpdNow:-525 YawOut:-31
+[Terminal] 23:48:17.099: Angle Tgt:500 Now:-253 Err:753 SpdOut:-459 SpdNow:-555 YawOut:-17
+[Terminal] 23:48:17.225: Angle Tgt:500 Now:-301 Err:801 SpdOut:-378 SpdNow:-427 YawOut:-20
+[Terminal] 23:48:17.351: Angle Tgt:500 Now:-340 Err:840 SpdOut:-293 SpdNow:-355 YawOut:-15
+23:48:17.351: Angle Tgt:500 Now:-362 Err:862 SpdOut:-206 SpdNow:-143 YawOut:-32
+[Terminal] 23:48:17.477: Angle Tgt:500 Now:-372 Err:872 SpdOut:-118 SpdNow:-75 YawOut:-32
+[Terminal] 23:48:17.604: Angle Tgt:500 Now:-376 Err:876 SpdOut:-29 SpdNow:-2 YawOut:-31
+[Terminal] 23:48:17.729: Angle Tgt:500 Now:-375 Err:875 SpdOut:58 SpdNow:14 YawOut:-23
+[Terminal] 23:48:17.748: Angle Tgt:500 Now:-372 Err:872 SpdOut:147 SpdNow:72 YawOut:-14
+[Terminal] 23:48:17.872: Angle Tgt:500 Now:-365 Err:865 SpdOut:234 SpdNow:99 YawOut:1
+[Terminal] 23:48:17.997: Angle Tgt:-500 Now:-353 Err:-146 SpdOut:273 SpdNow:138 YawOut:10
+[Terminal] 23:48:18.122: Angle Tgt:-500 Now:-342 Err:-157 SpdOut:257 SpdNow:79 YawOut:26
+[Terminal] 23:48:18.249: Angle Tgt:-500 Now:-333 Err:-166 SpdOut:240 SpdNow:108 YawOut:28
+23:48:18.249: Angle Tgt:-500 Now:-322 Err:-177 SpdOut:222 SpdNow:126 YawOut:29
+[Terminal] 23:48:18.377: Angle Tgt:-500 Now:-308 Err:-191 SpdOut:203 SpdNow:162 YawOut:25
+[Terminal] 23:48:18.502: Angle Tgt:-500 Now:-293 Err:-206 SpdOut:182 SpdNow:138 YawOut:27
+[Terminal] 23:48:18.628: Angle Tgt:-500 Now:-278 Err:-221 SpdOut:160 SpdNow:122 YawOut:27
+[Terminal] 23:48:18.753: Angle Tgt:-500 Now:-268 Err:-231 SpdOut:137 SpdNow:94 YawOut:30
+23:48:18.753: Angle Tgt:-500 Now:-260 Err:-239 SpdOut:112 SpdNow:54 YawOut:35
+[Terminal] 23:48:18.879: Angle Tgt:-500 Now:-255 Err:-244 SpdOut:88 SpdNow:45 YawOut:35
+[Terminal] 23:48:19.003: Angle Tgt:1000 Now:-250 Err:1250 SpdOut:134 SpdNow:37 YawOut:44
+[Terminal] 23:48:19.127: Angle Tgt:1000 Now:-231 Err:1231 SpdOut:259 SpdNow:300 YawOut:27
+[Terminal] 23:48:19.253: Angle Tgt:1000 Now:-191 Err:1191 SpdOut:380 SpdNow:455 YawOut:18
+23:48:19.253: Angle Tgt:1000 Now:-143 Err:1143 SpdOut:496 SpdNow:526 YawOut:22
+[Terminal] 23:48:19.380: Angle Tgt:1000 Now:-89 Err:1089 SpdOut:606 SpdNow:569 YawOut:29
+[Terminal] 23:48:19.504: Angle Tgt:1000 Now:-29 Err:1029 SpdOut:711 SpdNow:631 YawOut:39
+[Terminal] 23:48:19.628: Angle Tgt:1000 Now:44 Err:955 SpdOut:808 SpdNow:835 YawOut:27
+[Terminal] 23:48:19.754: Angle Tgt:1000 Now:133 Err:866 SpdOut:896 SpdNow:890 YawOut:26
+23:48:19.754: Angle Tgt:1000 Now:223 Err:776 SpdOut:975 SpdNow:926 YawOut:34
+[Terminal] 23:48:19.878: Angle Tgt:1000 Now:322 Err:677 SpdOut:1044 SpdNow:1111 YawOut:20
+[Terminal] 23:48:20.004: Angle Tgt:-1000 Now:430 Err:-1430 SpdOut:1006 SpdNow:1088 YawOut:16
+[Terminal] 23:48:20.132: Angle Tgt:-1000 Now:518 Err:-1518 SpdOut:853 SpdNow:843 YawOut:28
+[Terminal] 23:48:20.146: Angle Tgt:-1000 Now:597 Err:-1597 SpdOut:692 SpdNow:753 YawOut:19
+[Terminal] 23:48:20.270: Angle Tgt:-1000 Now:658 Err:-1658 SpdOut:524 SpdNow:567 YawOut:20
+[Terminal] 23:48:20.397: Angle Tgt:-1000 Now:700 Err:-1700 SpdOut:352 SpdNow:300 YawOut:31
+[Terminal] 23:48:20.526: Angle Tgt:-1000 Now:721 Err:-1721 SpdOut:178 SpdNow:115 YawOut:36
+[Terminal] 23:48:20.652: Angle Tgt:-1000 Now:728 Err:-1728 SpdOut:4 SpdNow:-9 YawOut:29
+23:48:20.652: Angle Tgt:-1000 Now:725 Err:-1725 SpdOut:-170 SpdNow:-72 YawOut:13
+[Terminal] 23:48:20.776: Angle Tgt:-1000 Now:713 Err:-1713 SpdOut:-343 SpdNow:-181 YawOut:-4
+[Terminal] 23:48:20.904: Angle Tgt:-1000 Now:688 Err:-1688 SpdOut:-514 SpdNow:-325 YawOut:-18
+[Terminal] 23:48:21.029: Angle Tgt:1000 Now:649 Err:350 SpdOut:-586 SpdNow:-504 YawOut:-15
+[Terminal] 23:48:21.155: Angle Tgt:1000 Now:605 Err:394 SpdOut:-546 SpdNow:-416 YawOut:-29
+23:48:21.155: Angle Tgt:1000 Now:566 Err:433 SpdOut:-503 SpdNow:-429 YawOut:-27
+[Terminal] 23:48:21.279: Angle Tgt:1000 Now:522 Err:477 SpdOut:-455 SpdNow:-455 YawOut:-20
+[Terminal] 23:48:21.403: Angle Tgt:1000 Now:480 Err:519 SpdOut:-402 SpdNow:-409 YawOut:-20
+[Terminal] 23:48:21.528: Angle Tgt:1000 Now:443 Err:556 SpdOut:-346 SpdNow:-339 YawOut:-20
+[Terminal] 23:48:21.655: Angle Tgt:1000 Now:413 Err:586 SpdOut:-287 SpdNow:-252 YawOut:-24
+23:48:21.655: Angle Tgt:1000 Now:391 Err:608 SpdOut:-225 SpdNow:-199 YawOut:-24
+[Terminal] 23:48:21.779: Angle Tgt:1000 Now:376 Err:623 SpdOut:-162 SpdNow:-121 YawOut:-28
+[Terminal] 23:48:21.904: Angle Tgt:1000 Now:366 Err:633 SpdOut:-98 SpdNow:-87 YawOut:-25
+[Terminal] 23:48:22.028: Angle Tgt:-500 Now:361 Err:-861 SpdOut:-105 SpdNow:-9 YawOut:-39
+[Terminal] 23:48:22.154: Angle Tgt:-500 Now:349 Err:-849 SpdOut:-192 SpdNow:-171 YawOut:-29
+23:48:22.154: Angle Tgt:-500 Now:329 Err:-829 SpdOut:-276 SpdNow:-245 YawOut:-31
+[Terminal] 23:48:22.277: Angle Tgt:-500 Now:303 Err:-803 SpdOut:-357 SpdNow:-296 YawOut:-38
+[Terminal] 23:48:22.402: Angle Tgt:-500 Now:263 Err:-763 SpdOut:-435 SpdNow:-503 YawOut:-22
+[Terminal] 23:48:22.527: Angle Tgt:-500 Now:211 Err:-711 SpdOut:-507 SpdNow:-536 YawOut:-25
+[Terminal] 23:48:22.654: Angle Tgt:-500 Now:152 Err:-652 SpdOut:-573 SpdNow:-536 YawOut:-29
+23:48:22.654: Angle Tgt:-500 Now:95 Err:-595 SpdOut:-634 SpdNow:-622 YawOut:-27
+[Terminal] 23:48:22.783: Angle Tgt:-500 Now:36 Err:-536 SpdOut:-688 SpdNow:-654 YawOut:-34
+[Terminal] 23:48:22.912: Angle Tgt:-500 Now:-37 Err:-462 SpdOut:-735 SpdNow:-788 YawOut:-22
+[Terminal] 23:48:23.036: Angle Tgt:0 Now:-116 Err:117 SpdOut:-751 SpdNow:-784 YawOut:-23
+[Terminal] 23:48:23.050: Angle Tgt:47 Now:-185 Err:233 SpdOut:-728 SpdNow:-683 YawOut:-33
+[Terminal] 23:48:23.180: Angle Tgt:124 Now:-250 Err:375 SpdOut:-691 SpdNow:-751 YawOut:-23
+[Terminal] 23:48:23.306: Angle Tgt:226 Now:-323 Err:550 SpdOut:-636 SpdNow:-699 YawOut:-19
+[Terminal] 23:48:23.430: Angle Tgt:340 Now:-385 Err:726 SpdOut:-563 SpdNow:-517 YawOut:-31
+[Terminal] 23:48:23.444: Angle Tgt:443 Now:-432 Err:875 SpdOut:-475 SpdNow:-456 YawOut:-29
+[Terminal] 23:48:23.571: Angle Tgt:498 Now:-468 Err:967 SpdOut:-377 SpdNow:-341 YawOut:-34
+[Terminal] 23:48:23.695: Angle Tgt:462 Now:-500 Err:963 SpdOut:-279 SpdNow:-340 YawOut:-23
+[Terminal] 23:48:23.820: Angle Tgt:305 Now:-530 Err:835 SpdOut:-193 SpdNow:-265 YawOut:-17
+[Terminal] 23:48:23.946: Angle Tgt:34 Now:-551 Err:586 SpdOut:-131 SpdNow:-156 YawOut:-22
+23:48:23.946: Angle Tgt:-273 Now:-565 Err:291 SpdOut:-100 SpdNow:-121 YawOut:-21
+[Terminal] 23:48:24.071: Angle Tgt:-480 Now:-576 Err:96 SpdOut:-91 SpdNow:-118 YawOut:-19
+[Terminal] 23:48:24.196: Angle Tgt:-440 Now:-587 Err:146 SpdOut:-79 SpdNow:-118 YawOut:-17
+[Terminal] 23:48:24.320: Angle Tgt:-121 Now:-594 Err:472 SpdOut:-35 SpdNow:-38 YawOut:-21
+[Terminal] 23:48:24.445: Angle Tgt:302 Now:-595 Err:897 SpdOut:53 SpdNow:-12 YawOut:-12
+23:48:24.445: Angle Tgt:499 Now:-592 Err:1091 SpdOut:166 SpdNow:44 YawOut:0
+[Terminal] 23:48:24.569: Angle Tgt:247 Now:-585 Err:832 SpdOut:255 SpdNow:99 YawOut:14
+[Terminal] 23:48:24.693: Angle Tgt:-266 Now:-573 Err:306 SpdOut:289 SpdNow:127 YawOut:24
+[Terminal] 23:48:24.818: Angle Tgt:-495 Now:-557 Err:62 SpdOut:292 SpdNow:194 YawOut:22
+[Terminal] 23:48:24.943: Angle Tgt:-115 Now:-538 Err:422 SpdOut:328 SpdNow:226 YawOut:29
+[Terminal] 23:48:24.959: Angle Tgt:428 Now:-509 Err:938 SpdOut:423 SpdNow:375 YawOut:25
+[Terminal] 23:48:25.083: Angle Tgt:353 Now:-464 Err:817 SpdOut:513 SpdNow:577 YawOut:12
+[Terminal] 23:48:25.210: Angle Tgt:-283 Now:-410 Err:126 SpdOut:531 SpdNow:513 YawOut:21
+[Terminal] 23:48:25.335: Angle Tgt:-442 Now:-359 Err:-83 SpdOut:515 SpdNow:458 YawOut:27
+[Terminal] 23:48:25.351: Angle Tgt:205 Now:-315 Err:520 SpdOut:562 SpdNow:523 YawOut:29
+[Terminal] 23:48:25.477: Angle Tgt:455 Now:-261 Err:716 SpdOut:642 SpdNow:578 YawOut:36
+[Terminal] 23:48:25.601: Angle Tgt:-234 Now:-192 Err:-42 SpdOut:646 SpdNow:701 YawOut:19
+[Terminal] 23:48:25.728: Angle Tgt:-408 Now:-126 Err:-282 SpdOut:607 SpdNow:614 YawOut:23
+[Terminal] 23:48:25.855: Angle Tgt:358 Now:-69 Err:428 SpdOut:646 SpdNow:585 YawOut:33
+23:48:25.855: Angle Tgt:249 Now:-7 Err:257 SpdOut:686 SpdNow:661 YawOut:30
+[Terminal] 23:48:25.982: Angle Tgt:-488 Now:62 Err:-550 SpdOut:629 SpdNow:718 YawOut:14
+[Terminal] 23:48:26.106: Angle Tgt:78 Now:124 Err:-45 SpdOut:611 SpdNow:599 YawOut:25
+[Terminal] 23:48:26.233: Angle Tgt:415 Now:184 Err:231 SpdOut:647 SpdNow:572 YawOut:36
+[Terminal] 23:48:26.248: Angle Tgt:-442 Now:243 Err:-685 SpdOut:581 SpdNow:544 YawOut:31
+[Terminal] 23:48:26.374: Angle Tgt:35 Now:297 Err:-261 SpdOut:538 SpdNow:604 YawOut:19
+[Terminal] 23:48:26.498: Angle Tgt:386 Now:355 Err:30 SpdOut:556 SpdNow:558 YawOut:25
+[Terminal] 23:48:26.624: Angle Tgt:-489 Now:407 Err:-897 SpdOut:466 SpdNow:473 YawOut:25
+[Terminal] 23:48:26.751: Angle Tgt:256 Now:446 Err:-190 SpdOut:431 SpdNow:374 YawOut:34
+23:48:26.751: Angle Tgt:114 Now:486 Err:-371 SpdOut:415 SpdNow:390 YawOut:31
+[Terminal] 23:48:26.876: Angle Tgt:-403 Now:520 Err:-923 SpdOut:307 SpdNow:311 YawOut:29
+[Terminal] 23:48:27.002: Angle Tgt:499 Now:549 Err:-49 SpdOut:304 SpdNow:289 YawOut:30
+[Terminal] 23:48:27.127: Angle Tgt:-413 Now:582 Err:-996 SpdOut:215 SpdNow:294 YawOut:15
+[Terminal] 23:48:27.257: Angle Tgt:218 Now:603 Err:-384 SpdOut:155 SpdNow:149 YawOut:23
+23:48:27.257: Angle Tgt:4 Now:616 Err:-612 SpdOut:118 SpdNow:92 YawOut:27
+[Terminal] 23:48:27.382: Angle Tgt:-197 Now:619 Err:-817 SpdOut:11 SpdNow:-12 YawOut:27
+[Terminal] 23:48:27.507: Angle Tgt:338 Now:620 Err:-281 SpdOut:3 SpdNow:4 YawOut:25
+[Terminal] 23:48:27.632: Angle Tgt:-426 Now:618 Err:-1044 SpdOut:-116 SpdNow:-61 YawOut:17
+[Terminal] 23:48:27.648: Angle Tgt:472 Now:615 Err:-143 SpdOut:-123 SpdNow:-4 YawOut:2
+[Terminal] 23:48:27.772: Angle Tgt:-491 Now:610 Err:-1102 SpdOut:-237 SpdNow:-93 YawOut:-8
+[Terminal] 23:48:27.897: Angle Tgt:497 Now:600 Err:-102 SpdOut:-248 SpdNow:-128 YawOut:-13
+[Terminal] 23:48:28.021: Angle Tgt:-499 Now:586 Err:-1085 SpdOut:-355 SpdNow:-164 YawOut:-33
+[Terminal] 23:48:28.149: Angle Tgt:497 Now:563 Err:-65 SpdOut:-365 SpdNow:-241 YawOut:-30
+23:48:28.149: Angle Tgt:-491 Now:529 Err:-1021 SpdOut:-468 SpdNow:-405 YawOut:-25
+[Terminal] 23:48:28.275: Angle Tgt:470 Now:485 Err:-14 SpdOut:-466 SpdNow:-437 YawOut:-21
+[Terminal] 23:48:28.400: Angle Tgt:-423 Now:437 Err:-860 SpdOut:-564 SpdNow:-515 YawOut:-25
+[Terminal] 23:48:28.525: Angle Tgt:334 Now:385 Err:-51 SpdOut:-550 SpdNow:-491 YawOut:-28
+[Terminal] 23:48:28.650: Angle Tgt:-191 Now:332 Err:-523 SpdOut:-632 SpdNow:-574 YawOut:-31
+23:48:28.650: Angle Tgt:-4 Now:277 Err:-282 SpdOut:-624 SpdNow:-564 YawOut:-35
+[Terminal] 23:48:28.778: Angle Tgt:227 Now:209 Err:18 SpdOut:-662 SpdNow:-666 YawOut:-26
+[Terminal] 23:48:28.910: Angle Tgt:-419 Now:140 Err:-560 SpdOut:-686 SpdNow:-671 YawOut:-25
+[Terminal] 23:48:29.042: Angle Tgt:499 Now:75 Err:424 SpdOut:-659 SpdNow:-655 YawOut:-25
+[Terminal] 23:48:29.057: Angle Tgt:-394 Now:14 Err:-409 SpdOut:-710 SpdNow:-717 YawOut:-29
+[Terminal] 23:48:29.182: Angle Tgt:100 Now:-56 Err:156 SpdOut:-661 SpdNow:-722 YawOut:-19
+[Terminal] 23:48:29.308: Angle Tgt:269 Now:-127 Err:397 SpdOut:-665 SpdNow:-693 YawOut:-22
+[Terminal] 23:48:29.433: Angle Tgt:-492 Now:-186 Err:-306 SpdOut:-668 SpdNow:-624 YawOut:-32
+[Terminal] 23:48:29.448: Angle Tgt:374 Now:-243 Err:618 SpdOut:-598 SpdNow:-571 YawOut:-33
+[Terminal] 23:48:29.575: Angle Tgt:54 Now:-309 Err:364 SpdOut:-602 SpdNow:-658 YawOut:-20
+[Terminal] 23:48:29.699: Angle Tgt:-451 Now:-369 Err:-81 SpdOut:-570 SpdNow:-593 YawOut:-23
+[Terminal] 23:48:29.824: Angle Tgt:402 Now:-418 Err:821 SpdOut:-488 SpdNow:-431 YawOut:-34
+[Terminal] 23:48:29.951: Angle Tgt:101 Now:-463 Err:564 SpdOut:-473 SpdNow:-421 YawOut:-35
+23:48:29.951: Angle Tgt:-493 Now:-500 Err:7 SpdOut:-436 SpdNow:-443 YawOut:-31
+[Terminal] 23:48:30.075: Angle Tgt:226 Now:-546 Err:773 SpdOut:-340 SpdNow:-415 YawOut:-18
+[Terminal] 23:48:30.200: Angle Tgt:376 Now:-585 Err:962 SpdOut:-292 SpdNow:-363 YawOut:-16
+[Terminal] 23:48:30.330: Angle Tgt:-392 Now:-613 Err:221 SpdOut:-264 SpdNow:-276 YawOut:-24
+[Terminal] 23:48:30.344: Angle Tgt:-260 Now:-634 Err:373 SpdOut:-178 SpdNow:-171 YawOut:-24
+[Terminal] 23:48:30.470: Angle Tgt:442 Now:-647 Err:1089 SpdOut:-85 SpdNow:-68 YawOut:-25
+[Terminal] 23:48:30.595: Angle Tgt:233 Now:-652 Err:886 SpdOut:-43 SpdNow:-46 YawOut:-25
+[Terminal] 23:48:30.720: Angle Tgt:-426 Now:-652 Err:225 SpdOut:-3 SpdNow:-3 YawOut:-26
+[Terminal] 23:48:30.851: Angle Tgt:-311 Now:-651 Err:339 SpdOut:80 SpdNow:11 YawOut:-14
+23:48:30.851: Angle Tgt:326 Now:-648 Err:975 SpdOut:175 SpdNow:50 YawOut:-1
+[Terminal] 23:48:30.975: Angle Tgt:446 Now:-643 Err:1090 SpdOut:233 SpdNow:70 YawOut:11
+[Terminal] 23:48:31.099: Angle Tgt:-78 Now:-632 Err:553 SpdOut:268 SpdNow:138 YawOut:14
+[Terminal] 23:48:31.225: Angle Tgt:-488 Now:-613 Err:124 SpdOut:319 SpdNow:220 YawOut:17
+[Terminal] 23:48:31.354: Angle Tgt:-300 Now:-588 Err:287 SpdOut:397 SpdNow:277 YawOut:27
+23:48:31.354: Angle Tgt:209 Now:-556 Err:766 SpdOut:478 SpdNow:402 YawOut:27
+[Terminal] 23:48:31.479: Angle Tgt:496 Now:-516 Err:1013 SpdOut:536 SpdNow:485 YawOut:28
+[Terminal] 23:48:31.607: Angle Tgt:336 Now:-462 Err:798 SpdOut:567 SpdNow:599 YawOut:18
+[Terminal] 23:48:31.732: Angle Tgt:-77 Now:-403 Err:326 SpdOut:588 SpdNow:584 YawOut:21
+[Terminal] 23:48:31.747: Angle Tgt:-417 Now:-347 Err:-69 SpdOut:612 SpdNow:521 YawOut:35
+[Terminal] 23:48:31.873: Angle Tgt:-491 Now:-288 Err:-203 SpdOut:645 SpdNow:574 YawOut:35
+[Terminal] 23:48:31.997: Angle Tgt:-313 Now:-221 Err:-92 SpdOut:681 SpdNow:791 YawOut:11
+[Terminal] 23:48:32.122: Angle Tgt:-15 Now:-147 Err:132 SpdOut:712 SpdNow:750 YawOut:20
+[Terminal] 23:48:32.248: Angle Tgt:263 Now:-81 Err:344 SpdOut:731 SpdNow:659 YawOut:35
+23:48:32.248: Angle Tgt:440 Now:-15 Err:455 SpdOut:738 SpdNow:702 YawOut:32
+[Terminal] 23:48:32.375: Angle Tgt:499 Now:59 Err:440 SpdOut:731 SpdNow:820 YawOut:14
+[Terminal] 23:48:32.501: Angle Tgt:466 Now:129 Err:336 SpdOut:714 SpdNow:700 YawOut:25
+[Terminal] 23:48:32.628: Angle Tgt:379 Now:192 Err:187 SpdOut:688 SpdNow:638 YawOut:33
+[Terminal] 23:48:32.756: Angle Tgt:276 Now:255 Err:21 SpdOut:656 SpdNow:610 YawOut:33
+23:48:32.756: Angle Tgt:181 Now:322 Err:-141 SpdOut:619 SpdNow:629 YawOut:26
+[Terminal] 23:48:32.884: Angle Tgt:107 Now:382 Err:-275 SpdOut:577 SpdNow:549 YawOut:28
+[Terminal] 23:48:33.010: Angle Tgt:300 Now:434 Err:-134 SpdOut:542 SpdNow:480 YawOut:34
+[Terminal] 23:48:33.135: Angle Tgt:300 Now:483 Err:-183 SpdOut:524 SpdNow:492 YawOut:32
+[Terminal] 23:48:33.149: Angle Tgt:300 Now:532 Err:-232 SpdOut:501 SpdNow:510 YawOut:29
+[Terminal] 23:48:33.273: Angle Tgt:300 Now:586 Err:-286 SpdOut:472 SpdNow:513 YawOut:21
+[Terminal] 23:48:33.398: Angle Tgt:300 Now:631 Err:-331 SpdOut:439 SpdNow:458 YawOut:25
+[Terminal] 23:48:33.523: Angle Tgt:300 Now:673 Err:-373 SpdOut:401 SpdNow:332 YawOut:34
+[Terminal] 23:48:33.655: Angle Tgt:300 Now:705 Err:-405 SpdOut:361 SpdNow:323 YawOut:33
+23:48:33.655: Angle Tgt:300 Now:737 Err:-437 SpdOut:316 SpdNow:316 YawOut:29
+[Terminal] 23:48:33.779: Angle Tgt:300 Now:760 Err:-460 SpdOut:270 SpdNow:207 YawOut:40
+[Terminal] 23:48:33.905: Angle Tgt:300 Now:781 Err:-481 SpdOut:221 SpdNow:183 YawOut:39
+[Terminal] 23:48:34.032: Angle Tgt:300 Now:803 Err:-503 SpdOut:171 SpdNow:259 YawOut:21
+[Terminal] 23:48:34.046: Angle Tgt:300 Now:823 Err:-523 SpdOut:118 SpdNow:165 YawOut:24
+[Terminal] 23:48:34.172: Angle Tgt:300 Now:836 Err:-536 SpdOut:63 SpdNow:73 YawOut:29
+[Terminal] 23:48:34.299: Angle Tgt:600 Now:843 Err:-243 SpdOut:38 SpdNow:59 YawOut:26
+[Terminal] 23:48:34.429: Angle Tgt:600 Now:847 Err:-247 SpdOut:13 SpdNow:34 YawOut:26
+[Terminal] 23:48:34.558: Angle Tgt:600 Now:849 Err:-249 SpdOut:-11 SpdNow:6 YawOut:26
+23:48:34.558: Angle Tgt:600 Now:849 Err:-249 SpdOut:-36 SpdNow:28 YawOut:18
+[Terminal] 23:48:34.683: Angle Tgt:600 Now:848 Err:-248 SpdOut:-62 SpdNow:-3 YawOut:17
+[Terminal] 23:48:34.809: Angle Tgt:600 Now:847 Err:-247 SpdOut:-87 SpdNow:-13 YawOut:11
+[Terminal] 23:48:34.935: Angle Tgt:600 Now:845 Err:-245 SpdOut:-111 SpdNow:-17 YawOut:4
+[Terminal] 23:48:34.951: Angle Tgt:600 Now:843 Err:-243 SpdOut:-136 SpdNow:-20 YawOut:-4
+[Terminal] 23:48:35.075: Angle Tgt:600 Now:838 Err:-238 SpdOut:-160 SpdNow:-63 YawOut:-7
+[Terminal] 23:48:35.201: Angle Tgt:600 Now:831 Err:-231 SpdOut:-184 SpdNow:-95 YawOut:-11
+[Terminal] 23:48:35.326: Angle Tgt:600 Now:822 Err:-222 SpdOut:-206 SpdNow:-98 YawOut:-20
+[Terminal] 23:48:35.454: Angle Tgt:600 Now:810 Err:-210 SpdOut:-227 SpdNow:-150 YawOut:-21
+23:48:35.454: Angle Tgt:-1000 Now:793 Err:-1793 SpdOut:-324 SpdNow:-206 YawOut:-31
+[Terminal] 23:48:35.579: Angle Tgt:-1000 Now:755 Err:-1755 SpdOut:-502 SpdNow:-516 YawOut:-16
+[Terminal] 23:48:35.703: Angle Tgt:-1000 Now:700 Err:-1700 SpdOut:-674 SpdNow:-636 YawOut:-23
+[Terminal] 23:48:35.827: Angle Tgt:-1000 Now:631 Err:-1631 SpdOut:-839 SpdNow:-768 YawOut:-31
+[Terminal] 23:48:35.956: Angle Tgt:-1000 Now:546 Err:-1546 SpdOut:-996 SpdNow:-902 YawOut:-38
+23:48:35.956: Angle Tgt:-1000 Now:441 Err:-1441 SpdOut:-1143 SpdNow:-1156 YawOut:-25
+[Terminal] 23:48:36.083: Angle Tgt:-1000 Now:322 Err:-1322 SpdOut:-1277 SpdNow:-1209 YawOut:-35
+[Terminal] 23:48:36.210: Angle Tgt:-1000 Now:192 Err:-1192 SpdOut:-1399 SpdNow:-1409 YawOut:-28
+[Terminal] 23:48:36.336: Angle Tgt:-1000 Now:49 Err:-1049 SpdOut:-1505 SpdNow:-1432 YawOut:-37
+[Terminal] 23:48:36.350: Angle Tgt:-1000 Now:-101 Err:-898 SpdOut:-1597 SpdNow:-1647 YawOut:-22
+[Terminal] 23:48:36.475: Angle Tgt:-1000 Now:-256 Err:-743 SpdOut:-1673 SpdNow:-1599 YawOut:-40
+[Terminal] 23:48:36.600: Angle Tgt:-1000 Now:-423 Err:-576 SpdOut:-1732 SpdNow:-1709 YawOut:-31
+[Terminal] 23:48:36.725: Angle Tgt:-1000 Now:-591 Err:-408 SpdOut:-1775 SpdNow:-1835 YawOut:-22
+[Terminal] 23:48:36.851: Angle Tgt:1500 Now:-754 Err:2254 SpdOut:-1554 SpdNow:-1507 YawOut:-35
+23:48:36.851: Angle Tgt:1500 Now:-892 Err:2392 SpdOut:-1313 SpdNow:-1310 YawOut:-27
+[Terminal] 23:48:36.976: Angle Tgt:1500 Now:-999 Err:2499 SpdOut:-1060 SpdNow:-1006 YawOut:-36
+[Terminal] 23:48:37.103: Angle Tgt:1500 Now:-1087 Err:2587 SpdOut:-799 SpdNow:-835 YawOut:-24
+[Terminal] 23:48:37.227: Angle Tgt:1500 Now:-1151 Err:2651 SpdOut:-531 SpdNow:-530 YawOut:-27
+[Terminal] 23:48:37.355: Angle Tgt:1500 Now:-1185 Err:2685 SpdOut:-260 SpdNow:-221 YawOut:-32
+23:48:37.355: Angle Tgt:1500 Now:-1192 Err:2692 SpdOut:12 SpdNow:4 YawOut:-29
+[Terminal] 23:48:37.480: Angle Tgt:1500 Now:-1186 Err:2686 SpdOut:284 SpdNow:115 YawOut:0
+[Terminal] 23:48:37.607: Angle Tgt:1500 Now:-1164 Err:2664 SpdOut:553 SpdNow:310 YawOut:22
+[Terminal] 23:48:37.733: Angle Tgt:1500 Now:-1119 Err:2619 SpdOut:819 SpdNow:618 YawOut:29
+[Terminal] 23:48:37.747: Angle Tgt:1500 Now:-1044 Err:2544 SpdOut:1076 SpdNow:906 YawOut:36
+[Terminal] 23:48:37.874: Angle Tgt:1500 Now:-937 Err:2437 SpdOut:1324 SpdNow:1281 YawOut:23
+[Terminal] 23:48:37.998: Angle Tgt:0 Now:-802 Err:802 SpdOut:1486 SpdNow:1497 YawOut:22
+[Terminal] 23:48:38.127: Angle Tgt:0 Now:-655 Err:655 SpdOut:1553 SpdNow:1595 YawOut:19
+[Terminal] 23:48:38.254: Angle Tgt:0 Now:-505 Err:505 SpdOut:1605 SpdNow:1528 YawOut:35
+23:48:38.254: Angle Tgt:0 Now:-344 Err:344 SpdOut:1641 SpdNow:1636 YawOut:24
+[Terminal] 23:48:38.380: Angle Tgt:0 Now:-187 Err:187 SpdOut:1660 SpdNow:1708 YawOut:21
+[Terminal] 23:48:38.506: Angle Tgt:0 Now:-28 Err:28 SpdOut:1664 SpdNow:1607 YawOut:33
+[Terminal] 23:48:38.633: Angle Tgt:0 Now:132 Err:-132 SpdOut:1651 SpdNow:1644 YawOut:26
+[Terminal] 23:48:38.649: Angle Tgt:0 Now:286 Err:-286 SpdOut:1623 SpdNow:1608 YawOut:28
+[Terminal] 23:48:38.776: Angle Tgt:0 Now:440 Err:-440 SpdOut:1579 SpdNow:1531 YawOut:33
+[Terminal] 23:48:38.902: Angle Tgt:0 Now:588 Err:-588 SpdOut:1521 SpdNow:1585 YawOut:19
+[Terminal] 23:48:39.027: Angle Tgt:0 Now:727 Err:-727 SpdOut:1448 SpdNow:1407 YawOut:32
+[Terminal] 23:48:39.157: Angle Tgt:0 Now:860 Err:-860 SpdOut:1361 SpdNow:1376 YawOut:28
+23:48:39.157: Angle Tgt:0 Now:983 Err:-983 SpdOut:1262 SpdNow:1195 YawOut:38
+[Terminal] 23:48:39.283: Angle Tgt:0 Now:1100 Err:-1100 SpdOut:1152 SpdNow:1214 YawOut:21
+[Terminal] 23:48:39.408: Angle Tgt:0 Now:1204 Err:-1204 SpdOut:1030 SpdNow:959 YawOut:38
+[Terminal] 23:48:39.535: Angle Tgt:0 Now:1295 Err:-1295 SpdOut:900 SpdNow:934 YawOut:27
+[Terminal] 23:48:39.552: Angle Tgt:0 Now:1381 Err:-1381 SpdOut:761 SpdNow:819 YawOut:19
+[Terminal] 23:48:39.677: Angle Tgt:0 Now:1444 Err:-1444 SpdOut:615 SpdNow:543 YawOut:37
+[Terminal] 23:48:39.807: Angle Tgt:0 Now:1490 Err:-1490 SpdOut:464 SpdNow:413 YawOut:38
+[Terminal] 23:48:39.934: Angle Tgt:0 Now:1523 Err:-1523 SpdOut:310 SpdNow:270 YawOut:38
+[Terminal] 23:48:39.948: Angle Tgt:0 Now:1545 Err:-1545 SpdOut:154 SpdNow:183 YawOut:31
+[Terminal] 23:48:40.076: Angle Tgt:0 Now:1557 Err:-1557 SpdOut:-3 SpdNow:47 YawOut:26
+[Terminal] 23:48:40.200: Angle Tgt:0 Now:1556 Err:-1556 SpdOut:-160 SpdNow:-20 YawOut:9
+[Terminal] 23:48:40.326: Angle Tgt:0 Now:1547 Err:-1547 SpdOut:-317 SpdNow:-130 YawOut:-6
+[Terminal] 23:48:40.452: Angle Tgt:0 Now:1526 Err:-1526 SpdOut:-471 SpdNow:-301 YawOut:-14
+23:48:40.452: Angle Tgt:0 Now:1487 Err:-1487 SpdOut:-622 SpdNow:-472 YawOut:-20
+[Terminal] 23:48:40.585: Angle Tgt:0 Now:1430 Err:-1430 SpdOut:-767 SpdNow:-648 YawOut:-23
+[Terminal] 23:48:40.711: Angle Tgt:0 Now:1361 Err:-1361 SpdOut:-905 SpdNow:-750 YawOut:-36
+[Terminal] 23:48:40.837: Angle Tgt:0 Now:1277 Err:-1277 SpdOut:-1035 SpdNow:-970 YawOut:-30
+[Terminal] 23:48:40.852: Angle Tgt:0 Now:1169 Err:-1169 SpdOut:-1154 SpdNow:-1168 YawOut:-21
+[Terminal] 23:48:40.980: Angle Tgt:0 Now:1055 Err:-1055 SpdOut:-1261 SpdNow:-1125 YawOut:-44
+[Terminal] 23:48:41.106: Angle Tgt:0 Now:925 Err:-925 SpdOut:-1356 SpdNow:-1399 YawOut:-20
+[Terminal] 23:48:41.235: Angle Tgt:0 Now:790 Err:-790 SpdOut:-1436 SpdNow:-1374 YawOut:-34
+[Terminal] 23:48:41.249: Angle Tgt:0 Now:644 Err:-644 SpdOut:-1502 SpdNow:-1535 YawOut:-23
+[Terminal] 23:48:41.378: Angle Tgt:0 Now:498 Err:-498 SpdOut:-1553 SpdNow:-1523 YawOut:-31
+[Terminal] 23:48:41.504: Angle Tgt:0 Now:342 Err:-342 SpdOut:-1589 SpdNow:-1581 YawOut:-27
+[Terminal] 23:48:41.632: Angle Tgt:0 Now:190 Err:-190 SpdOut:-1609 SpdNow:-1652 YawOut:-24
+[Terminal] 23:48:41.646: Angle Tgt:0 Now:32 Err:-32 SpdOut:-1613 SpdNow:-1541 YawOut:-37
+[Terminal] 23:48:41.772: Angle Tgt:0 Now:-122 Err:122 SpdOut:-1602 SpdNow:-1634 YawOut:-25
+[Terminal] 23:48:41.901: Angle Tgt:0 Now:-272 Err:272 SpdOut:-1575 SpdNow:-1499 YawOut:-40
+[Terminal] 23:48:42.028: Angle Tgt:0 Now:-425 Err:425 SpdOut:-1532 SpdNow:-1466 YawOut:-36
+[Terminal] 23:48:42.157: Angle Tgt:0 Now:-568 Err:568 SpdOut:-1476 SpdNow:-1575 YawOut:-16
+23:48:42.157: Angle Tgt:0 Now:-708 Err:708 SpdOut:-1405 SpdNow:-1348 YawOut:-35
+[Terminal] 23:48:42.283: Angle Tgt:0 Now:-838 Err:838 SpdOut:-1321 SpdNow:-1374 YawOut:-22
+[Terminal] 23:48:42.410: Angle Tgt:0 Now:-960 Err:960 SpdOut:-1224 SpdNow:-1162 YawOut:-36
+[Terminal] 23:48:42.537: Angle Tgt:0 Now:-1069 Err:1069 SpdOut:-1116 SpdNow:-1157 YawOut:-26
+[Terminal] 23:48:42.553: Angle Tgt:0 Now:-1173 Err:1173 SpdOut:-998 SpdNow:-1020 YawOut:-28
+[Terminal] 23:48:42.679: Angle Tgt:0 Now:-1259 Err:1259 SpdOut:-871 SpdNow:-827 YawOut:-36
+[Terminal] 23:48:42.806: Angle Tgt:0 Now:-1337 Err:1337 SpdOut:-736 SpdNow:-816 YawOut:-20
+[Terminal] 23:48:42.938: Angle Tgt:0 Now:-1407 Err:1407 SpdOut:-594 SpdNow:-690 YawOut:-15
+[Terminal] 23:48:42.954: Angle Tgt:0 Now:-1459 Err:1459 SpdOut:-447 SpdNow:-431 YawOut:-28
+[Terminal] 23:48:43.080: Angle Tgt:0 Now:-1494 Err:1494 SpdOut:-296 SpdNow:-250 YawOut:-33
+[Terminal] 23:48:43.207: Angle Tgt:0 Now:-1509 Err:1509 SpdOut:-143 SpdNow:-79 YawOut:-39
+[Terminal] 23:48:43.334: Angle Tgt:0 Now:-1511 Err:1511 SpdOut:9 SpdNow:32 YawOut:-35
+[Terminal] 23:48:43.350: Angle Tgt:0 Now:-1507 Err:1507 SpdOut:161 SpdNow:56 YawOut:-16
+[Terminal] 23:48:43.477: Angle Tgt:0 Now:-1497 Err:1497 SpdOut:313 SpdNow:135 YawOut:2
+[Terminal] 23:48:43.604: Angle Tgt:0 Now:-1479 Err:1479 SpdOut:463 SpdNow:244 YawOut:20
+[Terminal] 23:48:43.729: Angle Tgt:0 Now:-1444 Err:1444 SpdOut:609 SpdNow:447 YawOut:23
+[Terminal] 23:48:43.747: Angle Tgt:0 Now:-1393 Err:1393 SpdOut:750 SpdNow:545 YawOut:39
+[Terminal] 23:48:43.872: Angle Tgt:0 Now:-1325 Err:1325 SpdOut:885 SpdNow:733 YawOut:39
+[Terminal] 23:48:43.997: Angle Tgt:0 Now:-1238 Err:1238 SpdOut:1011 SpdNow:987 YawOut:23
+[Terminal] 23:48:44.124: Angle Tgt:0 Now:-1135 Err:1135 SpdOut:1126 SpdNow:1085 YawOut:27
+[Terminal] 23:48:44.256: Angle Tgt:0 Now:-1025 Err:1025 SpdOut:1230 SpdNow:1207 YawOut:28
+23:48:44.256: Angle Tgt:0 Now:-898 Err:898 SpdOut:1322 SpdNow:1329 YawOut:25
+[Terminal] 23:48:44.383: Angle Tgt:0 Now:-768 Err:768 SpdOut:1400 SpdNow:1371 YawOut:30
+[Terminal] 23:48:44.508: Angle Tgt:0 Now:-623 Err:623 SpdOut:1464 SpdNow:1453 YawOut:26
+[Terminal] 23:48:44.636: Angle Tgt:0 Now:-480 Err:480 SpdOut:1514 SpdNow:1575 YawOut:19
+[Terminal] 23:48:44.652: Angle Tgt:0 Now:-329 Err:329 SpdOut:1547 SpdNow:1499 YawOut:32
+[Terminal] 23:48:44.780: Angle Tgt:0 Now:-177 Err:177 SpdOut:1566 SpdNow:1629 YawOut:18
+[Terminal] 23:48:44.905: Angle Tgt:0 Now:-27 Err:27 SpdOut:1570 SpdNow:1551 YawOut:29
+[Terminal] 23:48:45.032: Angle Tgt:0 Now:125 Err:-125 SpdOut:1558 SpdNow:1575 YawOut:25
+[Terminal] 23:48:45.046: Angle Tgt:0 Now:272 Err:-272 SpdOut:1531 SpdNow:1547 YawOut:27
+[Terminal] 23:48:45.171: Angle Tgt:0 Now:419 Err:-419 SpdOut:1489 SpdNow:1449 YawOut:32
+[Terminal] 23:48:45.298: Angle Tgt:0 Now:559 Err:-559 SpdOut:1434 SpdNow:1488 YawOut:21
+[Terminal] 23:48:45.428: Angle Tgt:0 Now:694 Err:-694 SpdOut:1364 SpdNow:1331 YawOut:31
+[Terminal] 23:48:45.556: Angle Tgt:0 Now:821 Err:-821 SpdOut:1282 SpdNow:1296 YawOut:27
+23:48:45.556: Angle Tgt:0 Now:941 Err:-941 SpdOut:1187 SpdNow:1129 YawOut:35
+[Terminal] 23:48:45.682: Angle Tgt:0 Now:1047 Err:-1047 SpdOut:1082 SpdNow:1123 YawOut:25
+[Terminal] 23:48:45.809: Angle Tgt:0 Now:1152 Err:-1152 SpdOut:965 SpdNow:1016 YawOut:20
+[Terminal] 23:48:45.934: Angle Tgt:0 Now:1236 Err:-1236 SpdOut:841 SpdNow:837 YawOut:29
+[Terminal] 23:48:45.952: Angle Tgt:0 Now:1311 Err:-1311 SpdOut:709 SpdNow:804 YawOut:16
+[Terminal] 23:48:46.080: Angle Tgt:0 Now:1379 Err:-1379 SpdOut:569 SpdNow:594 YawOut:23
+[Terminal] 23:48:46.207: Angle Tgt:0 Now:1426 Err:-1426 SpdOut:425 SpdNow:373 YawOut:33
+[Terminal] 23:48:46.337: Angle Tgt:0 Now:1454 Err:-1454 SpdOut:278 SpdNow:197 YawOut:40
+[Terminal] 23:48:46.352: Angle Tgt:0 Now:1467 Err:-1467 SpdOut:130 SpdNow:69 YawOut:41
+[Terminal] 23:48:46.479: Angle Tgt:0 Now:1469 Err:-1469 SpdOut:-18 SpdNow:-1 YawOut:34
+[Terminal] 23:48:46.605: Angle Tgt:0 Now:1466 Err:-1466 SpdOut:-166 SpdNow:-44 YawOut:16
+[Terminal] 23:48:46.736: Angle Tgt:0 Now:1456 Err:-1456 SpdOut:-314 SpdNow:-142 YawOut:0
+[Terminal] 23:48:46.752: Angle Tgt:0 Now:1436 Err:-1436 SpdOut:-459 SpdNow:-266 YawOut:-13
+[Terminal] 23:48:46.883: Angle Tgt:0 Now:1402 Err:-1402 SpdOut:-601 SpdNow:-412 YawOut:-24
+[Terminal] 23:48:47.009: Angle Tgt:0 Now:1354 Err:-1354 SpdOut:-738 SpdNow:-567 YawOut:-32
+[Terminal] 23:48:47.138: Angle Tgt:0 Now:1289 Err:-1289 SpdOut:-869 SpdNow:-737 YawOut:-35
+[Terminal] 23:48:47.154: Angle Tgt:0 Now:1200 Err:-1200 SpdOut:-991 SpdNow:-946 YawOut:-24
+[Terminal] 23:48:47.280: Angle Tgt:0 Now:1100 Err:-1100 SpdOut:-1103 SpdNow:-1020 YawOut:-32
+[Terminal] 23:48:47.407: Angle Tgt:0 Now:992 Err:-992 SpdOut:-1204 SpdNow:-1240 YawOut:-21
+[Terminal] 23:48:47.533: Angle Tgt:0 Now:866 Err:-866 SpdOut:-1292 SpdNow:-1255 YawOut:-28
+[Terminal] 23:48:47.548: Angle Tgt:0 Now:740 Err:-740 SpdOut:-1368 SpdNow:-1378 YawOut:-26
+[Terminal] 23:48:47.673: Angle Tgt:0 Now:600 Err:-600 SpdOut:-1429 SpdNow:-1362 YawOut:-34
+[Terminal] 23:48:47.799: Angle Tgt:0 Now:460 Err:-460 SpdOut:-1477 SpdNow:-1483 YawOut:-28
+[Terminal] 23:48:47.924: Angle Tgt:0 Now:312 Err:-312 SpdOut:-1509 SpdNow:-1451 YawOut:-34
+[Terminal] 23:48:48.055: Angle Tgt:0 Now:166 Err:-166 SpdOut:-1527 SpdNow:-1543 YawOut:-27
+23:48:48.055: Angle Tgt:0 Now:16 Err:-16 SpdOut:-1529 SpdNow:-1455 YawOut:-38
+[Terminal] 23:48:48.181: Angle Tgt:0 Now:-132 Err:132 SpdOut:-1517 SpdNow:-1566 YawOut:-22
+[Terminal] 23:48:48.310: Angle Tgt:0 Now:-274 Err:274 SpdOut:-1490 SpdNow:-1402 YawOut:-41
+[Terminal] 23:48:48.436: Angle Tgt:0 Now:-421 Err:421 SpdOut:-1448 SpdNow:-1428 YawOut:-29
+[Terminal] 23:48:48.450: Angle Tgt:0 Now:-553 Err:553 SpdOut:-1392 SpdNow:-1420 YawOut:-27
+[Terminal] 23:48:48.578: Angle Tgt:0 Now:-689 Err:689 SpdOut:-1323 SpdNow:-1293 YawOut:-30
+[Terminal] 23:48:48.702: Angle Tgt:0 Now:-809 Err:809 SpdOut:-1242 SpdNow:-1249 YawOut:-29
+[Terminal] 23:48:48.827: Angle Tgt:0 Now:-928 Err:928 SpdOut:-1149 SpdNow:-1153 YawOut:-27
+[Terminal] 23:48:48.952: Angle Tgt:0 Now:-1029 Err:1029 SpdOut:-1045 SpdNow:-979 YawOut:-38
+23:48:48.952: Angle Tgt:0 Now:-1125 Err:1125 SpdOut:-932 SpdNow:-960 YawOut:-27
+[Terminal] 23:48:49.080: Angle Tgt:0 Now:-1211 Err:1211 SpdOut:-810 SpdNow:-781 YawOut:-32
+[Terminal] 23:48:49.205: Angle Tgt:0 Now:-1279 Err:1279 SpdOut:-680 SpdNow:-631 YawOut:-37
+[Terminal] 23:48:49.330: Angle Tgt:0 Now:-1337 Err:1337 SpdOut:-546 SpdNow:-640 YawOut:-19
+[Terminal] 23:48:49.347: Angle Tgt:0 Now:-1389 Err:1389 SpdOut:-405 SpdNow:-449 YawOut:-24
+[Terminal] 23:48:49.473: Angle Tgt:0 Now:-1428 Err:1428 SpdOut:-261 SpdNow:-331 YawOut:-16
+[Terminal] 23:48:49.598: Angle Tgt:0 Now:-1447 Err:1447 SpdOut:-114 SpdNow:-109 YawOut:-25
+[Terminal] 23:48:49.725: Angle Tgt:0 Now:-1449 Err:1449 SpdOut:31 SpdNow:0 YawOut:-22
+[Terminal] 23:48:49.851: Angle Tgt:0 Now:-1446 Err:1446 SpdOut:178 SpdNow:62 YawOut:-6
+23:48:49.851: Angle Tgt:0 Now:-1437 Err:1437 SpdOut:323 SpdNow:144 YawOut:12
+[Terminal] 23:48:49.976: Angle Tgt:0 Now:-1418 Err:1418 SpdOut:467 SpdNow:245 YawOut:31
+[Terminal] 23:48:50.104: Angle Tgt:0 Now:-1382 Err:1382 SpdOut:607 SpdNow:491 YawOut:25
+[Terminal] 23:48:50.231: Angle Tgt:0 Now:-1328 Err:1328 SpdOut:741 SpdNow:603 YawOut:36
+[Terminal] 23:48:50.245: Angle Tgt:0 Now:-1252 Err:1252 SpdOut:869 SpdNow:811 YawOut:26
+[Terminal] 23:48:50.371: Angle Tgt:0 Now:-1165 Err:1165 SpdOut:987 SpdNow:905 YawOut:32
+[Terminal] 23:48:50.497: Angle Tgt:0 Now:-1069 Err:1069 SpdOut:1096 SpdNow:1028 YawOut:34
+[Terminal] 23:48:50.624: Angle Tgt:0 Now:-955 Err:955 SpdOut:1193 SpdNow:1181 YawOut:26
+[Terminal] 23:48:50.750: Angle Tgt:0 Now:-835 Err:835 SpdOut:1278 SpdNow:1240 YawOut:30
+23:48:50.750: Angle Tgt:0 Now:-704 Err:704 SpdOut:1350 SpdNow:1420 YawOut:17
+[Terminal] 23:48:50.876: Angle Tgt:0 Now:-570 Err:570 SpdOut:1408 SpdNow:1361 YawOut:32
+[Terminal] 23:48:51.001: Angle Tgt:0 Now:-427 Err:427 SpdOut:1453 SpdNow:1492 YawOut:21
+[Terminal] 23:48:51.127: Angle Tgt:0 Now:-287 Err:287 SpdOut:1482 SpdNow:1416 YawOut:36
+[Terminal] 23:48:51.254: Angle Tgt:0 Now:-139 Err:139 SpdOut:1497 SpdNow:1475 YawOut:27
+23:48:51.254: Angle Tgt:0 Now:2 Err:-2 SpdOut:1498 SpdNow:1504 YawOut:28
+[Terminal] 23:48:51.379: Angle Tgt:0 Now:148 Err:-148 SpdOut:1483 SpdNow:1402 YawOut:37
+[Terminal] 23:48:51.504: Angle Tgt:0 Now:291 Err:-291 SpdOut:1455 SpdNow:1516 YawOut:19
+[Terminal] 23:48:51.635: Angle Tgt:0 Now:429 Err:-429 SpdOut:1412 SpdNow:1352 YawOut:35
+[Terminal] 23:48:51.649: Angle Tgt:0 Now:564 Err:-564 SpdOut:1356 SpdNow:1427 YawOut:18
+[Terminal] 23:48:51.775: Angle Tgt:0 Now:691 Err:-691 SpdOut:1286 SpdNow:1264 YawOut:29
+[Terminal] 23:48:51.900: Angle Tgt:0 Now:812 Err:-812 SpdOut:1205 SpdNow:1244 YawOut:23
+[Terminal] 23:48:52.026: Angle Tgt:0 Now:924 Err:-924 SpdOut:1112 SpdNow:1068 YawOut:32
+[Terminal] 23:48:52.157: Angle Tgt:0 Now:1023 Err:-1023 SpdOut:1009 SpdNow:987 YawOut:31
+23:48:52.157: Angle Tgt:0 Now:1120 Err:-1120 SpdOut:896 SpdNow:927 YawOut:24
+[Terminal] 23:48:52.283: Angle Tgt:0 Now:1199 Err:-1199 SpdOut:775 SpdNow:720 YawOut:35
+[Terminal] 23:48:52.409: Angle Tgt:0 Now:1264 Err:-1264 SpdOut:647 SpdNow:631 YawOut:31
+[Terminal] 23:48:52.536: Angle Tgt:0 Now:1328 Err:-1328 SpdOut:513 SpdNow:558 YawOut:21
+[Terminal] 23:48:52.552: Angle Tgt:0 Now:1375 Err:-1375 SpdOut:374 SpdNow:395 YawOut:23
+[Terminal] 23:48:52.679: Angle Tgt:0 Now:1403 Err:-1403 SpdOut:232 SpdNow:197 YawOut:29
+[Terminal] 23:48:52.805: Angle Tgt:0 Now:1415 Err:-1415 SpdOut:89 SpdNow:38 YawOut:34
+[Terminal] 23:48:52.931: Angle Tgt:0 Now:1415 Err:-1415 SpdOut:-53 SpdNow:-14 YawOut:24
+[Terminal] 23:48:52.947: Angle Tgt:0 Now:1411 Err:-1411 SpdOut:-196 SpdNow:-62 YawOut:5
+[Terminal] 23:48:53.074: Angle Tgt:0 Now:1400 Err:-1400 SpdOut:-338 SpdNow:-171 YawOut:-8
+[Terminal] 23:48:53.201: Angle Tgt:0 Now:1378 Err:-1378 SpdOut:-477 SpdNow:-291 YawOut:-22
+[Terminal] 23:48:53.327: Angle Tgt:0 Now:1342 Err:-1342 SpdOut:-613 SpdNow:-470 YawOut:-27
+[Terminal] 23:48:53.454: Angle Tgt:0 Now:1290 Err:-1290 SpdOut:-744 SpdNow:-583 YawOut:-38
+23:48:53.454: Angle Tgt:0 Now:1215 Err:-1215 SpdOut:-868 SpdNow:-870 YawOut:-19
+[Terminal] 23:48:53.582: Angle Tgt:0 Now:1125 Err:-1125 SpdOut:-982 SpdNow:-885 YawOut:-33
+[Terminal] 23:48:53.707: Angle Tgt:0 Now:1031 Err:-1031 SpdOut:-1087 SpdNow:-1014 YawOut:-34

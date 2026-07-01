@@ -1,0 +1,51 @@
+{
+  "model": "oe_1_4_2",
+  "rate_validation_fit_percent": 17.216432192513487,
+  "measured": {
+    "rmse": 0.50496625549824525,
+    "mae": 0.28702020202020206,
+    "iae": 5.6830000000000007,
+    "max_abs_err": 2.014,
+    "max_abs_u": 13.957,
+    "rise90_median": 0.30000000000000004,
+    "overshoot_median": 1.0000000000000009,
+    "settle_median": 0.4
+  },
+  "current": {
+    "rmse": 0.72812350989312091,
+    "mae": 0.57638759009548668,
+    "iae": 11.412474283890639,
+    "max_abs_err": 2.272044621189488,
+    "max_abs_u": 15.848759074724432,
+    "rise90_median": 0.9,
+    "overshoot_median": 16.819741040820098,
+    "settle_median": null,
+    "Kp": 7,
+    "Ki": 1
+  },
+  "optimized": {
+    "rmse": 0.69219154906837366,
+    "mae": 0.48735966365688232,
+    "iae": 9.6497213404062716,
+    "max_abs_err": 2.3437638363491864,
+    "max_abs_u": 25.168434888321819,
+    "rise90_median": 0.30000000000000004,
+    "overshoot_median": 6.5563558588794191,
+    "settle_median": null,
+    "Kp": 10.093413954547628,
+    "Ki": 0
+  },
+  "conservative": {
+    "rmse": 0.70138694672319557,
+    "mae": 0.52749085528105955,
+    "iae": 10.444318934564981,
+    "max_abs_err": 2.2958996784602048,
+    "max_abs_u": 20.065120923956226,
+    "rise90_median": 0.8,
+    "overshoot_median": 11.018464493389779,
+    "settle_median": null,
+    "Kp": 8.5,
+    "Ki": 0
+  },
+  "figure": "C:\\Users\\FAR\\Documents\\Codex\\2026-07-02\\du\\outputs\\h7_yaw_matlab_rate_model_pid_opt.png"
+}
