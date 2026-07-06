@@ -28,6 +28,65 @@ Class_BMI088 BSP_BMI088;
 
 /* Private function declarations ---------------------------------------------*/
 
+static bool BMI088_Status_Update_Matches(const Struct_BMI088_Status &Status, const Struct_BMI088_Status &Shadow_Status)
+{
+    return Status.Update_Flag &&
+           Shadow_Status.Update_Flag &&
+           (Status.Update_Timestamp == Shadow_Status.Update_Timestamp) &&
+           (Status.Update_Ready_Timestamp == Shadow_Status.Update_Ready_Timestamp);
+}
+
+static uint64_t BMI088_Status_Get_Update_Ready_Timestamp(const Struct_BMI088_Status &Status)
+{
+    if (Status.Update_Ready_Timestamp != 0)
+    {
+        return Status.Update_Ready_Timestamp;
+    }
+    return Status.Ready_Timestamp;
+}
+
+static void BMI088_Status_Clear_Update_If_Matches(Struct_BMI088_Status &Status, const Struct_BMI088_Status &Shadow_Status)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (BMI088_Status_Update_Matches(Status, Shadow_Status))
+    {
+        Status.Update_Flag = false;
+    }
+    if (primask == 0U)
+    {
+        __enable_irq();
+    }
+}
+
+static bool BMI088_Status_Restore_Ready_On_Timeout(Struct_BMI088_Status &Status, const uint64_t &Now_Timestamp, const uint64_t &Timeout)
+{
+    if (Status.Transfering_Flag && (Now_Timestamp - Status.Transfering_Timestamp) >= Timeout)
+    {
+        Status.Transfering_Flag = false;
+        if (!Status.Ready_Flag)
+        {
+            Status.Ready_Flag = true;
+            Status.Ready_Timestamp = Status.Transfering_Timestamp;
+        }
+        return true;
+    }
+    return false;
+}
+
+static void BMI088_Reset_DMA_Handle(DMA_HandleTypeDef *DMA_Handler)
+{
+    if (DMA_Handler == nullptr)
+    {
+        return;
+    }
+
+    HAL_DMA_Abort(DMA_Handler);
+    DMA_Handler->ErrorCode = HAL_DMA_ERROR_NONE;
+    DMA_Handler->State = HAL_DMA_STATE_READY;
+    DMA_Handler->Lock = HAL_UNLOCKED;
+}
+
 /* Function prototypes -------------------------------------------------------*/
 
 /**
@@ -61,13 +120,14 @@ void Class_BMI088::SPI_RxCpltCallback()
         {
             if (SPI_Manage_Object->Rx_Buffer_Length == 6)
             {
-                Accel_Transfering_Flag = false;
-                Accel_Update_Flag = true;
-                Accel_Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+                Accel_Status.Transfering_Flag = false;
+                Accel_Status.Update_Flag = true;
+                Accel_Status.Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+                Accel_Status.Update_Ready_Timestamp = Accel_Status.Transfering_Timestamp;
             }
             else if (SPI_Manage_Object->Rx_Buffer_Length == 2)
             {
-                Temperature_Transfering_Flag = false;
+                Temperature_Status.Transfering_Flag = false;
             }
         }
     }
@@ -77,15 +137,16 @@ void Class_BMI088::SPI_RxCpltCallback()
 
         if (Init_Finished_Flag)
         {
-            Gyro_Transfering_Flag = false;
-            Gyro_Update_Flag = true;
-            Gyro_Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+            Gyro_Status.Transfering_Flag = false;
+            Gyro_Status.Update_Flag = true;
+            Gyro_Status.Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+            Gyro_Status.Update_Ready_Timestamp = Gyro_Status.Transfering_Timestamp;
 
             osThreadFlagsSet(InsTaskHandle, 0x0001);
         }
     }
 
-    // 不再从 SPI 回调中发起新传输（DMA-in-DMA 竞态），由 EXTI 统一发起
+    // 不再从 SPI 回调中发起新传输（DMA-in-DMA 竞态），由 EXTI/慢周期统一发起
 }
 
 /**
@@ -97,43 +158,21 @@ void Class_BMI088::EXTI_Flag_Callback(uint16_t GPIO_Pin)
 {
     if (!Init_Finished_Flag) return;
 
+    uint64_t now_timestamp = SYS_Timestamp.Get_Now_Microsecond();
+
     // 记录当前传感器数据就绪
     if (GPIO_Pin == BMI088_ACCEL__INTERRUPT_Pin)
     {
-        Accel_Ready_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        Accel_Ready_Flag = true;
+        Accel_Status.Ready_Timestamp = now_timestamp;
+        Accel_Status.Ready_Flag = true;
     }
     else if (GPIO_Pin == BMI088_GYRO__INTERRUPT_Pin)
     {
-        Gyro_Ready_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-        Gyro_Ready_Flag = true;
+        Gyro_Status.Ready_Timestamp = now_timestamp;
+        Gyro_Status.Ready_Flag = true;
     }
 
-    // 如果没有传输在进行，按优先级启动第一个就绪的传输
-    if (!Accel_Transfering_Flag && !Gyro_Transfering_Flag && !Temperature_Transfering_Flag)
-    {
-        if (Accel_Ready_Flag)
-        {
-            Accel_Transfering_Flag = true;
-            Accel_Transfering_Timestamp = Accel_Ready_Timestamp;
-            BMI088_Accel.SPI_Request_Accel();
-            Accel_Ready_Flag = false;
-        }
-        else if (Gyro_Ready_Flag)
-        {
-            Gyro_Transfering_Flag = true;
-            Gyro_Transfering_Timestamp = Gyro_Ready_Timestamp;
-            BMI088_Gyro.SPI_Request_Gyro();
-            Gyro_Ready_Flag = false;
-        }
-        else if (Temperature_Ready_Flag)
-        {
-            Temperature_Transfering_Flag = true;
-            Temperature_Transfering_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-            BMI088_Accel.SPI_Request_Temperature();
-            Temperature_Ready_Flag = false;
-        }
-    }
+    BMI088_Service_Transfer(now_timestamp);
 }
 
 /**
@@ -142,8 +181,124 @@ void Class_BMI088::EXTI_Flag_Callback(uint16_t GPIO_Pin)
  */
 void Class_BMI088::TIM_128ms_Calculate_PeriodElapsedCallback()
 {
-    Temperature_Ready_Flag = true;
+    uint64_t now_timestamp = SYS_Timestamp.Get_Now_Microsecond();
+
+    Temperature_Status.Ready_Flag = true;
+    Temperature_Status.Ready_Timestamp = now_timestamp;
+    BMI088_Service_Transfer(now_timestamp, true);
     BMI088_Accel.TIM_128ms_Heater_PID_PeriodElapsedCallback();
+}
+
+void Class_BMI088::BMI088_Recover_SPI()
+{
+    if (SPI_Manage_Object == nullptr || SPI_Manage_Object->SPI_Handler == nullptr)
+    {
+        return;
+    }
+
+    SPI_HandleTypeDef *spi_handler = SPI_Manage_Object->SPI_Handler;
+
+    if (SPI_Manage_Object->Activate_GPIOx != nullptr)
+    {
+        HAL_GPIO_WritePin(SPI_Manage_Object->Activate_GPIOx, SPI_Manage_Object->Activate_GPIO_Pin,
+                          SPI_Manage_Object->Activate_Level == GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    }
+
+    HAL_SPI_Abort(spi_handler);
+    BMI088_Reset_DMA_Handle(spi_handler->hdmatx);
+    BMI088_Reset_DMA_Handle(spi_handler->hdmarx);
+    spi_handler->ErrorCode = HAL_SPI_ERROR_NONE;
+    spi_handler->State = HAL_SPI_STATE_READY;
+    spi_handler->Lock = HAL_UNLOCKED;
+    spi_handler->TxXferCount = 0;
+    spi_handler->RxXferCount = 0;
+    SPI_Manage_Object->Activate_GPIOx = nullptr;
+
+    Accel_Status.Transfering_Flag = false;
+    Gyro_Status.Transfering_Flag = false;
+    Temperature_Status.Transfering_Flag = false;
+}
+
+void Class_BMI088::BMI088_Service_Transfer(const uint64_t &Now_Timestamp, const bool &Allow_Recovery)
+{
+    if (!Init_Finished_Flag)
+    {
+        return;
+    }
+
+    bool transfer_timeout = false;
+    transfer_timeout |= BMI088_Status_Restore_Ready_On_Timeout(Accel_Status, Now_Timestamp, TRANSFERING_TIMEOUT);
+    transfer_timeout |= BMI088_Status_Restore_Ready_On_Timeout(Gyro_Status, Now_Timestamp, TRANSFERING_TIMEOUT);
+    transfer_timeout |= BMI088_Status_Restore_Ready_On_Timeout(Temperature_Status, Now_Timestamp, TRANSFERING_TIMEOUT);
+
+    bool spi_error = (SPI_Manage_Object != nullptr) &&
+                     (SPI_Manage_Object->SPI_Handler != nullptr) &&
+                     (SPI_Manage_Object->SPI_Handler->ErrorCode != HAL_SPI_ERROR_NONE);
+
+    if (Allow_Recovery && (transfer_timeout || spi_error))
+    {
+        BMI088_Recover_SPI();
+        return;
+    }
+
+    if (Accel_Status.Transfering_Flag || Gyro_Status.Transfering_Flag || Temperature_Status.Transfering_Flag)
+    {
+        return;
+    }
+
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        uint8_t index = (Transfer_Priority_Index + i) % 3;
+
+        if (index == 0 && Accel_Status.Ready_Flag)
+        {
+            uint8_t status = BMI088_Accel.SPI_Request_Accel();
+            if (status == HAL_OK)
+            {
+                Accel_Status.Transfering_Flag = true;
+                Accel_Status.Transfering_Timestamp = Accel_Status.Ready_Timestamp;
+                Accel_Status.Ready_Flag = false;
+                Transfer_Priority_Index = 1;
+            }
+            else if (Allow_Recovery)
+            {
+                BMI088_Recover_SPI();
+            }
+            return;
+        }
+        else if (index == 1 && Gyro_Status.Ready_Flag)
+        {
+            uint8_t status = BMI088_Gyro.SPI_Request_Gyro();
+            if (status == HAL_OK)
+            {
+                Gyro_Status.Transfering_Flag = true;
+                Gyro_Status.Transfering_Timestamp = Gyro_Status.Ready_Timestamp;
+                Gyro_Status.Ready_Flag = false;
+                Transfer_Priority_Index = 2;
+            }
+            else if (Allow_Recovery)
+            {
+                BMI088_Recover_SPI();
+            }
+            return;
+        }
+        else if (index == 2 && Temperature_Status.Ready_Flag)
+        {
+            uint8_t status = BMI088_Accel.SPI_Request_Temperature();
+            if (status == HAL_OK)
+            {
+                Temperature_Status.Transfering_Flag = true;
+                Temperature_Status.Transfering_Timestamp = Now_Timestamp;
+                Temperature_Status.Ready_Flag = false;
+                Transfer_Priority_Index = 0;
+            }
+            else if (Allow_Recovery)
+            {
+                BMI088_Recover_SPI();
+            }
+            return;
+        }
+    }
 }
 
 /**
@@ -152,7 +307,18 @@ void Class_BMI088::TIM_128ms_Calculate_PeriodElapsedCallback()
  */
 void Class_BMI088::EKF_Calculate()
 {
-    EKF_Now_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+    uint64_t calculate_start_timestamp = SYS_Timestamp.Get_Now_Microsecond();
+    Struct_BMI088_Status shadow_gyro_status;
+    Struct_BMI088_Status shadow_accel_status;
+
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    shadow_gyro_status = Gyro_Status;
+    shadow_accel_status = Accel_Status;
+    if (primask == 0U)
+    {
+        __enable_irq();
+    }
 
     Vector_Original_Accel = BMI088_Accel.Get_Raw_Accel();
     Vector_Original_Gyro = BMI088_Gyro.Get_Raw_Gyro();
@@ -172,11 +338,19 @@ void Class_BMI088::EKF_Calculate()
     }
 
     // 加速度计归一化数据
-    Vector_Normalized_Accel = Vector_Original_Accel.Get_Normalization();
+    if (BMI088_Accel.Get_Valid_Flag())
+    {
+        Vector_Normalized_Accel = Vector_Original_Accel.Get_Normalization();
+    }
+    else
+    {
+        BMI088_Status_Clear_Update_If_Matches(Accel_Status, shadow_accel_status);
+        shadow_accel_status.Update_Flag = false;
+    }
 
 
     // EKF初始化与计算
-    if (!EKF_Init_Finished_Flag && Accel_Update_Flag && BMI088_Accel.Get_Valid_Flag())
+    if (!EKF_Init_Finished_Flag && shadow_accel_status.Update_Flag && BMI088_Accel.Get_Valid_Flag())
     {
         // EKF相关变量与函数
 
@@ -211,73 +385,163 @@ void Class_BMI088::EKF_Calculate()
         EKF_Quaternion.Config_Nonlinear_Measurement_Model(EKF_Function_H, EKF_Function_Jacobian_H_X, EKF_Function_Jacobian_H_V);
 
         EKF_Init_Finished_Flag = true;
-        Accel_Update_Flag = false;
-        EKF_Pre_Timestamp = EKF_Now_Timestamp;
+        BMI088_Status_Clear_Update_If_Matches(Accel_Status, shadow_accel_status);
+        BMI088_Status_Clear_Update_If_Matches(Gyro_Status, shadow_gyro_status);
+        EKF_Pre_Timestamp = BMI088_Status_Get_Update_Ready_Timestamp(shadow_accel_status);
+        EKF_Now_Timestamp = EKF_Pre_Timestamp;
 
         return;
     }
 
     if (EKF_Init_Finished_Flag)
     {
-        // 设置时间差
-        D_T = (EKF_Now_Timestamp - EKF_Pre_Timestamp) / 1000000.0f;
-        // 若时间差不合法, 则重新初始化EKF
-        if (D_T <= 0.0f || D_T > D_T_TIMEOUT_THRESHOLD)
+        uint64_t gyro_update_ready_timestamp = BMI088_Status_Get_Update_Ready_Timestamp(shadow_gyro_status);
+        uint64_t accel_update_ready_timestamp = BMI088_Status_Get_Update_Ready_Timestamp(shadow_accel_status);
+
+        if (!shadow_gyro_status.Update_Flag && !shadow_accel_status.Update_Flag)
         {
-            EKF_Init_Finished_Flag = false;
-            return;
+            // 无传感器新数据, 只输出当前时刻外推姿态
         }
-        EKF_Quaternion.Set_D_T(D_T);
-
-        // EKF预测
-        EKF_Quaternion.Vector_U = Vector_Original_Gyro;
-        EKF_Quaternion.TIM_Predict_PeriodElapsedCallback();
-
-        // EKF更新
-        if (Accel_Update_Flag && BMI088_Accel.Get_Valid_Flag())
+        else if (shadow_gyro_status.Update_Flag && !shadow_accel_status.Update_Flag)
         {
-            Accel_Chi_Square_Calculate();
-            if (Accel_Chi_Square_Loss <= ACCEL_CHI_SQUARE_TEST_THRESHOLD)
+            if (!EKF_Predict_To_Timestamp(gyro_update_ready_timestamp))
             {
-                // 卡方检验通过, 更新
-                EKF_Quaternion.Vector_Z = Vector_Normalized_Accel;
-                EKF_Quaternion.TIM_Update_PeriodElapsedCallback();
+                EKF_Init_Finished_Flag = false;
+                return;
             }
-            // 加速度已利用过, 清除标志
-            Accel_Update_Flag = false;
+            BMI088_Status_Clear_Update_If_Matches(Gyro_Status, shadow_gyro_status);
+        }
+        else if (!shadow_gyro_status.Update_Flag && shadow_accel_status.Update_Flag)
+        {
+            // 只有加速度计更新时暂存, 等下一次陀螺仪更新后按时间戳对齐修正
+        }
+        else
+        {
+            if (gyro_update_ready_timestamp == accel_update_ready_timestamp)
+            {
+                if (!EKF_Predict_To_Timestamp(gyro_update_ready_timestamp))
+                {
+                    EKF_Init_Finished_Flag = false;
+                    return;
+                }
+                EKF_Update_With_Accel();
+                BMI088_Status_Clear_Update_If_Matches(Gyro_Status, shadow_gyro_status);
+                BMI088_Status_Clear_Update_If_Matches(Accel_Status, shadow_accel_status);
+            }
+            else if (gyro_update_ready_timestamp < accel_update_ready_timestamp)
+            {
+                if (!EKF_Predict_To_Timestamp(gyro_update_ready_timestamp))
+                {
+                    EKF_Init_Finished_Flag = false;
+                    return;
+                }
+                BMI088_Status_Clear_Update_If_Matches(Gyro_Status, shadow_gyro_status);
+            }
+            else
+            {
+                if (accel_update_ready_timestamp > EKF_Pre_Timestamp)
+                {
+                    if (!EKF_Predict_To_Timestamp(accel_update_ready_timestamp))
+                    {
+                        EKF_Init_Finished_Flag = false;
+                        return;
+                    }
+                    EKF_Update_With_Accel();
+                }
+                BMI088_Status_Clear_Update_If_Matches(Accel_Status, shadow_accel_status);
+
+                if (!EKF_Predict_To_Timestamp(gyro_update_ready_timestamp))
+                {
+                    EKF_Init_Finished_Flag = false;
+                    return;
+                }
+                BMI088_Status_Clear_Update_If_Matches(Gyro_Status, shadow_gyro_status);
+            }
         }
 
-        // x归一化, 按理来说这也算模型的一部分, 应当放到系统函数F中, 且需要更新Jacobi矩阵
-        // 然而实测发现是否更新对性能影响不算太大, 更新反而占用了计算时间
-        EKF_Quaternion.Vector_X = EKF_Quaternion.Vector_X.Get_Normalization();
-
-        // 数据输出
-
-        // 获取四元数
-        Quarternion = EKF_Quaternion.Vector_X;
-
-        // 输出姿态相关变量
-        Vector_Euler_Angle = Quarternion.Get_Euler_Angle();
-        Matrix_Rotation = Quarternion.Get_Rotation_Matrix();
-        Vector_Axis_Angle = Quarternion.Get_Axis_Angle();
-
-        // 机体坐标系下的重力加速度
-        Class_Matrix_f32<3, 1> vector_gravity_body = Matrix_Rotation.Get_Transpose() * (-Namespace_ALG_Matrix::Axis_Z_3d() * GRAVITY_ACCELERATION);
-
-        // 输出运动学相关变量
-        Vector_Accel_Body = Vector_Original_Accel + vector_gravity_body;
-        Vector_Accel = Matrix_Rotation * Vector_Accel_Body;
-        Vector_Gyro_Body = Vector_Original_Gyro;
-        Vector_Gyro = Matrix_Rotation * Vector_Gyro_Body;
-
-        Calculating_Time = SYS_Timestamp.Get_Now_Microsecond() - EKF_Now_Timestamp;
+        EKF_Output_To_Timestamp(calculate_start_timestamp);
+        Calculating_Time = SYS_Timestamp.Get_Now_Microsecond() - calculate_start_timestamp;
 
         if (BMI088_Gyro.Get_Valid_Flag())
         {
             Vector_Pre_Original_Gyro = Vector_Original_Gyro;
         }
-        EKF_Pre_Timestamp = EKF_Now_Timestamp;
     }
+}
+
+bool Class_BMI088::EKF_Predict_To_Timestamp(const uint64_t &Timestamp)
+{
+    if (Timestamp <= EKF_Pre_Timestamp)
+    {
+        EKF_Now_Timestamp = EKF_Pre_Timestamp;
+        D_T = 0.0f;
+        return true;
+    }
+
+    D_T = (Timestamp - EKF_Pre_Timestamp) / 1000000.0f;
+    if (D_T <= 0.0f || D_T > D_T_TIMEOUT_THRESHOLD)
+    {
+        return false;
+    }
+
+    EKF_Quaternion.Set_D_T(D_T);
+    EKF_Quaternion.Vector_U = Vector_Original_Gyro;
+    EKF_Quaternion.TIM_Predict_PeriodElapsedCallback();
+    EKF_Quaternion.Vector_X = EKF_Quaternion.Vector_X.Get_Normalization();
+
+    EKF_Pre_Timestamp = Timestamp;
+    EKF_Now_Timestamp = Timestamp;
+
+    return true;
+}
+
+void Class_BMI088::EKF_Update_With_Accel()
+{
+    if (!BMI088_Accel.Get_Valid_Flag())
+    {
+        return;
+    }
+
+    Accel_Chi_Square_Calculate();
+    if (Accel_Chi_Square_Loss <= ACCEL_CHI_SQUARE_TEST_THRESHOLD)
+    {
+        EKF_Quaternion.Vector_Z = Vector_Normalized_Accel;
+        EKF_Quaternion.TIM_Update_PeriodElapsedCallback();
+        EKF_Quaternion.Vector_X = EKF_Quaternion.Vector_X.Get_Normalization();
+    }
+}
+
+void Class_BMI088::EKF_Output_To_Timestamp(const uint64_t &Timestamp)
+{
+    float output_d_t = 0.0f;
+    if (Timestamp > EKF_Pre_Timestamp)
+    {
+        output_d_t = (Timestamp - EKF_Pre_Timestamp) / 1000000.0f;
+        if (output_d_t > D_T_TIMEOUT_THRESHOLD)
+        {
+            output_d_t = 0.0f;
+        }
+    }
+
+    if (output_d_t > 0.0f)
+    {
+        Quarternion = EKF_Function_F(EKF_Quaternion.Vector_X, Vector_Original_Gyro, output_d_t).Get_Normalization();
+    }
+    else
+    {
+        Quarternion = EKF_Quaternion.Vector_X.Get_Normalization();
+    }
+
+    Vector_Euler_Angle = Quarternion.Get_Euler_Angle();
+    Matrix_Rotation = Quarternion.Get_Rotation_Matrix();
+    Vector_Axis_Angle = Quarternion.Get_Axis_Angle();
+
+    Class_Matrix_f32<3, 1> vector_gravity_body = Matrix_Rotation.Get_Transpose() * (-Namespace_ALG_Matrix::Axis_Z_3d() * GRAVITY_ACCELERATION);
+
+    Vector_Accel_Body = Vector_Original_Accel + vector_gravity_body;
+    Vector_Accel = Matrix_Rotation * Vector_Accel_Body;
+    Vector_Gyro_Body = Vector_Original_Gyro;
+    Vector_Gyro = Matrix_Rotation * Vector_Gyro_Body;
 }
 
 /**
