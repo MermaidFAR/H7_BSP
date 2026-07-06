@@ -26,6 +26,29 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 
 /**
+ * @brief BMI088单路数据状态
+ *
+ */
+struct Struct_BMI088_Status
+{
+    // 数据准备好标志
+    bool Ready_Flag = false;
+    // 数据传输标志
+    bool Transfering_Flag = false;
+    // 数据更新标志
+    bool Update_Flag = false;
+
+    // 数据准备好时间戳
+    uint64_t Ready_Timestamp = 0;
+    // 数据开始传输时间戳
+    uint64_t Transfering_Timestamp = 0;
+    // 数据更新完成时间戳
+    uint64_t Update_Timestamp = 0;
+    // 已更新数据对应的数据准备好时间戳
+    uint64_t Update_Ready_Timestamp = 0;
+};
+
+/**
  * @brief Specialized, 板载AHRS
  *
  */
@@ -82,7 +105,7 @@ protected:
     // 常量
 
     // 数据传输超时时间, 单位us
-    uint64_t TRANSFERING_TIMEOUT = 20;
+    uint64_t TRANSFERING_TIMEOUT = 1000;
 
     // D_T超时时间阈值
     float D_T_TIMEOUT_THRESHOLD = 0.1f;
@@ -106,24 +129,11 @@ protected:
     // 初始化完成标志
     bool Init_Finished_Flag = false;
 
-    // 数据准备好标志
-    bool Accel_Ready_Flag = false;
-    uint64_t Accel_Ready_Timestamp = 0;
-    bool Gyro_Ready_Flag = false;
-    uint64_t Gyro_Ready_Timestamp = 0;
-    bool Temperature_Ready_Flag = false;
-    // 数据传输标志
-    bool Accel_Transfering_Flag = false;
-    uint64_t Accel_Transfering_Timestamp = 0;
-    bool Gyro_Transfering_Flag = false;
-    uint64_t Gyro_Transfering_Timestamp = 0;
-    bool Temperature_Transfering_Flag = false;
-    uint64_t Temperature_Transfering_Timestamp = 0;
-    // 数据更新标志
-    bool Accel_Update_Flag = false;
-    uint64_t Accel_Update_Timestamp = 0;
-    bool Gyro_Update_Flag = false;
-    uint64_t Gyro_Update_Timestamp = 0;
+    // 数据状态
+    Struct_BMI088_Status Accel_Status;
+    Struct_BMI088_Status Gyro_Status;
+    Struct_BMI088_Status Temperature_Status;
+    uint8_t Transfer_Priority_Index = 0;
 
     // 上一次陀螺仪源数据
     Class_Matrix_f32<3, 1> Vector_Pre_Original_Gyro;
@@ -195,6 +205,11 @@ protected:
     static Class_Matrix_f32<3, 3> EKF_Function_Jacobian_H_V(const Class_Matrix_f32<4, 1> &Vector_X, const float &D_T);
 
     void Accel_Chi_Square_Calculate();
+    void BMI088_Recover_SPI();
+    void BMI088_Service_Transfer(const uint64_t &Now_Timestamp, const bool &Allow_Recovery = false);
+    bool EKF_Predict_To_Timestamp(const uint64_t &Timestamp);
+    void EKF_Update_With_Accel();
+    void EKF_Output_To_Timestamp(const uint64_t &Timestamp);
 };
 
 /* Exported variables --------------------------------------------------------*/

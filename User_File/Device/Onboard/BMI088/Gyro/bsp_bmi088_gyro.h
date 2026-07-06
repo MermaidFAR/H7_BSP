@@ -53,7 +53,7 @@ public:
 
     void SPI_RxCallback();
 
-    void SPI_Request_Gyro();
+    uint8_t SPI_Request_Gyro();
 
 protected:
     // 初始化相关常量

@@ -131,7 +131,14 @@ uint8_t SPI_Transmit_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, uint16_t
             HAL_GPIO_WritePin(SPI2_Manage_Object.Activate_GPIOx, SPI2_Manage_Object.Activate_GPIO_Pin, Activate_Level);
         }
 
-        return (HAL_SPI_Transmit_DMA(hspi, SPI2_Manage_Object.Tx_Buffer, Tx_Length));
+        uint8_t status = HAL_SPI_Transmit_DMA(hspi, SPI2_Manage_Object.Tx_Buffer, Tx_Length);
+        if (status != HAL_OK && SPI2_Manage_Object.Activate_GPIOx != nullptr)
+        {
+            HAL_GPIO_WritePin(SPI2_Manage_Object.Activate_GPIOx, SPI2_Manage_Object.Activate_GPIO_Pin,
+                              SPI2_Manage_Object.Activate_Level == GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET);
+            SPI2_Manage_Object.Activate_GPIOx = nullptr;
+        }
+        return status;
     }
     else if (hspi->Instance == SPI3)
     {
@@ -239,7 +246,14 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
             HAL_GPIO_WritePin(SPI2_Manage_Object.Activate_GPIOx, SPI2_Manage_Object.Activate_GPIO_Pin, Activate_Level);
         }
 
-        return (HAL_SPI_TransmitReceive_DMA(hspi, SPI2_Manage_Object.Tx_Buffer, SPI2_Manage_Object.Rx_Buffer, Tx_Length + Rx_Length));
+        uint8_t status = HAL_SPI_TransmitReceive_DMA(hspi, SPI2_Manage_Object.Tx_Buffer, SPI2_Manage_Object.Rx_Buffer, Tx_Length + Rx_Length);
+        if (status != HAL_OK && SPI2_Manage_Object.Activate_GPIOx != nullptr)
+        {
+            HAL_GPIO_WritePin(SPI2_Manage_Object.Activate_GPIOx, SPI2_Manage_Object.Activate_GPIO_Pin,
+                              SPI2_Manage_Object.Activate_Level == GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET);
+            SPI2_Manage_Object.Activate_GPIOx = nullptr;
+        }
+        return status;
     }
     else if (hspi->Instance == SPI3)
     {

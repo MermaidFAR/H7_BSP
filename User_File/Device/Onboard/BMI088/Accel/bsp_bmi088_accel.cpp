@@ -144,20 +144,22 @@ void Class_BMI088_Accel::SPI_RxCpltCallback()
  * @brief SPI请求加速度计数据
  *
  */
-void Class_BMI088_Accel::SPI_Request_Accel()
+uint8_t Class_BMI088_Accel::SPI_Request_Accel()
 {
-    // 读取加速度计数据
-    Read_Multi_Register(offsetof(Struct_BMI088_Accel_Register, ACC_X_RO), 6);
+    SPI_Manage_Object->Tx_Buffer[0] = offsetof(Struct_BMI088_Accel_Register, ACC_X_RO) | BMI088_ACCEL_READ_MASK;
+
+    return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin, Activate_Pin_State, 1 + BMI088_ACCEL_SPI_RX_RESERVED, 6);
 }
 
 /**
  * @brief SPI请求温度计数据
  *
  */
-void Class_BMI088_Accel::SPI_Request_Temperature()
+uint8_t Class_BMI088_Accel::SPI_Request_Temperature()
 {
-    // 读取温度计数据
-    Read_Multi_Register(offsetof(Struct_BMI088_Accel_Register, TEMP_MSB_RO), 2);
+    SPI_Manage_Object->Tx_Buffer[0] = offsetof(Struct_BMI088_Accel_Register, TEMP_MSB_RO) | BMI088_ACCEL_READ_MASK;
+
+    return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin, Activate_Pin_State, 1 + BMI088_ACCEL_SPI_RX_RESERVED, 2);
 }
 
 /**

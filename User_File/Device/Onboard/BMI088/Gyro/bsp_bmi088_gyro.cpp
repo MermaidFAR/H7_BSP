@@ -115,10 +115,11 @@ void Class_BMI088_Gyro::SPI_RxCallback()
  * @brief TIM定时器中断回调函数, 100us周期
  *
  */
-void Class_BMI088_Gyro::SPI_Request_Gyro()
+uint8_t Class_BMI088_Gyro::SPI_Request_Gyro()
 {
-    // 读取陀螺仪数据
-    Read_Multi_Register(offsetof(Struct_BMI088_Gyro_Register, RATE_X_RO), 6);
+    SPI_Manage_Object->Tx_Buffer[0] = offsetof(Struct_BMI088_Gyro_Register, RATE_X_RO) | BMI088_GYRO_READ_MASK;
+
+    return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin, Activate_Pin_State, 1, 6);
 }
 
 /**

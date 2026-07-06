@@ -63,9 +63,9 @@ public:
 
     void SPI_RxCpltCallback();
 
-    void SPI_Request_Accel();
+    uint8_t SPI_Request_Accel();
 
-    void SPI_Request_Temperature();
+    uint8_t SPI_Request_Temperature();
 
     void TIM_128ms_Heater_PID_PeriodElapsedCallback();
 
