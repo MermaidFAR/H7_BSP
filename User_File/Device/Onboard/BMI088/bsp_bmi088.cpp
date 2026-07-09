@@ -14,7 +14,7 @@
 #include "bsp_bmi088.h"
 
 
-extern "C" { extern osThreadId_t InsTaskHandle; }
+extern "C" { extern osThreadId_t BMI088TaskHandle; }
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -97,7 +97,7 @@ void Class_BMI088::Init()
 {
     SPI_Manage_Object = &SPI2_Manage_Object;
 
-    BMI088_Accel.Init(false);
+    BMI088_Accel.Init(true);
     BMI088_Gyro.Init();
 
     // 欧拉角需要辅助初始化EKF, 第一次初始化默认Yaw是0
@@ -142,7 +142,7 @@ void Class_BMI088::SPI_RxCpltCallback()
             Gyro_Status.Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
             Gyro_Status.Update_Ready_Timestamp = Gyro_Status.Transfering_Timestamp;
 
-            osThreadFlagsSet(InsTaskHandle, 0x0001);
+            osThreadFlagsSet(BMI088TaskHandle, 0x0001);
         }
     }
 

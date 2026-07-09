@@ -158,6 +158,10 @@ void QD4310_Disable(QD4310_t *motor) {
  */
 void QD4310_SetAngle(QD4310_t *motor, float angle) {
     angle = QD4310_Clamp(angle, 0.0f, QD4310_TWO_PI);
+    float diff = angle - motor->angle;
+    while (diff > QD4310_PI) diff -= QD4310_TWO_PI;
+    while (diff < -QD4310_PI) diff += QD4310_TWO_PI;
+    angle = QD4310_Clamp(motor->angle + diff, 0.0f, QD4310_TWO_PI);
     int16_t angle_value = (int16_t)(angle / QD4310_TWO_PI * UINT16_MAX);
     QD4310_SendCommand(motor, QD4310_CMD_ANGLE, angle_value);
 }

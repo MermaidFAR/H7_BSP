@@ -32,6 +32,26 @@ enum Enum_PID_D_First
 };
 
 /**
+ * @brief PID初始化结构体
+ *
+ */
+typedef struct
+{
+    float K_P;
+    float K_I;
+    float K_D;
+    float K_F;
+    float I_Out_Max;
+    float Out_Max;
+    float D_T;
+    float Dead_Zone;
+    float I_Variable_Speed_A;
+    float I_Variable_Speed_B;
+    float I_Separate_Threshold;
+    Enum_PID_D_First D_First;
+} PID_InitTypeDef;
+
+/**
  * @brief Reusable, PID算法
  *
  */

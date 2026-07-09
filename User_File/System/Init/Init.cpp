@@ -26,6 +26,7 @@ extern "C" void System_Init(void)
     // SEGGER_SYSVIEW_Stop();
     SYS_Timestamp.Init(&htim5);
     HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  
 
     UART_Init(&huart1, nullptr);
     UART_Init(&huart2, nullptr);
@@ -47,6 +48,7 @@ extern "C" void System_Init(void)
     // Flash 的 OSPI
     OSPI_Init(&hospi2, OSPI2_Polling_Callback, OSPI2_Rx_Callback, OSPI2_Tx_Callback);
 
+    HAL_TIM_Base_Start_IT(&htim4);
     HAL_TIM_Base_Start_IT(&htim5);
     BSP_BMI088.Init();
     BSP_WS2812.Init();

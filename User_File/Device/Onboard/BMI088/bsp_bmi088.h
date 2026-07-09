@@ -215,7 +215,7 @@ protected:
 /* Exported variables --------------------------------------------------------*/
 
 extern Class_BMI088 BSP_BMI088;
-extern "C" { extern osThreadId_t InsTaskHandle; }
+extern "C" { extern osThreadId_t BMI088TaskHandle; }
 
 /* Exported function declarations --------------------------------------------*/
 
