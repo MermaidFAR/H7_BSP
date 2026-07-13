@@ -95,6 +95,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/CanTxTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/debug/sys_debug.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Storage/sys_imu_bias_store.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/USB/bsp_usb.cpp
@@ -107,12 +108,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/BMI088_Task.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Tuner/app_tuner.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StorageTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
-        User_File/Task/Gimbal_Task.cpp
-        User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
-        User_File/Application/Gimbal/Gimbal.cpp
-
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Gimbal_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Gimbal/Gimbal.cpp
 
 )
 
@@ -142,6 +142,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/System/Init
         User_File/Task
         User_File/System/debug
+        User_File/System/Storage
         User_File/Middleware/BSP/CAN
         User_File/Middleware/BSP/UART
         User_File/Middleware/BSP/USB
@@ -151,7 +152,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Onboard/Key
         User_File/Device/Onboard/WS2812
         User_File/Device/Peripheral/EricTool
-        User_File/Application/Tuner
         User_File/Device/Peripheral/Motor/QDrive
         User_File/Middleware/Algorithm/Pulse/
         User_File/Application/Gimbal/

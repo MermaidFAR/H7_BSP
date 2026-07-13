@@ -56,14 +56,32 @@ void Class_Timestamp::TIM_3600s_PeriodElapsedCallback()
  */
 uint64_t Class_Timestamp::Calculate_Timestamp() const
 {
-    // 当前时间
-    uint64_t timestamp;
-    // arr计数
-    uint32_t arr_counter = TIM_Handler->Instance->CNT;
+    for (;;)
+    {
+        const uint32_t overflow_before = TIM_Overflow_Count;
+        const uint32_t counter = TIM_Handler->Instance->CNT;
+        __DMB();
+        const uint32_t overflow_after = TIM_Overflow_Count;
+        if (overflow_before != overflow_after)
+        {
+            continue;
+        }
 
-    timestamp = (uint64_t)(TIM_Overflow_Count) * 3600000000ULL + (uint64_t) arr_counter;
+        if (__HAL_TIM_GET_FLAG(TIM_Handler, TIM_FLAG_UPDATE) != RESET)
+        {
+            const uint32_t pending_counter = TIM_Handler->Instance->CNT;
+            __DMB();
+            if (overflow_before != TIM_Overflow_Count)
+            {
+                continue;
+            }
+            return (static_cast<uint64_t>(overflow_before) + 1ULL) * TIM_PERIOD_US +
+                   static_cast<uint64_t>(pending_counter);
+        }
 
-    return (timestamp);
+        return static_cast<uint64_t>(overflow_before) * TIM_PERIOD_US +
+               static_cast<uint64_t>(counter);
+    }
 }
 
 /**

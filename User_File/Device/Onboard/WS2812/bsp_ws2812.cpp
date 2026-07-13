@@ -66,10 +66,8 @@ void Class_WS2812::Init(const uint8_t &__Red, const uint8_t &__Green, const uint
  */
 void Class_WS2812::TIM_10ms_Write_PeriodElapsedCallback() const
 {
-    uint8_t *tmp_buffer = SPI_Manage_Object->Tx_Buffer;
-    uint8_t res = 0;
+    uint8_t tmp_buffer[25] = {};
 
-    memset(tmp_buffer, 0, SPI_BUFFER_SIZE);
     for (uint8_t i = 0; i < 8; i++)
     {
         tmp_buffer[7 - i] = (Color.Green & (1 << i)) ? LEVEL_1 : LEVEL_0;
@@ -77,7 +75,8 @@ void Class_WS2812::TIM_10ms_Write_PeriodElapsedCallback() const
         tmp_buffer[23 - i] = (Color.Blue & (1 << i)) ? LEVEL_1 : LEVEL_0;
     }
 
-    SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, nullptr, 0, GPIO_PIN_SET, 25);
+    SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, nullptr, 0, GPIO_PIN_SET,
+                      tmp_buffer, sizeof(tmp_buffer));
 }
 
 #ifdef __cplusplus

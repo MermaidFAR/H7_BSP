@@ -59,5 +59,6 @@ extern "C" void System_Init(void)
     BSP_Power.Init(true, true, false);
 
     EricTool_USB.Init();
+    BSP_BMI088.BMI088_Gyro.Start_FIFO_Acquisition();
     init_finished = true;
 }

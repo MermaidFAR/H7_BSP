@@ -37,6 +37,17 @@ enum Enum_BSP_BMI088_Accel_Range : uint8_t
     BMI088_ACCEL_RANGE_24G,
 };
 
+struct Struct_BMI088_Accel_Temperature_State
+{
+    float Temperature = 0.0f;
+    uint64_t Now_Timestamp_Us = 0U;
+    uint64_t Last_Valid_Timestamp_Us = 0U;
+    uint32_t Age_Us = 0xffffffffU;
+    uint32_t Stale_Counter = 0U;
+    uint32_t Heater_PWM_Compare = 0U;
+    bool Data_Valid = false;
+};
+
 /**
  * @brief Specialized, 加速度计
  *
@@ -50,6 +61,20 @@ public:
     void Init(const bool &__Heater_Enable = false);
 
     inline float Get_Now_Temperature() const;
+
+    uint32_t Get_Temperature_Outlier_Counter() const;
+
+    uint32_t Get_Temperature_Stale_Counter() const;
+
+    uint32_t Get_Accel_Invalid_Counter() const;
+
+    Struct_BMI088_Accel_Temperature_State Get_Temperature_State() const;
+
+    bool Get_Temperature_Valid_Flag() const;
+
+    uint32_t Get_Temperature_Age_Us() const;
+
+    inline uint32_t Get_Heater_PWM_Compare() const;
 
     inline bool Get_Valid_Flag() const;
 
@@ -116,7 +141,8 @@ protected:
     float HEATER_PREHEAT_BASE_TEMPERATURE = 45.0f;
     // 加热电阻目标温度
     float HEATER_TARGET_TEMPERATURE = 50.0f;
-
+    uint32_t TEMPERATURE_STALE_TIMEOUT_US = 500000U;
+    uint8_t TEMPERATURE_REBASE_SAMPLE_COUNT = 3U;
     // 内部变量
 
     // 寄存器结构体
@@ -128,8 +154,13 @@ protected:
     // 读变量
 
     // 当前温度
-    float Now_Temperature = 0.0f;
-
+    volatile float Now_Temperature = 0.0f;
+    float Temperature_Rebase_Candidate = 0.0f;
+    volatile uint64_t Temperature_Last_Valid_Timestamp = 0U;
+    uint8_t Temperature_Rebase_Count = 0U;
+    volatile bool Temperature_Valid_Flag = false;
+    volatile bool Temperature_Stale_Latched = false;
+    volatile uint32_t Heater_PWM_Compare = 0U;
     // 当前加速度是否有效
     bool Valid_Flag = true;
     // 当前加速度
@@ -202,6 +233,11 @@ inline Class_Matrix_f32<3, 1> Class_BMI088_Accel::Get_Raw_Accel() const
 inline float Class_BMI088_Accel::Get_Heater_Enable() const
 {
     return (Heater_Enable);
+}
+
+inline uint32_t Class_BMI088_Accel::Get_Heater_PWM_Compare() const
+{
+    return (Heater_PWM_Compare);
 }
 
 /**
