@@ -22,6 +22,10 @@
 
 /* Private macros ------------------------------------------------------------*/
 
+#define W25Q64JV_FLASH_SIZE 0x00800000U
+#define W25Q64JV_PAGE_SIZE 256U
+#define W25Q64JV_SECTOR_SIZE 4096U
+
 /* Private types -------------------------------------------------------------*/
 
 enum Enum_W25Q64JV_Mode
@@ -41,11 +45,11 @@ public:
 
     void Enable_Quad_Mode();
 
-    inline void Get_Buffer(const uint32_t &Address, const uint8_t &Length);
+    inline bool Get_Buffer(const uint32_t &Address, const uint16_t &Length);
 
-    inline void Set_Write_Enable();
+    inline bool Set_Write_Enable();
 
-    inline void Set_Sector_Erased(const uint32_t &Address);
+    inline bool Set_Sector_Erased(const uint32_t &Address);
 
     inline void Set_Bolck_Erased_32K(const uint32_t &Address);
 
@@ -53,15 +57,15 @@ public:
 
     inline void Set_Chip_Erased();
 
-    inline void Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint8_t &Length);
+    inline bool Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint16_t &Length);
 
     bool Is_Ready() { return !Is_Busy(); }
 
     uint32_t Get_Auto_Polling_Error_Count() { return Auto_Polling_Error_Count; }
 
-    inline void Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length);
+    inline bool Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length);
 
-    inline void Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length);
+    inline bool Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length);
 
     void OSPI_StatusMatchCallback();
 
@@ -118,22 +122,22 @@ public:
     const uint64_t AUTOPOLLING_CHIP_ERASED_TIMEOUT = 100000000;     // 100000ms
 
     // 写使能激活标志
-    bool Write_Enable_Activated_Flag = false;
+    volatile bool Write_Enable_Activated_Flag = false;
     // 忙标志（发出指令/收发数据后置1，StatusMatch回调中清零）
-    bool Busy_Flag = false;
+    volatile bool Busy_Flag = false;
     // 置忙时间戳（微秒）
-    uint64_t Busy_Timestamp = 0;
+    volatile uint64_t Busy_Timestamp = 0;
 
     // 当前命令配置
     OSPI_RegularCmdTypeDef Command = COMMAND_DEFAULT_CONFIG;
-    uint32_t Current_Instruction = 0;
+    volatile uint32_t Current_Instruction = 0;
 
     // 当前指令对应的轮询超时
-    uint64_t Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
+    volatile uint64_t Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
     // 轮询超时错误计数
-    uint32_t Auto_Polling_Error_Count = 0;
+    volatile uint32_t Auto_Polling_Error_Count = 0;
     // 抑制 Tx/Rx 回调中的自动轮询（Enable_Quad_Mode 手动轮询 WIP 时使用）
-    bool Suppress_AutoPolling = false;
+    volatile bool Suppress_AutoPolling = false;
 
     bool Is_Busy()
     {
@@ -166,11 +170,12 @@ extern Class_W25Q64JV BSP_W25Q64JV;
  * @param Address 起始地址
  * @param Length  读取字节数（≤ OSPI_BUFFER_SIZE）
  */
-inline void Class_W25Q64JV::Get_Buffer(const uint32_t &Address, const uint8_t &Length)
+inline bool Class_W25Q64JV::Get_Buffer(const uint32_t &Address, const uint16_t &Length)
 {
-    if (Is_Busy())
+    if (Is_Busy() || Length == 0U || Length > OSPI_BUFFER_SIZE ||
+        Address >= W25Q64JV_FLASH_SIZE || Length > (W25Q64JV_FLASH_SIZE - Address))
     {
-        return;
+        return false;
     }
     Busy_Flag = true;
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
@@ -182,42 +187,43 @@ inline void Class_W25Q64JV::Get_Buffer(const uint32_t &Address, const uint8_t &L
     Command.DataMode = HAL_OSPI_DATA_4_LINES;
     Command.DummyCycles = 6;
     Command.NbData = Length;
-    OSPI_Command_Receive_Data(OSPI_Manage_Object->OSPI_Handler, &Command);
-
     Current_Instruction = W25Q64JV_Command_FAST_READ_QUAD_IO;
+    Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
+    OSPI_Command_Receive_Data(OSPI_Manage_Object->OSPI_Handler, &Command);
+    return true;
 }
 
 /**
  * @brief 发送写使能指令（06h），后续写/擦操作必须先调用
  *
  */
-inline void Class_W25Q64JV::Set_Write_Enable()
+inline bool Class_W25Q64JV::Set_Write_Enable()
 {
     if (Is_Busy())
     {
-        return;
+        return false;
     }
     Busy_Flag = true;
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
     Command = COMMAND_DEFAULT_CONFIG;
     Command.Instruction = W25Q64JV_Command_WRITE_ENABLE;
-    OSPI_Command(OSPI_Manage_Object->OSPI_Handler, &Command);
-
     Current_Instruction = W25Q64JV_Command_WRITE_ENABLE;
     Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
+    OSPI_Command(OSPI_Manage_Object->OSPI_Handler, &Command);
     Auto_Polling_With_Timeout();
+    return true;
 }
 
 /**
  * @brief 擦除单个 Sector（4KB），地址必须 4096 字节对齐
  *
  */
-inline void Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
+inline bool Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
 {
     if (Is_Busy())
     {
-        return;
+        return false;
     }
     Busy_Flag = true;
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
@@ -225,24 +231,24 @@ inline void Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
     if (!Write_Enable_Activated_Flag)
     {
         Busy_Flag = false;
-        return;
+        return false;
     }
 
-    if (Address % 4096)
+    if ((Address % W25Q64JV_SECTOR_SIZE) != 0U || Address >= W25Q64JV_FLASH_SIZE)
     {
         Busy_Flag = false;
-        return;
+        return false;
     }
 
     Command = COMMAND_DEFAULT_CONFIG;
     Command.Instruction = W25Q64JV_Command_SECTOR_ERASE;
     Command.Address = Address;
     Command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
-    OSPI_Command(OSPI_Manage_Object->OSPI_Handler, &Command);
-
     Current_Instruction = W25Q64JV_Command_SECTOR_ERASE;
     Current_Auto_Polling_Timeout = AUTOPOLLING_SECTOR_ERASED_TIMEOUT;
+    OSPI_Command(OSPI_Manage_Object->OSPI_Handler, &Command);
     Auto_Polling_With_Timeout();
+    return true;
 }
 
 /**
@@ -353,11 +359,12 @@ inline void Class_W25Q64JV::Set_Chip_Erased()
  * @param Address 目标地址（不跨 Page，即 Address%256 + Length ≤ 256）
  * @param Length  写入字节数
  */
-inline void Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint8_t &Length)
+inline bool Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint16_t &Length)
 {
-    if (Is_Busy())
+    if (Is_Busy() || Buffer == nullptr || Length == 0U || Length > W25Q64JV_PAGE_SIZE ||
+        Address >= W25Q64JV_FLASH_SIZE || Length > (W25Q64JV_FLASH_SIZE - Address))
     {
-        return;
+        return false;
     }
     Busy_Flag = true;
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
@@ -365,14 +372,14 @@ inline void Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Ad
     if (!Write_Enable_Activated_Flag)
     {
         Busy_Flag = false;
-        return;
+        return false;
     }
 
     // 不允许跨 Page（256B 边界）写
-    if (Address % 256 + Length > 256)
+    if ((Address % W25Q64JV_PAGE_SIZE) + Length > W25Q64JV_PAGE_SIZE)
     {
         Busy_Flag = false;
-        return;
+        return false;
     }
 
     Command = COMMAND_DEFAULT_CONFIG;
@@ -382,28 +389,46 @@ inline void Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Ad
     Command.DataMode = HAL_OSPI_DATA_4_LINES;
     Command.NbData = Length;
     memcpy(OSPI_Manage_Object->Tx_Buffer, Buffer, Length);
-    OSPI_Command_Transmit_Data(OSPI_Manage_Object->OSPI_Handler, &Command);
-
     Current_Instruction = W25Q64JV_Command_QUAD_INPUT_PAGE_PROGRAM;
     Current_Auto_Polling_Timeout = AUTOPOLLING_DEFAULT_TIMEOUT;
+    OSPI_Command_Transmit_Data(OSPI_Manage_Object->OSPI_Handler, &Command);
+    return true;
 }
 
 /**
  * @brief 同步读取任意长度数据（分次 DMA 接收，自动等待）
  *
  */
-inline void Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length)
+inline bool Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length)
 {
+    if (Length == 0U)
+    {
+        return true;
+    }
+    if (Dest == nullptr || Address >= W25Q64JV_FLASH_SIZE ||
+        Length > (W25Q64JV_FLASH_SIZE - Address) || Is_Busy())
+    {
+        return false;
+    }
+
     uint8_t *dst = static_cast<uint8_t *>(Dest);
     uint32_t addr = Address;
     uint32_t remaining = Length;
+    const uint32_t error_count = Get_Auto_Polling_Error_Count();
 
     while (remaining > 0)
     {
-        uint32_t chunk = (remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining;
+        const uint16_t chunk = static_cast<uint16_t>((remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining);
 
-        Get_Buffer(addr, chunk);
+        if (!Get_Buffer(addr, chunk))
+        {
+            return false;
+        }
         while (!Is_Ready()) { osDelay(1); }
+        if (Get_Auto_Polling_Error_Count() != error_count)
+        {
+            return false;
+        }
 
         memcpy(dst, OSPI_Manage_Object->Rx_Buffer, chunk);
 
@@ -411,33 +436,60 @@ inline void Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const
         addr += chunk;
         remaining -= chunk;
     }
+    return true;
 }
 
 /**
  * @brief 同步写入任意长度数据（自动处理页边界和写使能）
  *
  */
-inline void Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length)
+inline bool Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length)
 {
+    if (Length == 0U)
+    {
+        return true;
+    }
+    if (Src == nullptr || Address >= W25Q64JV_FLASH_SIZE ||
+        Length > (W25Q64JV_FLASH_SIZE - Address) || Is_Busy())
+    {
+        return false;
+    }
+
     const uint8_t *src = static_cast<const uint8_t *>(Src);
     uint32_t addr = Address;
     uint32_t remaining = Length;
+    const uint32_t error_count = Get_Auto_Polling_Error_Count();
 
     while (remaining > 0)
     {
-        uint32_t page_remain = 256 - (addr % 256);
-        uint32_t chunk = (remaining > page_remain) ? page_remain : remaining;
+        const uint32_t page_remain = W25Q64JV_PAGE_SIZE - (addr % W25Q64JV_PAGE_SIZE);
+        const uint16_t chunk = static_cast<uint16_t>((remaining > page_remain) ? page_remain : remaining);
 
-        Set_Write_Enable();
+        if (!Set_Write_Enable())
+        {
+            return false;
+        }
         while (!Is_Ready()) { osDelay(1); }
+        if (Get_Auto_Polling_Error_Count() != error_count)
+        {
+            return false;
+        }
 
-        Set_Buffer(src, addr, chunk);
+        if (!Set_Buffer(src, addr, chunk))
+        {
+            return false;
+        }
         while (!Is_Ready()) { osDelay(1); }
+        if (Get_Auto_Polling_Error_Count() != error_count)
+        {
+            return false;
+        }
 
         src += chunk;
         addr += chunk;
         remaining -= chunk;
     }
+    return true;
 }
 
 #endif /* __BSP_W25Q64JV_H */

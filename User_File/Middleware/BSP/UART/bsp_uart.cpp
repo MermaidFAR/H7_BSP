@@ -104,7 +104,18 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function)
     manage->Rx_Buffer_Active = manage->Rx_Buffer_0;
     manage->Rx_Buffer_Ready = manage->Rx_Buffer_1;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE);
+    // Some managed UARTs are TX-only in the current CubeMX DMA allocation.
+    // Starting the HAL DMA receive path without hdmarx still sets DMAR/IDLEIE,
+    // then the first IDLE interrupt dereferences a null DMA handle.
+    if (huart->hdmarx == nullptr)
+    {
+        return;
+    }
+
+    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    {
+        manage->Rx_Buffer_Active = nullptr;
+    }
 }
 
 /**
@@ -115,13 +126,16 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function)
 void UART_Reinit(UART_HandleTypeDef *huart)
 {
     Struct_UART_Manage_Object *manage = UART_Get_Manage_Object(huart);
-    if (manage == nullptr)
+    if (manage == nullptr || huart->hdmarx == nullptr)
     {
         return;
     }
 
     manage->Rx_Buffer_Active = manage->Rx_Buffer_0;
-    HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE);
+    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    {
+        manage->Rx_Buffer_Active = nullptr;
+    }
 }
 
 /**
@@ -152,7 +166,7 @@ uint8_t UART_Transmit_Data(UART_HandleTypeDef *huart, uint8_t *Data, uint16_t Le
 extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
     Struct_UART_Manage_Object *manage = UART_Get_Manage_Object(huart);
-    if (manage == nullptr)
+    if (manage == nullptr || huart->hdmarx == nullptr || manage->Rx_Buffer_Active == nullptr)
     {
         return;
     }

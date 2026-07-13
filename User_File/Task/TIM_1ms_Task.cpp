@@ -46,7 +46,8 @@ extern "C" void TIM1msTask(void *argument) {
   (void)argument;
   uint32_t xLastWakeTime = osKernelGetTickCount();
   while (1) {
-      pulse(1, 3, W25Q64JV_AutoPolling_Callback, BSP_Key_TIM_1ms_Process_PeriodElapsedCallback, Sys_Debug_IMU_Update);
+      pulse(1, 3, W25Q64JV_AutoPolling_Callback, BSP_Key_TIM_1ms_Process_PeriodElapsedCallback,
+            BMI088_TIM_1ms_Service_PeriodElapsedCallback);
       pulse(10, 1, BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback);
       pulse(50, 1, BSP_Key_TIM_50ms_Process_PeriodElapsedCallback);
       pulse(128, 1, BMI088_TIM_128ms_Calculate_PeriodElapsedCallback);

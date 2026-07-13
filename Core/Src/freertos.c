@@ -46,6 +46,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+osThreadId_t StorageTaskHandle;
+const osThreadAttr_t StorageTask_attributes = {
+  .name = "StorageTask",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* USER CODE END Variables */
 /* Definitions for TransportTask */
@@ -93,6 +99,7 @@ const osThreadAttr_t GimbalTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+void Storage_Task(void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -170,7 +177,7 @@ void MX_FREERTOS_Init(void) {
   GimbalTaskHandle = osThreadNew(Gimbal_Task, NULL, &GimbalTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  StorageTaskHandle = osThreadNew(Storage_Task, NULL, &StorageTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

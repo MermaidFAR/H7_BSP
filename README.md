@@ -44,7 +44,6 @@ User_Config/                  工具与补丁配置，包含 FreeRTOS patched po
  User_File/System/             系统服务，如初始化、回调、时间戳
  User_File/Middleware/Algorithm/算法组件，如矩阵、PID、EKF、四元数等
  User_File/Task/               FreeRTOS 用户任务
- User_File/Application/        应用层（Tuner 在线调参）
 ```
 
 ## 启动与运行链路

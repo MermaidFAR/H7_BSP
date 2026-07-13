@@ -34,6 +34,10 @@ JLinkLog.txt
 *.jdebug.user
 Debug.jdebug.user
 
+# Override the global STM32CubeIDE Debug/ rule for source files.
+!User_File/System/debug/
+!User_File/System/debug/**
+
 # 操作系统级缓存
 .DS_Store
 Thumbs.db
