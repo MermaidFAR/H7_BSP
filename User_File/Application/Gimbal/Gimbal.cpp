@@ -24,7 +24,7 @@ PID_InitTypeDef Yaw_Speed_PID_Init = {
     .D_First = PID_D_First_DISABLE};
 
 PID_InitTypeDef Yaw_Angle_PID_Init = {
-    .K_P = 10.00f,
+    .K_P = 32.00f,
     .K_I = 0.00f,
     .K_D = 0.0f,
     .K_F = 0.0f,
