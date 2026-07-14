@@ -74,7 +74,7 @@ void Class_PID::TIM_Calculate_PeriodElapsedCallback()
     // 绝对值误差
     float abs_error;
     // 线性变速积分
-    float speed_ratio;
+    float speed_ratio = 0.0f;
 
     error = Target - Now;
     abs_error = Basic_Math_Abs(error);

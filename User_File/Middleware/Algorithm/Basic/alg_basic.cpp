@@ -15,6 +15,8 @@
 
 #include "alg_basic.h"
 
+#include <cstring>
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -241,8 +243,11 @@ float Basic_Math_Int_To_Float(int32_t x, int32_t Int_1, int32_t Int_2, float Flo
  */
 bool Basic_Math_Is_Invalid_Float(float x)
 {
-    uint32_t exp = (*(uint32_t *) (&x) >> 23) & 0xff;
-    uint32_t frac = (*(uint32_t *) (&x) & 0x7fffff);
+    uint32_t bits;
+    std::memcpy(&bits, &x, sizeof(bits));
+
+    uint32_t exp = (bits >> 23) & 0xff;
+    uint32_t frac = bits & 0x7fffff;
     if (exp == 0x00)
     {
         if (frac == 0x00)
