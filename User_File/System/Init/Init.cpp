@@ -17,6 +17,7 @@
 #include "sys_debug.h"
 #include "sys_timestamp.h"
 #include "usart.h"
+#include "Comhub.h"
 // 全局初始化完成标志位
 volatile bool init_finished = false;
 
@@ -25,6 +26,7 @@ extern "C" void System_Init(void)
     SEGGER_SYSVIEW_Conf();
     // SEGGER_SYSVIEW_Stop();
     SYS_Timestamp.Init(&htim5);
+    Comhub_Init();
     HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   
 
@@ -34,7 +36,7 @@ extern "C" void System_Init(void)
     UART_Init(&huart4, nullptr);
     UART_Init(&huart5, nullptr);
     UART_Init(&huart6, nullptr);
-    UART_Init(&huart7, nullptr);
+    UART_Init(&huart7, Comhub_Callback);
     UART_Init(&huart8, nullptr);
     UART_Init(&huart9, nullptr);
     UART_Init(&huart10, nullptr);
