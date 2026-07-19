@@ -1,13 +1,88 @@
 #include "Gimbal.h"
 #include "BSP_BMI088.h"
+#include "Comhub.h"
 #include "QD4310.h"
 #include "alg_pid.h"
 #include "cmsis_os2.h"
 #include "fdcan.h"
 #include "sys_timestamp.h"
+#include <cmath>
 #include <sys/_intsup.h>
 
 QDGimbal_t Gimbal;
+
+namespace
+{
+/** 每个视觉数据帧最多修正约 6.9 度，远处目标会通过连续帧逐步追上。 */
+constexpr float GIMBAL_VISION_MAX_STEP_RAD = 0.12f;
+
+/** 当前相机坐标方向与云台坐标方向一致；若实机方向相反，只修改对应符号。 */
+constexpr float GIMBAL_VISION_YAW_SIGN = 1.0f;
+constexpr float GIMBAL_VISION_PITCH_SIGN = 1.0f;
+
+/** 保存上一次已消费的视觉代数，确保同一帧不会被 1 kHz 控制环重复累加。 */
+Struct_Comhub_Message Vision_Message = {};
+
+float Gimbal_Clamp(float value, float minimum, float maximum)
+{
+    if (value < minimum)
+    {
+        return minimum;
+    }
+    if (value > maximum)
+    {
+        return maximum;
+    }
+    return value;
+}
+
+/**
+ * @brief 消费一帧新的树莓派视觉数据并更新双轴目标。
+ *
+ * 只接受带角度有效标志的 TRACKING/PREDICT_ONLY 数据，不使用质量阈值触发失能。
+ * LOST、DETECTING 或串口暂时无新帧时保持最后目标，电机不会被锁存失能。
+ */
+void Gimbal_UpdateVisionTarget(void)
+{
+    if (!Comhub_GetLatest(&Vision_Message))
+    {
+        return;
+    }
+
+    const bool Target_Valid =
+        (Vision_Message.Flags & COMHUB_FLAG_ANGLE_VALID) != 0U &&
+        (Vision_Message.Track_State == COMHUB_TRACK_TRACKING ||
+         Vision_Message.Track_State == COMHUB_TRACK_PREDICT_ONLY) &&
+        std::isfinite(Vision_Message.Yaw_Error_Rad) &&
+        std::isfinite(Vision_Message.Pitch_Error_Rad);
+    if (!Target_Valid)
+    {
+        return;
+    }
+
+    const float Yaw_Now = BSP_BMI088.Get_Euler_Angle().Data[0];
+    if (std::isfinite(Yaw_Now))
+    {
+        const float Yaw_Step = Gimbal_Clamp(
+            GIMBAL_VISION_YAW_SIGN * Vision_Message.Yaw_Error_Rad,
+            -GIMBAL_VISION_MAX_STEP_RAD,
+            GIMBAL_VISION_MAX_STEP_RAD);
+        Gimbal.Target_Yaw_Angle = Yaw_Now + Yaw_Step;
+    }
+
+    if (std::isfinite(Gimbal.Pitch_Motor.angle))
+    {
+        const float Pitch_Step = Gimbal_Clamp(
+            GIMBAL_VISION_PITCH_SIGN * Vision_Message.Pitch_Error_Rad,
+            -GIMBAL_VISION_MAX_STEP_RAD,
+            GIMBAL_VISION_MAX_STEP_RAD);
+        Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
+            Gimbal.Pitch_Motor.angle + Pitch_Step,
+            0.0f,
+            QD4310_TWO_PI);
+    }
+}
+} // namespace
 
 /**
  * @brief Yaw 轴速度内环参数。
@@ -52,9 +127,8 @@ PID_InitTypeDef Yaw_Angle_PID_Init = {
 /**
  * @brief Pitch 轴速度 PID 参数。
  *
- * 目标由 Gimbal_SetTargetSpeed() 写入，反馈来自 BMI088 Y 轴角速度。
- * 注意：当前 Gimbal_Loop() 把该 PID 的输出传给 QD4310_SetAngle()，因此它目前
- * 实际被当作电机内置位置环的角度目标使用，而不是作为电流指令使用。
+ * 该组参数保留给手动速度控制；矩形追踪时 Pitch 直接使用 QD4310 内置位置环，
+ * 不经过这组 PID。
  */
 PID_InitTypeDef Pitch_Speed_PID_Init = {
     .K_P = 0.1f,
@@ -118,7 +192,7 @@ void Gimbal_Init(void)
                               Yaw_Speed_PID_Init.I_Separate_Threshold,
                               Yaw_Speed_PID_Init.D_First);
 
-    // Pitch 速度 PID：当前输出在循环中被作为 QD4310 内置位置环的角度目标。
+    // Pitch 速度 PID：保留给手动速度模式，视觉追踪不使用它。
     Gimbal.Pitch_Speed_PID.Init(Pitch_Speed_PID_Init.K_P,
                                 Pitch_Speed_PID_Init.K_I,
                                 Pitch_Speed_PID_Init.K_D,
@@ -167,6 +241,16 @@ RESET:
     }
     else if (Gimbal.Pitch_Motor.enabled && Gimbal.Yaw_Motor.enabled)
     {
+        // 电机刚使能时锁住当前姿态，避免在第一帧视觉数据到达前跳向零点。
+        const float Yaw_Now = BSP_BMI088.Get_Euler_Angle().Data[0];
+        if (std::isfinite(Yaw_Now))
+        {
+            Gimbal.Target_Yaw_Angle = Yaw_Now;
+        }
+        if (std::isfinite(Gimbal.Pitch_Motor.angle))
+        {
+            Gimbal.Target_Pitch_Angle = Gimbal.Pitch_Motor.angle;
+        }
         Gimbal.Gimbal_FSM.Set_Status(Gimbal_Status_READY);
         return;
     }
@@ -177,7 +261,7 @@ RESET:
 /**
  * @brief 设置两轴目标角度。
  * @param yaw_angle Yaw 目标角度，供 Yaw 角度外环使用。
- * @param pitch_angle Pitch 目标角度；当前循环尚未消费该变量。
+ * @param pitch_angle Pitch 电机内置位置环目标角度，单位为弧度。
  */
 void Gimbal_SetTargetAngle(float yaw_angle, float pitch_angle)
 {
@@ -188,7 +272,7 @@ void Gimbal_SetTargetAngle(float yaw_angle, float pitch_angle)
 /**
  * @brief 设置两轴目标角速度。
  * @param yaw_speed Yaw 目标角速度；下一次循环会被 Yaw 角度外环输出覆盖。
- * @param pitch_speed Pitch 目标角速度，作为 Pitch 速度 PID 的目标值。
+ * @param pitch_speed Pitch 手动速度 PID 目标值；矩形追踪模式不使用。
  */
 void Gimbal_SetTargetSpeed(float yaw_speed, float pitch_speed)
 {
@@ -199,32 +283,28 @@ void Gimbal_SetTargetSpeed(float yaw_speed, float pitch_speed)
 /**
  * @brief 执行一次云台控制计算并向两台电机下发命令。
  *
- * 当前控制路径：
- * 1. Yaw：目标角度 -> 角度 PID -> 目标角速度 -> 速度 PID -> 电流指令。
- * 2. Pitch：目标角速度 -> 速度 PID -> QD4310 内置位置环角度指令。
- *
- * 本函数没有读取 Comhub 的视觉报文，也没有把矩形中心误差转换为目标角度；因此
- * 单靠当前文件中的这条控制链不能形成矩形靶视觉追踪闭环。
+ * 当前控制路径：Yaw 使用“视觉误差 -> 目标角度 -> 角度 PID -> 目标角速度 ->
+ * 速度 PID -> 电流指令”；Pitch 使用“视觉误差 -> 目标角度 -> QD4310 内置位置环”。
+ * 视觉丢失时保持最后目标，不发送失能命令。
  */
 void Gimbal_Loop(void)
 {
+    // 视觉线程约 350 Hz 发布，本控制环约 1 kHz；只在消息代数变化时更新目标。
+    Gimbal_UpdateVisionTarget();
+
     // Yaw 角度外环：使用 BMI088 的 Yaw 欧拉角，计算速度内环目标。
     Gimbal.Yaw_Angle_PID.Set_Target(Gimbal.Target_Yaw_Angle);
     Gimbal.Yaw_Angle_PID.Set_Now(BSP_BMI088.Get_Euler_Angle().Data[0]);
     Gimbal.Yaw_Angle_PID.TIM_Calculate_PeriodElapsedCallback();
     Gimbal.Target_Yaw_Speed = Gimbal.Yaw_Angle_PID.Get_Out();
 
-    // 两轴速度反馈取自 BMI088；Yaw 使用 Z 轴角速度，Pitch 使用 Y 轴角速度。
+    // Yaw 速度内环使用 BMI088 Z 轴角速度反馈。
     Gimbal.Yaw_Speed_PID.Set_Target(Gimbal.Target_Yaw_Speed);
-    Gimbal.Pitch_Speed_PID.Set_Target(Gimbal.Target_Pitch_Speed);
     Gimbal.Yaw_Speed_PID.Set_Now(BSP_BMI088.Get_Gyro_Body().Data[2]);
-    Gimbal.Pitch_Speed_PID.Set_Now(BSP_BMI088.Get_Gyro_Body().Data[1]);
     Gimbal.Yaw_Speed_PID.TIM_Calculate_PeriodElapsedCallback();
-    Gimbal.Pitch_Speed_PID.TIM_Calculate_PeriodElapsedCallback();
 
     // Yaw 采用电流控制：速度 PID 输出直接作为电机电流指令。
     QD4310_SetCurrent(&Gimbal.Yaw_Motor, Gimbal.Yaw_Speed_PID.Get_Out());
-    // Pitch 当前采用电机内置位置环，但传入值仍是 Pitch 速度 PID 的输出。
-    // 这表示“速度 PID 输出量”被当成“角度目标量”；该量纲和效果尚需实机验证。
-    QD4310_SetAngle(&Gimbal.Pitch_Motor, Gimbal.Pitch_Speed_PID.Get_Out());
+    // Pitch 采用 QD4310 内置位置环，直接下发绝对角度目标。
+    QD4310_SetAngle(&Gimbal.Pitch_Motor, Gimbal.Target_Pitch_Angle);
 }
