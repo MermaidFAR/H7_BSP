@@ -114,7 +114,10 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function)
 
     if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
     {
+        // 上电时线路已在连续发送，首次启动可能与错误中断竞争并返回 BUSY。
+        // 先异步终止残留接收；完成回调会重新启动 ReceiveToIdle DMA。
         manage->Rx_Buffer_Active = nullptr;
+        HAL_UART_AbortReceive_IT(huart);
     }
 }
 
@@ -205,6 +208,27 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t S
  * @param huart UART 句柄
  */
 extern "C" void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    Struct_UART_Manage_Object *manage = UART_Get_Manage_Object(huart);
+    if (manage == nullptr || huart->hdmarx == nullptr)
+    {
+        return;
+    }
+
+    // 不在 UART 错误中断里直接重启仍可能处于 BUSY 的 DMA；先异步终止，
+    // 再由完成回调统一恢复，避免树莓派先启动时把活动缓冲永久置空。
+    manage->Rx_Buffer_Active = nullptr;
+    if (HAL_UART_AbortReceive_IT(huart) != HAL_OK)
+    {
+        UART_Reinit(huart);
+    }
+}
+
+/**
+ * @brief UART 接收异步终止完成回调。
+ * @note  错误标志和 DMA 状态已由 HAL 清理，此时可安全重启空闲 DMA 接收。
+ */
+extern "C" void HAL_UART_AbortReceiveCpltCallback(UART_HandleTypeDef *huart)
 {
     UART_Reinit(huart);
 }
