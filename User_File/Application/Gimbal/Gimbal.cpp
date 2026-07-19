@@ -13,12 +13,22 @@ QDGimbal_t Gimbal;
 
 namespace
 {
-/** 每个视觉数据帧最多修正约 6.9 度，远处目标会通过连续帧逐步追上。 */
-constexpr float GIMBAL_VISION_MAX_STEP_RAD = 0.12f;
+/** Yaw 每帧最多修正约 6.9 度，远处目标会通过连续帧逐步追上。 */
+constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.12f;
 
-/** 当前相机坐标方向与云台坐标方向一致；若实机方向相反，只修改对应符号。 */
-constexpr float GIMBAL_VISION_YAW_SIGN = 1.0f;
-constexpr float GIMBAL_VISION_PITCH_SIGN = 1.0f;
+/** Pitch 每帧最多修正约 2.3 度，降低内置位置环的瞬时跳变。 */
+constexpr float GIMBAL_VISION_MAX_PITCH_STEP_RAD = 0.04f;
+
+/** 首轮实机发现两轴会追离目标，因此将相机误差方向同时反向。 */
+constexpr float GIMBAL_VISION_YAW_SIGN = -1.0f;
+constexpr float GIMBAL_VISION_PITCH_SIGN = -1.0f;
+
+/**
+ * Pitch 绝对角限位：约 335.2°～358.1°。
+ * 当前机械中位实测约为 6.10 rad，限位避免跨越 0/2π 编码边界和继续向下顶机械结构。
+ */
+constexpr float GIMBAL_PITCH_MIN_ANGLE_RAD = 5.85f;
+constexpr float GIMBAL_PITCH_MAX_ANGLE_RAD = 6.25f;
 
 /** 保存上一次已消费的视觉代数，确保同一帧不会被 1 kHz 控制环重复累加。 */
 Struct_Comhub_Message Vision_Message = {};
@@ -65,8 +75,8 @@ void Gimbal_UpdateVisionTarget(void)
     {
         const float Yaw_Step = Gimbal_Clamp(
             GIMBAL_VISION_YAW_SIGN * Vision_Message.Yaw_Error_Rad,
-            -GIMBAL_VISION_MAX_STEP_RAD,
-            GIMBAL_VISION_MAX_STEP_RAD);
+            -GIMBAL_VISION_MAX_YAW_STEP_RAD,
+            GIMBAL_VISION_MAX_YAW_STEP_RAD);
         Gimbal.Target_Yaw_Angle = Yaw_Now + Yaw_Step;
     }
 
@@ -74,12 +84,12 @@ void Gimbal_UpdateVisionTarget(void)
     {
         const float Pitch_Step = Gimbal_Clamp(
             GIMBAL_VISION_PITCH_SIGN * Vision_Message.Pitch_Error_Rad,
-            -GIMBAL_VISION_MAX_STEP_RAD,
-            GIMBAL_VISION_MAX_STEP_RAD);
+            -GIMBAL_VISION_MAX_PITCH_STEP_RAD,
+            GIMBAL_VISION_MAX_PITCH_STEP_RAD);
         Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
             Gimbal.Pitch_Motor.angle + Pitch_Step,
-            0.0f,
-            QD4310_TWO_PI);
+            GIMBAL_PITCH_MIN_ANGLE_RAD,
+            GIMBAL_PITCH_MAX_ANGLE_RAD);
     }
 }
 } // namespace
@@ -249,7 +259,10 @@ RESET:
         }
         if (std::isfinite(Gimbal.Pitch_Motor.angle))
         {
-            Gimbal.Target_Pitch_Angle = Gimbal.Pitch_Motor.angle;
+            Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
+                Gimbal.Pitch_Motor.angle,
+                GIMBAL_PITCH_MIN_ANGLE_RAD,
+                GIMBAL_PITCH_MAX_ANGLE_RAD);
         }
         Gimbal.Gimbal_FSM.Set_Status(Gimbal_Status_READY);
         return;
@@ -266,7 +279,10 @@ RESET:
 void Gimbal_SetTargetAngle(float yaw_angle, float pitch_angle)
 {
     Gimbal.Target_Yaw_Angle = yaw_angle;
-    Gimbal.Target_Pitch_Angle = pitch_angle;
+    Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
+        pitch_angle,
+        GIMBAL_PITCH_MIN_ANGLE_RAD,
+        GIMBAL_PITCH_MAX_ANGLE_RAD);
 }
 
 /**
@@ -305,6 +321,10 @@ void Gimbal_Loop(void)
 
     // Yaw 采用电流控制：速度 PID 输出直接作为电机电流指令。
     QD4310_SetCurrent(&Gimbal.Yaw_Motor, Gimbal.Yaw_Speed_PID.Get_Out());
-    // Pitch 采用 QD4310 内置位置环，直接下发绝对角度目标。
+    // Pitch 采用 QD4310 内置位置环；下发前再次限幅，手动目标也不能绕过机械范围。
+    Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
+        Gimbal.Target_Pitch_Angle,
+        GIMBAL_PITCH_MIN_ANGLE_RAD,
+        GIMBAL_PITCH_MAX_ANGLE_RAD);
     QD4310_SetAngle(&Gimbal.Pitch_Motor, Gimbal.Target_Pitch_Angle);
 }
