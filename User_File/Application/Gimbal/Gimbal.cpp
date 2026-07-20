@@ -16,8 +16,14 @@ namespace
 /** Yaw 每帧最多修正约 6.9 度，远处目标会通过连续帧逐步追上。 */
 constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.12f;
 
-/** Pitch 每帧最多修正约 2.3 度，降低内置位置环的瞬时跳变。 */
-constexpr float GIMBAL_VISION_MAX_PITCH_STEP_RAD = 0.04f;
+/** Pitch 视觉外环只施加四分之一相对角误差，给检测延迟保留相位裕度。 */
+constexpr float GIMBAL_VISION_PITCH_CORRECTION_GAIN = 0.25f;
+
+/** 约 0.11 度的小误差不再驱动内置位置环，避免中心附近测量噪声造成抖动。 */
+constexpr float GIMBAL_VISION_PITCH_DEADBAND_RAD = 0.002f;
+
+/** Pitch 每个新测量最多修正约 0.69 度，限制内置位置环的瞬时目标跳变。 */
+constexpr float GIMBAL_VISION_MAX_PITCH_STEP_RAD = 0.012f;
 
 /** 新测量时刻至少前进 5 ms，过滤 UART 调度抖动和同一测量的 350 Hz 重复发布。 */
 constexpr uint64_t GIMBAL_VISION_NEW_MEASUREMENT_MIN_ADVANCE_US = 5000ULL;
@@ -121,10 +127,15 @@ void Gimbal_UpdateVisionTarget(void)
 
     if (std::isfinite(Gimbal.Pitch_Motor.angle))
     {
-        const float Pitch_Step = Gimbal_Clamp(
-            GIMBAL_VISION_PITCH_SIGN * Vision_Message.Pitch_Error_Rad,
-            -GIMBAL_VISION_MAX_PITCH_STEP_RAD,
-            GIMBAL_VISION_MAX_PITCH_STEP_RAD);
+        const float Signed_Pitch_Error =
+            GIMBAL_VISION_PITCH_SIGN * Vision_Message.Pitch_Error_Rad;
+        const float Pitch_Step =
+            std::fabs(Signed_Pitch_Error) <= GIMBAL_VISION_PITCH_DEADBAND_RAD
+                ? 0.0f
+                : Gimbal_Clamp(
+                      GIMBAL_VISION_PITCH_CORRECTION_GAIN * Signed_Pitch_Error,
+                      -GIMBAL_VISION_MAX_PITCH_STEP_RAD,
+                      GIMBAL_VISION_MAX_PITCH_STEP_RAD);
         Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
             Gimbal.Pitch_Motor.angle + Pitch_Step,
             GIMBAL_PITCH_MIN_ANGLE_RAD,
