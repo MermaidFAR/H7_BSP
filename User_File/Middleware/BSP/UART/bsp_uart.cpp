@@ -38,6 +38,7 @@ __attribute__((section(".dma_buffer"), aligned(32))) Struct_UART_Manage_Object U
 /* Private function declarations ---------------------------------------------*/
 
 static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *huart);
+static HAL_StatusTypeDef UART_Start_Receive_ToIdle(Struct_UART_Manage_Object *manage);
 static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage);
 
 /* Function prototypes -------------------------------------------------------*/
@@ -84,6 +85,30 @@ static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *hua
 }
 
 /**
+ * @brief 启动空闲 DMA 接收并关闭不需要的半传输中断。
+ * @details 半传输事件发生时 DMA 仍是 BUSY，不能切换缓冲并重新启动；本驱动只在
+ *          IDLE 或整缓冲完成后消费数据，因此关闭 HT 可避免偶发 BUSY 和字节缺口。
+ */
+static HAL_StatusTypeDef UART_Start_Receive_ToIdle(Struct_UART_Manage_Object *manage)
+{
+    if (manage == nullptr || manage->UART_Handler == nullptr ||
+        manage->UART_Handler->hdmarx == nullptr || manage->Rx_Buffer_Active == nullptr)
+    {
+        return HAL_ERROR;
+    }
+
+    HAL_StatusTypeDef Status = HAL_UARTEx_ReceiveToIdle_DMA(
+        manage->UART_Handler,
+        manage->Rx_Buffer_Active,
+        UART_BUFFER_SIZE);
+    if (Status == HAL_OK)
+    {
+        __HAL_DMA_DISABLE_IT(manage->UART_Handler->hdmarx, DMA_IT_HT);
+    }
+    return Status;
+}
+
+/**
  * @brief 在任务上下文清理 UART/DMA 状态并重新启动空闲 DMA 接收。
  * @note  HAL_UART_AbortReceive 会关闭旧 DMA、清除 ORE/FE/NE/PE 并冲掉 RDR。
  */
@@ -110,7 +135,7 @@ static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage)
     huart->ErrorCode = HAL_UART_ERROR_NONE;
 
     manage->Rx_Buffer_Active = manage->Rx_Buffer_0;
-    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    if (UART_Start_Receive_ToIdle(manage) != HAL_OK)
     {
         manage->Rx_Buffer_Active = nullptr;
         manage->Rx_Restart_Pending = true;
@@ -242,7 +267,7 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t S
     // 程序未初始化完成时，仅重启接收不分发回调
     if (!init_finished)
     {
-        if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+        if (UART_Start_Receive_ToIdle(manage) != HAL_OK)
         {
             manage->Rx_Buffer_Active = nullptr;
             manage->Rx_Restart_Pending = true;
@@ -264,7 +289,7 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t S
 
     manage->Rx_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
-    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    if (UART_Start_Receive_ToIdle(manage) != HAL_OK)
     {
         manage->Rx_Buffer_Active = nullptr;
         manage->Rx_Restart_Pending = true;
