@@ -58,8 +58,9 @@ float Gimbal_Clamp(float value, float minimum, float maximum)
  *
  * 树莓派虽然以约 350 Hz 发布预测包，但真实 PnP 测量约为 30 Hz。若每个发布包都
  * 执行“当前角度 + 相对误差”，同一个旧误差会在下一张图到来前反复推动目标，形成
- * 延迟、越过和往复振荡。因此这里只对新的 TRACKING 测量更新一次目标；
- * PREDICT_ONLY、重复发布包、LOST 或 DETECTING 均保持最后绝对目标。
+ * 延迟、越过和往复振荡。因此这里只在相机测量时刻真正前进时更新一次目标。
+ * 新测量经过检测线程后可能已超过 150 ms，此时发布状态会直接成为 PREDICT_ONLY，
+ * 不能一律丢弃；测量时刻不变的 PREDICT_ONLY 和重复包仍只保持最后绝对目标。
  */
 void Gimbal_UpdateVisionTarget(void)
 {
@@ -82,9 +83,12 @@ void Gimbal_UpdateVisionTarget(void)
         return;
     }
 
-    if (Vision_Message.Track_State != COMHUB_TRACK_TRACKING)
+    const bool Measurement_State_Valid =
+        Vision_Message.Track_State == COMHUB_TRACK_TRACKING ||
+        Vision_Message.Track_State == COMHUB_TRACK_PREDICT_ONLY;
+    if (!Measurement_State_Valid)
     {
-        // PREDICT_ONLY 只保持目标，禁止用旧图预测值继续重锚相对角度。
+        // 未知状态不参与控制，避免协议扩展值被误当成有效测量。
         return;
     }
 
