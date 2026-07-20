@@ -38,6 +38,7 @@ __attribute__((section(".dma_buffer"), aligned(32))) Struct_UART_Manage_Object U
 /* Private function declarations ---------------------------------------------*/
 
 static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *huart);
+static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage);
 
 /* Function prototypes -------------------------------------------------------*/
 
@@ -83,6 +84,46 @@ static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *hua
 }
 
 /**
+ * @brief 在任务上下文清理 UART/DMA 状态并重新启动空闲 DMA 接收。
+ * @note  HAL_UART_AbortReceive 会关闭旧 DMA、清除 ORE/FE/NE/PE 并冲掉 RDR。
+ */
+static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage)
+{
+    if (manage == nullptr || manage->UART_Handler == nullptr ||
+        manage->UART_Handler->hdmarx == nullptr)
+    {
+        return false;
+    }
+
+    UART_HandleTypeDef *huart = manage->UART_Handler;
+    manage->Rx_Buffer_Active = nullptr;
+
+    if (HAL_UART_AbortReceive(huart) != HAL_OK)
+    {
+        manage->Rx_Restart_Pending = true;
+        manage->Rx_Restart_Failure_Count++;
+        return false;
+    }
+
+    // AbortReceive 已清除错误位和 RDR；这里再清 IDLE，避免旧空闲标志抢先中断。
+    __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_IDLEF);
+    huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+    manage->Rx_Buffer_Active = manage->Rx_Buffer_0;
+    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    {
+        manage->Rx_Buffer_Active = nullptr;
+        manage->Rx_Restart_Pending = true;
+        manage->Rx_Restart_Failure_Count++;
+        return false;
+    }
+
+    manage->Rx_Restart_Pending = false;
+    manage->Rx_Restart_Count++;
+    return true;
+}
+
+/**
  * @brief 初始化 UART，绑定回调并启动 DMA 接收
  *
  * @param huart UART 句柄
@@ -101,7 +142,6 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function)
     manage->UART_Handler = huart;
     manage->Callback_Function = Callback_Function;
 
-    manage->Rx_Buffer_Active = manage->Rx_Buffer_0;
     manage->Rx_Buffer_Ready = manage->Rx_Buffer_1;
 
     // Some managed UARTs are TX-only in the current CubeMX DMA allocation.
@@ -112,13 +152,8 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function)
         return;
     }
 
-    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
-    {
-        // 上电时线路已在连续发送，首次启动可能与错误中断竞争并返回 BUSY。
-        // 先异步终止残留接收；完成回调会重新启动 ReceiveToIdle DMA。
-        manage->Rx_Buffer_Active = nullptr;
-        HAL_UART_AbortReceive_IT(huart);
-    }
+    // 即使线路上电时已经持续发送，也先清除溢出和残留字节后再接管 DMA。
+    UART_Restart_Receive(manage);
 }
 
 /**
@@ -134,10 +169,40 @@ void UART_Reinit(UART_HandleTypeDef *huart)
         return;
     }
 
-    manage->Rx_Buffer_Active = manage->Rx_Buffer_0;
-    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    UART_Restart_Receive(manage);
+}
+
+/**
+ * @brief UART 接收恢复服务，每 1 ms 由系统任务调用，内部每 10 ms 重试一次。
+ * @details 错误中断只设置 Rx_Restart_Pending，本函数在任务上下文持续重试，
+ *          避免在中断里递归调用 HAL 或一次失败后永久停止接收。
+ */
+void UART_TIM_1ms_Recover_PeriodElapsedCallback(void)
+{
+    static uint8_t Retry_Divider = 0U;
+    Retry_Divider++;
+    if (Retry_Divider < 10U)
     {
-        manage->Rx_Buffer_Active = nullptr;
+        return;
+    }
+    Retry_Divider = 0U;
+
+    Struct_UART_Manage_Object *const Manage_List[] = {
+        &USART1_Manage_Object,
+        &USART2_Manage_Object,
+        &USART3_Manage_Object,
+        &UART5_Manage_Object,
+        &USART6_Manage_Object,
+        &UART7_Manage_Object,
+        &USART10_Manage_Object,
+    };
+
+    for (Struct_UART_Manage_Object *manage : Manage_List)
+    {
+        if (manage->Rx_Restart_Pending)
+        {
+            UART_Restart_Receive(manage);
+        }
     }
 }
 
@@ -177,7 +242,12 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t S
     // 程序未初始化完成时，仅重启接收不分发回调
     if (!init_finished)
     {
-        HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE);
+        if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+        {
+            manage->Rx_Buffer_Active = nullptr;
+            manage->Rx_Restart_Pending = true;
+            manage->Rx_Restart_Failure_Count++;
+        }
         return;
     }
 
@@ -194,7 +264,12 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t S
 
     manage->Rx_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
-    HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE);
+    if (HAL_UARTEx_ReceiveToIdle_DMA(huart, manage->Rx_Buffer_Active, UART_BUFFER_SIZE) != HAL_OK)
+    {
+        manage->Rx_Buffer_Active = nullptr;
+        manage->Rx_Restart_Pending = true;
+        manage->Rx_Restart_Failure_Count++;
+    }
 
     if (manage->Callback_Function != nullptr)
     {
@@ -215,20 +290,8 @@ extern "C" void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
         return;
     }
 
-    // 不在 UART 错误中断里直接重启仍可能处于 BUSY 的 DMA；先异步终止，
-    // 再由完成回调统一恢复，避免树莓派先启动时把活动缓冲永久置空。
+    // 中断上下文只记录故障并请求任务恢复，避免递归调用 HAL 和二次竞态。
     manage->Rx_Buffer_Active = nullptr;
-    if (HAL_UART_AbortReceive_IT(huart) != HAL_OK)
-    {
-        UART_Reinit(huart);
-    }
-}
-
-/**
- * @brief UART 接收异步终止完成回调。
- * @note  错误标志和 DMA 状态已由 HAL 清理，此时可安全重启空闲 DMA 接收。
- */
-extern "C" void HAL_UART_AbortReceiveCpltCallback(UART_HandleTypeDef *huart)
-{
-    UART_Reinit(huart);
+    manage->Rx_Restart_Pending = true;
+    manage->Rx_Error_Count++;
 }
