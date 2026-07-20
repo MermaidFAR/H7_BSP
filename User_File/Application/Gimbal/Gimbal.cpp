@@ -13,8 +13,14 @@ QDGimbal_t Gimbal;
 
 namespace
 {
-/** Yaw 每帧最多修正约 6.9 度，远处目标会通过连续帧逐步追上。 */
-constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.12f;
+/** Yaw 视觉外环只施加四分之一相对角误差，不改变角度环 Kp=32。 */
+constexpr float GIMBAL_VISION_YAW_CORRECTION_GAIN = 0.25f;
+
+/** 约 0.086 度的小误差不再驱动 Yaw，避免中心附近视觉噪声反复换向。 */
+constexpr float GIMBAL_VISION_YAW_DEADBAND_RAD = 0.0015f;
+
+/** Yaw 每个新测量最多修正约 1.72 度，限制延迟测量造成的目标跳变。 */
+constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.03f;
 
 /** Pitch 视觉外环只施加四分之一相对角误差，给检测延迟保留相位裕度。 */
 constexpr float GIMBAL_VISION_PITCH_CORRECTION_GAIN = 0.25f;
@@ -118,10 +124,15 @@ void Gimbal_UpdateVisionTarget(void)
     const float Yaw_Now = BSP_BMI088.Get_Euler_Angle().Data[0];
     if (std::isfinite(Yaw_Now))
     {
-        const float Yaw_Step = Gimbal_Clamp(
-            GIMBAL_VISION_YAW_SIGN * Vision_Message.Yaw_Error_Rad,
-            -GIMBAL_VISION_MAX_YAW_STEP_RAD,
-            GIMBAL_VISION_MAX_YAW_STEP_RAD);
+        const float Signed_Yaw_Error =
+            GIMBAL_VISION_YAW_SIGN * Vision_Message.Yaw_Error_Rad;
+        const float Yaw_Step =
+            std::fabs(Signed_Yaw_Error) <= GIMBAL_VISION_YAW_DEADBAND_RAD
+                ? 0.0f
+                : Gimbal_Clamp(
+                      GIMBAL_VISION_YAW_CORRECTION_GAIN * Signed_Yaw_Error,
+                      -GIMBAL_VISION_MAX_YAW_STEP_RAD,
+                      GIMBAL_VISION_MAX_YAW_STEP_RAD);
         Gimbal.Target_Yaw_Angle = Yaw_Now + Yaw_Step;
     }
 
