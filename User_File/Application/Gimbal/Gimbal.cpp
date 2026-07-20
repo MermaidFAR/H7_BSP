@@ -19,8 +19,8 @@ constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.12f;
 /** Pitch 每帧最多修正约 2.3 度，降低内置位置环的瞬时跳变。 */
 constexpr float GIMBAL_VISION_MAX_PITCH_STEP_RAD = 0.04f;
 
-/** 首轮实机发现两轴会追离目标，因此将相机误差方向同时反向。 */
-constexpr float GIMBAL_VISION_YAW_SIGN = -1.0f;
+/** 实机验证确认 Yaw 相机误差与云台方向一致，Pitch 方向相反。 */
+constexpr float GIMBAL_VISION_YAW_SIGN = 1.0f;
 constexpr float GIMBAL_VISION_PITCH_SIGN = -1.0f;
 
 /**
