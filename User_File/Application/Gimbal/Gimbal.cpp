@@ -19,6 +19,9 @@ constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.12f;
 /** Pitch 每帧最多修正约 2.3 度，降低内置位置环的瞬时跳变。 */
 constexpr float GIMBAL_VISION_MAX_PITCH_STEP_RAD = 0.04f;
 
+/** 新测量时刻至少前进 5 ms，过滤 UART 调度抖动和同一测量的 350 Hz 重复发布。 */
+constexpr uint64_t GIMBAL_VISION_NEW_MEASUREMENT_MIN_ADVANCE_US = 5000ULL;
+
 /** 实机验证确认 Yaw 相机误差与云台方向一致，Pitch 方向相反。 */
 constexpr float GIMBAL_VISION_YAW_SIGN = 1.0f;
 constexpr float GIMBAL_VISION_PITCH_SIGN = -1.0f;
@@ -32,6 +35,10 @@ constexpr float GIMBAL_PITCH_MAX_ANGLE_RAD = 6.25f;
 
 /** 保存上一次已消费的视觉代数，确保同一帧不会被 1 kHz 控制环重复累加。 */
 Struct_Comhub_Message Vision_Message = {};
+
+/** 上一次真正用于更新目标的相机测量时刻代理，单位为 H7 本地微秒。 */
+uint64_t Gimbal_Vision_Last_Measurement_Timestamp_Us = 0ULL;
+bool Gimbal_Vision_Has_Applied_Measurement = false;
 
 float Gimbal_Clamp(float value, float minimum, float maximum)
 {
@@ -49,8 +56,10 @@ float Gimbal_Clamp(float value, float minimum, float maximum)
 /**
  * @brief 消费一帧新的树莓派视觉数据并更新双轴目标。
  *
- * 只接受带角度有效标志的 TRACKING/PREDICT_ONLY 数据，不使用质量阈值触发失能。
- * LOST、DETECTING 或串口暂时无新帧时保持最后目标，电机不会被锁存失能。
+ * 树莓派虽然以约 350 Hz 发布预测包，但真实 PnP 测量约为 30 Hz。若每个发布包都
+ * 执行“当前角度 + 相对误差”，同一个旧误差会在下一张图到来前反复推动目标，形成
+ * 延迟、越过和往复振荡。因此这里只对新的 TRACKING 测量更新一次目标；
+ * PREDICT_ONLY、重复发布包、LOST 或 DETECTING 均保持最后绝对目标。
  */
 void Gimbal_UpdateVisionTarget(void)
 {
@@ -59,16 +68,42 @@ void Gimbal_UpdateVisionTarget(void)
         return;
     }
 
-    const bool Target_Valid =
+    const bool Angle_Valid =
         (Vision_Message.Flags & COMHUB_FLAG_ANGLE_VALID) != 0U &&
-        (Vision_Message.Track_State == COMHUB_TRACK_TRACKING ||
-         Vision_Message.Track_State == COMHUB_TRACK_PREDICT_ONLY) &&
         std::isfinite(Vision_Message.Yaw_Error_Rad) &&
         std::isfinite(Vision_Message.Pitch_Error_Rad);
-    if (!Target_Valid)
+    if (!Angle_Valid ||
+        Vision_Message.Track_State == COMHUB_TRACK_LOST ||
+        Vision_Message.Track_State == COMHUB_TRACK_DETECTING)
+    {
+        // 重新捕获后，允许第一帧 TRACKING 测量立即建立新的绝对目标。
+        Gimbal_Vision_Last_Measurement_Timestamp_Us = 0ULL;
+        Gimbal_Vision_Has_Applied_Measurement = false;
+        return;
+    }
+
+    if (Vision_Message.Track_State != COMHUB_TRACK_TRACKING)
+    {
+        // PREDICT_ONLY 只保持目标，禁止用旧图预测值继续重锚相对角度。
+        return;
+    }
+
+    const uint64_t Measurement_Timestamp_Us =
+        Vision_Message.Rx_Timestamp_Us >= Vision_Message.Capture_Age_Us
+            ? Vision_Message.Rx_Timestamp_Us - Vision_Message.Capture_Age_Us
+            : 0ULL;
+    const bool Is_New_Measurement =
+        !Gimbal_Vision_Has_Applied_Measurement ||
+        Measurement_Timestamp_Us >=
+            Gimbal_Vision_Last_Measurement_Timestamp_Us +
+                GIMBAL_VISION_NEW_MEASUREMENT_MIN_ADVANCE_US;
+    if (!Is_New_Measurement)
     {
         return;
     }
+
+    Gimbal_Vision_Last_Measurement_Timestamp_Us = Measurement_Timestamp_Us;
+    Gimbal_Vision_Has_Applied_Measurement = true;
 
     const float Yaw_Now = BSP_BMI088.Get_Euler_Angle().Data[0];
     if (std::isfinite(Yaw_Now))
