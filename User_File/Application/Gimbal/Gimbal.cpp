@@ -1,6 +1,5 @@
 #include "Gimbal.h"
 #include "BSP_BMI088.h"
-#include "Comhub.h"
 #include "QD4310.h"
 #include "alg_pid.h"
 #include "cmsis_os2.h"
@@ -10,47 +9,6 @@
 #include <sys/_intsup.h>
 
 QDGimbal_t Gimbal;
-
-namespace
-{
-/** Yaw 视觉外环只施加四分之一相对角误差，不改变角度环 Kp=32。 */
-constexpr float GIMBAL_VISION_YAW_CORRECTION_GAIN = 0.25f;
-
-/** 约 0.086 度的小误差不再驱动 Yaw，避免中心附近视觉噪声反复换向。 */
-constexpr float GIMBAL_VISION_YAW_DEADBAND_RAD = 0.0015f;
-
-/** Yaw 每个新测量最多修正约 1.72 度，限制延迟测量造成的目标跳变。 */
-constexpr float GIMBAL_VISION_MAX_YAW_STEP_RAD = 0.03f;
-
-/** Pitch 视觉外环只施加四分之一相对角误差，给检测延迟保留相位裕度。 */
-constexpr float GIMBAL_VISION_PITCH_CORRECTION_GAIN = 0.25f;
-
-/** 约 0.11 度的小误差不再驱动内置位置环，避免中心附近测量噪声造成抖动。 */
-constexpr float GIMBAL_VISION_PITCH_DEADBAND_RAD = 0.002f;
-
-/** Pitch 每个新测量最多修正约 0.69 度，限制内置位置环的瞬时目标跳变。 */
-constexpr float GIMBAL_VISION_MAX_PITCH_STEP_RAD = 0.012f;
-
-/** 新测量时刻至少前进 5 ms，过滤 UART 调度抖动和同一测量的 350 Hz 重复发布。 */
-constexpr uint64_t GIMBAL_VISION_NEW_MEASUREMENT_MIN_ADVANCE_US = 5000ULL;
-
-/** 实机验证确认 Yaw 相机误差与云台方向一致，Pitch 方向相反。 */
-constexpr float GIMBAL_VISION_YAW_SIGN = 1.0f;
-constexpr float GIMBAL_VISION_PITCH_SIGN = -1.0f;
-
-/**
- * Pitch 绝对角限位：约 335.2°～358.1°。
- * 当前机械中位实测约为 6.10 rad，限位避免跨越 0/2π 编码边界和继续向下顶机械结构。
- */
-constexpr float GIMBAL_PITCH_MIN_ANGLE_RAD = 5.85f;
-constexpr float GIMBAL_PITCH_MAX_ANGLE_RAD = 6.25f;
-
-/** 保存上一次已消费的视觉代数，确保同一帧不会被 1 kHz 控制环重复累加。 */
-Struct_Comhub_Message Vision_Message = {};
-
-/** 上一次真正用于更新目标的相机测量时刻代理，单位为 H7 本地微秒。 */
-uint64_t Gimbal_Vision_Last_Measurement_Timestamp_Us = 0ULL;
-bool Gimbal_Vision_Has_Applied_Measurement = false;
 
 float Gimbal_Clamp(float value, float minimum, float maximum)
 {
@@ -64,96 +22,6 @@ float Gimbal_Clamp(float value, float minimum, float maximum)
     }
     return value;
 }
-
-/**
- * @brief 消费一帧新的树莓派视觉数据并更新双轴目标。
- *
- * 树莓派虽然以约 350 Hz 发布预测包，但真实 PnP 测量约为 30 Hz。若每个发布包都
- * 执行“当前角度 + 相对误差”，同一个旧误差会在下一张图到来前反复推动目标，形成
- * 延迟、越过和往复振荡。因此这里只在相机测量时刻真正前进时更新一次目标。
- * 新测量经过检测线程后可能已超过 150 ms，此时发布状态会直接成为 PREDICT_ONLY，
- * 不能一律丢弃；测量时刻不变的 PREDICT_ONLY 和重复包仍只保持最后绝对目标。
- */
-void Gimbal_UpdateVisionTarget(void)
-{
-    if (!Comhub_GetLatest(&Vision_Message))
-    {
-        return;
-    }
-
-    const bool Angle_Valid =
-        (Vision_Message.Flags & COMHUB_FLAG_ANGLE_VALID) != 0U &&
-        std::isfinite(Vision_Message.Yaw_Error_Rad) &&
-        std::isfinite(Vision_Message.Pitch_Error_Rad);
-    if (!Angle_Valid ||
-        Vision_Message.Track_State == COMHUB_TRACK_LOST ||
-        Vision_Message.Track_State == COMHUB_TRACK_DETECTING)
-    {
-        // 重新捕获后，允许第一帧 TRACKING 测量立即建立新的绝对目标。
-        Gimbal_Vision_Last_Measurement_Timestamp_Us = 0ULL;
-        Gimbal_Vision_Has_Applied_Measurement = false;
-        return;
-    }
-
-    const bool Measurement_State_Valid =
-        Vision_Message.Track_State == COMHUB_TRACK_TRACKING ||
-        Vision_Message.Track_State == COMHUB_TRACK_PREDICT_ONLY;
-    if (!Measurement_State_Valid)
-    {
-        // 未知状态不参与控制，避免协议扩展值被误当成有效测量。
-        return;
-    }
-
-    const uint64_t Measurement_Timestamp_Us =
-        Vision_Message.Rx_Timestamp_Us >= Vision_Message.Capture_Age_Us
-            ? Vision_Message.Rx_Timestamp_Us - Vision_Message.Capture_Age_Us
-            : 0ULL;
-    const bool Is_New_Measurement =
-        !Gimbal_Vision_Has_Applied_Measurement ||
-        Measurement_Timestamp_Us >=
-            Gimbal_Vision_Last_Measurement_Timestamp_Us +
-                GIMBAL_VISION_NEW_MEASUREMENT_MIN_ADVANCE_US;
-    if (!Is_New_Measurement)
-    {
-        return;
-    }
-
-    Gimbal_Vision_Last_Measurement_Timestamp_Us = Measurement_Timestamp_Us;
-    Gimbal_Vision_Has_Applied_Measurement = true;
-
-    const float Yaw_Now = BSP_BMI088.Get_Euler_Angle().Data[0];
-    if (std::isfinite(Yaw_Now))
-    {
-        const float Signed_Yaw_Error =
-            GIMBAL_VISION_YAW_SIGN * Vision_Message.Yaw_Error_Rad;
-        const float Yaw_Step =
-            std::fabs(Signed_Yaw_Error) <= GIMBAL_VISION_YAW_DEADBAND_RAD
-                ? 0.0f
-                : Gimbal_Clamp(
-                      GIMBAL_VISION_YAW_CORRECTION_GAIN * Signed_Yaw_Error,
-                      -GIMBAL_VISION_MAX_YAW_STEP_RAD,
-                      GIMBAL_VISION_MAX_YAW_STEP_RAD);
-        Gimbal.Target_Yaw_Angle = Yaw_Now + Yaw_Step;
-    }
-
-    if (std::isfinite(Gimbal.Pitch_Motor.angle))
-    {
-        const float Signed_Pitch_Error =
-            GIMBAL_VISION_PITCH_SIGN * Vision_Message.Pitch_Error_Rad;
-        const float Pitch_Step =
-            std::fabs(Signed_Pitch_Error) <= GIMBAL_VISION_PITCH_DEADBAND_RAD
-                ? 0.0f
-                : Gimbal_Clamp(
-                      GIMBAL_VISION_PITCH_CORRECTION_GAIN * Signed_Pitch_Error,
-                      -GIMBAL_VISION_MAX_PITCH_STEP_RAD,
-                      GIMBAL_VISION_MAX_PITCH_STEP_RAD);
-        Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
-            Gimbal.Pitch_Motor.angle + Pitch_Step,
-            GIMBAL_PITCH_MIN_ANGLE_RAD,
-            GIMBAL_PITCH_MAX_ANGLE_RAD);
-    }
-}
-} // namespace
 
 /**
  * @brief Yaw 轴速度内环参数。
@@ -295,7 +163,7 @@ void Gimbal_Init(void)
     // Gimbal.Pitch_Angle_PID.Init(Pitch_Angle_PID_Init.K_P, ...);
     Gimbal.Target_Pitch_Angle = 0.0f;
     Gimbal.Target_Yaw_Angle = 0.0f;
-    Gimbal.Target_Pitch_Speed = 0.0f;
+    Gimbal.Target_Pitch_Speed = 10.0f;
     Gimbal.Target_Yaw_Speed = 0.0f;
 
     // 持续尝试使能两台电机，并通过状态机报告当前未就绪的轴。
@@ -366,8 +234,6 @@ void Gimbal_SetTargetSpeed(float yaw_speed, float pitch_speed)
  */
 void Gimbal_Loop(void)
 {
-    // 视觉线程约 350 Hz 发布，本控制环约 1 kHz；只在消息代数变化时更新目标。
-    Gimbal_UpdateVisionTarget();
 
     // Yaw 角度外环：使用 BMI088 的 Yaw 欧拉角，计算速度内环目标。
     Gimbal.Yaw_Angle_PID.Set_Target(Gimbal.Target_Yaw_Angle);
@@ -383,9 +249,11 @@ void Gimbal_Loop(void)
     // Yaw 采用电流控制：速度 PID 输出直接作为电机电流指令。
     QD4310_SetCurrent(&Gimbal.Yaw_Motor, Gimbal.Yaw_Speed_PID.Get_Out());
     // Pitch 采用 QD4310 内置位置环；下发前再次限幅，手动目标也不能绕过机械范围。
-    Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
-        Gimbal.Target_Pitch_Angle,
-        GIMBAL_PITCH_MIN_ANGLE_RAD,
-        GIMBAL_PITCH_MAX_ANGLE_RAD);
-    QD4310_SetAngle(&Gimbal.Pitch_Motor, Gimbal.Target_Pitch_Angle);
+    // Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
+    //     Gimbal.Target_Pitch_Angle,
+    //     GIMBAL_PITCH_MIN_ANGLE_RAD,
+    //     GIMBAL_PITCH_MAX_ANGLE_RAD);
+
+    
+    QD4310_SetSpeed(&Gimbal.Pitch_Motor, Gimbal.Target_Pitch_Speed);
 }

@@ -4,11 +4,12 @@
 #include "QD4310.h"
 #include "alg_pid.h"
 #include "alg_fsm.h"
-// #include "alg_filter.h"
 #include "bsp_can.h"
 
 #define YAW_ID 0
 #define PITCH_ID 1
+#define GIMBAL_PITCH_MIN_ANGLE_RAD 5.85f
+#define GIMBAL_PITCH_MAX_ANGLE_RAD 6.25f
 
 enum Enum_Gimbal_Status
 {
@@ -17,6 +18,8 @@ enum Enum_Gimbal_Status
     Gimbal_Status_YAW_ERROR,
     Gimbal_Status_PITCH_ERROR,
 };
+
+
 typedef struct
 {
     Class_FSM<5> Gimbal_FSM;
@@ -34,6 +37,7 @@ typedef struct
     Class_PID Pitch_Speed_PID;
 
 }QDGimbal_t;
+
 
 void Gimbal_Init(void);
 void Gimbal_Loop(void);
