@@ -18,7 +18,12 @@
 #include "SEGGER_RTT.h"
 #include "bsp_bmi088.h"
 #include "bsp_w25q64jv.h"
+#include "cmsis_os2.h"
 #include "sys_timestamp.h"
+
+extern "C" {
+    extern osThreadId_t GimbalTaskHandle;
+}
 
 /**
  * @brief 每3600s调用一次
@@ -44,10 +49,11 @@ void Task1s_Callback() {}
 
 /**
  * @brief 每1ms调用一次
- * @note  TIM4 硬件定时器触发，可用于唤醒 1ms 级实时任务
+ * @note
  */
 void Task1ms_Callback()
 {
+    osThreadFlagsSet(GimbalTaskHandle, 0x0001);
 }
 
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {

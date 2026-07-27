@@ -1,8 +1,8 @@
 CompileFlags:
   Add:
-    - '-ferror-limit=0'
-    - '-Wno-implicit-int'
-    - '-Wno-unknown-pragmas'
+    - -ferror-limit=0
+    - -Wno-implicit-int
+    - -Wno-unknown-pragmas
   CompilationDatabase: build/Debug
 Diagnostics:
   Suppress:

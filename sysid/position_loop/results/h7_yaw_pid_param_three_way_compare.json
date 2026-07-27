@@ -1,0 +1,44 @@
+{
+  "Kp7_Ki1_after_fix": {
+    "frames": 265,
+    "duration_s": 26.400000000000002,
+    "rmse": 0.43648920538209685,
+    "mae": 0.21479622641509433,
+    "rise90_median_s": 0.30000000000000004,
+    "overshoot_median_pct": 1.0000000000000009,
+    "overshoot_p90_pct": 8.312500000000002,
+    "settle_median_s": 0.4,
+    "final_abs_err_median_rad": 0.017000000000000015,
+    "max_abs_speed_cmd": 13.957,
+    "speed_cmd_rms": 3.054895503261782,
+    "steps_used": 27
+  },
+  "Kp8p5_Ki0": {
+    "frames": 335,
+    "duration_s": 33.4,
+    "rmse": 0.38565940042261176,
+    "mae": 0.17132835820895523,
+    "rise90_median_s": 0.30000000000000004,
+    "overshoot_median_pct": 0.5000000000000004,
+    "overshoot_p90_pct": 3.025000000000003,
+    "settle_median_s": 0.30000000000000004,
+    "final_abs_err_median_rad": 0.007000000000000006,
+    "max_abs_speed_cmd": 20.348,
+    "speed_cmd_rms": 3.277917580670942,
+    "steps_used": 27
+  },
+  "Kp10_Ki0": {
+    "frames": 353,
+    "duration_s": 35.2,
+    "rmse": 0.37364992099034444,
+    "mae": 0.14862039660056658,
+    "rise90_median_s": 0.2,
+    "overshoot_median_pct": 0.4375000000000004,
+    "overshoot_p90_pct": 2.3500000000000023,
+    "settle_median_s": 0.30000000000000004,
+    "final_abs_err_median_rad": 0.0050000000000000044,
+    "max_abs_speed_cmd": 24.005,
+    "speed_cmd_rms": 3.736621727556081,
+    "steps_used": 27
+  }
+}

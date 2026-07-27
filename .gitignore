@@ -26,6 +26,7 @@ mx.scratch
 *.swp
 *~
 *.log
+!sysid/**/*.log
 
 # 调试器配置与日志
 *.jlink

@@ -240,26 +240,6 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
-  /* DMA buffer section - placed in RAM_D1 (DMA1/DMA2 accessible, MPU non-cacheable) */
-  .dma_buffer (NOLOAD) :
-  {
-    . = ALIGN(32);
-    _sdma_buffer = .;
-    *(.dma_buffer)
-    *(.dma_buffer*)
-    . = ALIGN(32);
-    _edma_buffer = .;
-  } >RAM_D1
-
-  /* SysID / user data section in RAM_D1 (320KB, avoids DTCMRAM pressure) */
-  .ram_d1_data (NOLOAD) :
-  {
-    . = ALIGN(4);
-    *(.ram_d1_data)
-    *(.ram_d1_data*)
-    . = ALIGN(4);
-  } >RAM_D1
-
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {

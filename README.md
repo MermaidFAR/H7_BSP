@@ -10,7 +10,7 @@ STM32H723ZG 板级支持包工程，面向 RoboMaster/机器人控制场景。�
 | --- | --- | --- |
 | 构建 | 已通过 | `cmake --build build/Debug` 可生成 `build/Debug/H7_BSP.elf` |
 | MCU | 已配置 | STM32H723ZG，Flash 1024K，DTCMRAM/RAM_D1/RAM_D2/RAM_D3 分区已在链接脚本中定义 |
-| RTOS | 已接入 | FreeRTOS + CMSIS-RTOS V2，创建 `TransportTask` 与 `InsTask` |
+| RTOS | 已接入 | FreeRTOS + CMSIS-RTOS V2；`heap_5` 的 64 KiB 后备区按 48 KiB DTCMRAM + 16 KiB RAM_D1 分区 |
 | SystemView | 已接入 | 使用 `User_Config/FreeRTOS_Patch/port_patched.c` 替换原始 FreeRTOS `port.c` |
 | BMI088 | 已形成主链路 | EXTI 数据就绪触发 SPI DMA 读取，陀螺仪完成后通知 `InsTask` 执行 EKF |
 | DMA 缓冲区 | 已修复关键布局 | SPI/ADC 管理对象放入 `.dma_buffer`，链接到 RAM_D1，MPU 配置为 non-cacheable |
@@ -22,12 +22,12 @@ STM32H723ZG 板级支持包工程，面向 RoboMaster/机器人控制场景。�
 
 | 内存区域 | 使用量 | 总量 | 使用率 |
 | --- | ---: | ---: | ---: |
-| DTCMRAM | 103968 B | 128 KB | 79.32% |
-| RAM_D1 | 6336 B | 320 KB | 1.93% |
+| DTCMRAM | 105264 B | 128 KB | 80.31% |
+| RAM_D1 | 45664 B | 320 KB | 13.94% |
 | RAM_D2 | 0 B | 32 KB | 0.00% |
 | RAM_D3 | 0 B | 16 KB | 0.00% |
 | ITCMRAM | 0 B | 64 KB | 0.00% |
-| FLASH | 150608 B | 1024 KB | 14.36% |
+| FLASH | 131668 B | 1024 KB | 12.56% |
 
 ## 目录结构
 
@@ -37,7 +37,7 @@ Drivers/                      STM32 HAL/CMSIS 驱动库
 Middlewares/                  ST/FreeRTOS/USB 等第三方中间件
 SystemView/                   SEGGER SystemView 与 RTT 支持
 USB_DEVICE/                   STM32 USB Device CDC 相关代码
-User_Config/                  工具与补丁配置，包含 FreeRTOS patched port
+User_Config/                  工具与补丁配置，包含 FreeRTOS 与链接脚本补丁
  User_File/Device/Onboard/      板载器件封装（BMI088、WS2812、Buzzer 等）
  User_File/Device/Peripheral/  外接器件（QD4310 电机、EricTool 等）
  User_File/Middleware/BSP/     外设 BSP 抽象层
@@ -77,7 +77,8 @@ BMI088 数据就绪 EXTI
 
 - CMake 工程已经接入用户源码、SystemView 源码和 CMSIS-DSP 库。
 - `CMakePresets.json` 提供 `Debug` 与 `Release` preset，生成器为 Ninja。
-- 根 `CMakeLists.txt` 从 STM32CubeMX 子工程中读取 FreeRTOS 源码列表，并过滤原始 `port.c`，改用 `User_Config/FreeRTOS_Patch/port_patched.c`。
+- Debug 使用 `-Og -g3`，在保留源码级调试能力的同时避免 `-O0` 带来的代码膨胀；Release 保持 `-Os -g0`。
+- 根 `CMakeLists.txt` 从 STM32CubeMX 子工程中读取 FreeRTOS 源码列表，并过滤原始 `port.c`，改用 `User_Config/FreeRTOS_Patch/port_patched.c`，同时接入 `heap_regions_patched.c`。
 - 链接 `arm_cortexM7lfsp_math`，算法层可以使用 CMSIS-DSP 的 Cortex-M7 FPU 优化库。
 
 常用构建命令：
@@ -126,6 +127,32 @@ STM32H7 的 DTCMRAM 无法被 DMA1/DMA2 直接访问。项目已经为 SPI/ADC D
 - `ADC1_Manage_Object` 到 `ADC3_Manage_Object`
 
 同时，`main.c` 的 MPU 配置将 `0x24000000` 起始的 RAM_D1 区域设置为 non-cacheable。这解决了 H7 上常见的“全局 DMA 缓冲区落在 DTCMRAM 导致 DMA 读写失败”问题。
+
+FreeRTOS 动态内存继续使用 `heap_5`，`configTOTAL_HEAP_SIZE` 保持 65536 字节不变。`User_Config/FreeRTOS_Patch/heap_regions_patched.c` 将后备存储划分为两个按地址升序排列的区域：
+
+- 48 KiB 位于 DTCMRAM，当前任务栈和 RTOS 对象优先从该低延迟区域分配。
+- 16 KiB 位于 RAM_D1，DTCMRAM 中找不到足够连续块时自动回退到该区域。
+- CMake 缓存变量 `H7_FREERTOS_DTCM_HEAP_SIZE` 可调整分区，但必须小于 65536 且按 8 字节对齐。
+
+例如，将 DTCMRAM 中的 FreeRTOS heap 后备区调整为 40 KiB：
+
+```powershell
+cmake --preset Debug -DH7_FREERTOS_DTCM_HEAP_SIZE=40960
+cmake --build --preset Debug
+```
+
+该选型依据主流官方方案：FreeRTOS 官方说明 `heap_5` 可以跨多个不连续内存区域；ST AN4891 说明 STM32H72x/73x 的 TCM 仅 CPU 与 MDMA 可访问；ST AN4839 建议 CPU 与 DMA 共享缓冲区优先使用 MPU 配置的 non-cacheable 区域。
+
+- [FreeRTOS heap memory management](https://www.freertos.org/Documentation/02-Kernel/02-Kernel-features/09-Memory-management/01-Memory-management)
+- [ST AN4891: STM32H72x/73x/74x/75x system architecture and performance](https://www.st.com/resource/en/application_note/an4891-stm32h72x-stm32h73x-and-singlecore-stm32h74x75x-system-architecture-and-performance-stmicroelectronics.pdf)
+- [ST AN4839: Level 1 cache on STM32F7 and STM32H7 series](https://www.st.com/resource/en/application_note/an4839-level-1-cache-on-stm32f7-series-and-stm32h7-series-stmicroelectronics.pdf)
+
+### CubeMX 重生成安全边界
+
+- `STM32H723XG_FLASH.ld` 保持 CubeMX 基线，不再直接保存 `.dma_buffer` 或 `.ram_d1_data` 用户段。
+- 用户 RAM 段位于 `User_Config/Linker/h7_memory_sections.ld`，由根 `CMakeLists.txt` 作为第二个 GNU ld 脚本接入。
+- FreeRTOS heap 分区位于 `User_Config/FreeRTOS_Patch/heap_regions_patched.c`，覆盖宏通过 `FreeRTOS` target 的编译定义注入，不修改 `Core/Inc/FreeRTOSConfig.h`。
+- CubeMX 重生成后重新运行 `cmake --preset Debug`；只要根 `CMakeLists.txt` 的用户集成仍在，DMA 段、heap 分区和 patched port 会自动恢复到构建中。
 
 ### SystemView 集成
 

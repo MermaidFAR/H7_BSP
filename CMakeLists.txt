@@ -28,6 +28,28 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+set(CMAKE_C_FLAGS_DEBUG "-Og -g3")
+set(CMAKE_CXX_FLAGS_DEBUG "-Og -g3")
+
+set(H7_FREERTOS_DTCM_HEAP_SIZE "49152" CACHE STRING
+    "FreeRTOS heap bytes retained in DTCMRAM; the remainder is placed in RAM_D1")
+if(NOT H7_FREERTOS_DTCM_HEAP_SIZE MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "H7_FREERTOS_DTCM_HEAP_SIZE must be an unsigned integer")
+endif()
+if(H7_FREERTOS_DTCM_HEAP_SIZE LESS 1024 OR
+   H7_FREERTOS_DTCM_HEAP_SIZE GREATER_EQUAL 65536)
+    message(FATAL_ERROR
+        "H7_FREERTOS_DTCM_HEAP_SIZE must be in [1024, 65535]")
+endif()
+math(EXPR H7_FREERTOS_DTCM_HEAP_REMAINDER
+    "${H7_FREERTOS_DTCM_HEAP_SIZE} % 8")
+if(NOT H7_FREERTOS_DTCM_HEAP_REMAINDER EQUAL 0)
+    message(FATAL_ERROR
+        "H7_FREERTOS_DTCM_HEAP_SIZE must be 8-byte aligned")
+endif()
+message(STATUS
+    "FreeRTOS heap: ${H7_FREERTOS_DTCM_HEAP_SIZE} bytes in DTCMRAM, remainder in RAM_D1")
+
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
@@ -42,6 +64,14 @@ include_directories(
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
 )
+set_property(TARGET ${CMAKE_PROJECT_NAME} APPEND PROPERTY
+    LINK_DEPENDS
+        "${CMAKE_SOURCE_DIR}/STM32H723XG_FLASH.ld"
+        "${CMAKE_SOURCE_DIR}/User_Config/Linker/h7_memory_sections.ld"
+)
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+    "-T${CMAKE_SOURCE_DIR}/User_Config/Linker/h7_memory_sections.ld"
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -50,9 +80,16 @@ get_target_property(RTOS_SRC FreeRTOS SOURCES)
 
 list(FILTER RTOS_SRC EXCLUDE REGEX "port\\.c$")
 
-list(APPEND RTOS_SRC "${CMAKE_SOURCE_DIR}/User_Config/FreeRTOS_Patch/port_patched.c")
+list(APPEND RTOS_SRC
+    "${CMAKE_SOURCE_DIR}/User_Config/FreeRTOS_Patch/port_patched.c"
+    "${CMAKE_SOURCE_DIR}/User_Config/FreeRTOS_Patch/heap_regions_patched.c"
+)
 
 set_target_properties(FreeRTOS PROPERTIES SOURCES "${RTOS_SRC}")
+target_compile_definitions(FreeRTOS PRIVATE
+    configHEAP_5_REGIONS=SYS_FreeRTOS_Heap_Regions
+    H7_FREERTOS_DTCM_HEAP_SIZE=${H7_FREERTOS_DTCM_HEAP_SIZE}U
+)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -110,7 +147,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/BMI088_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StorageTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
-        User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Gimbal_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Gimbal/Gimbal.cpp
 
 )
 
@@ -152,6 +191,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Peripheral/EricTool
         User_File/Device/Peripheral/Motor/QDrive
         User_File/Middleware/Algorithm/Pulse/
+        User_File/Application/Gimbal/
+        User_File/Application/Communication/
 )
 
 # Add project symbols (macros)

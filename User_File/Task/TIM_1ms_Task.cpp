@@ -19,6 +19,7 @@
 
 #include "user_task.h"
 #include "bsp_key.h"
+#include "bsp_uart.h"
 #include "bsp_w25q64jv.h"
 #include <cstddef>
 extern timesmode_t tick;
@@ -46,8 +47,9 @@ extern "C" void TIM1msTask(void *argument) {
   (void)argument;
   uint32_t xLastWakeTime = osKernelGetTickCount();
   while (1) {
-      pulse(1, 3, W25Q64JV_AutoPolling_Callback, BSP_Key_TIM_1ms_Process_PeriodElapsedCallback,
-            BMI088_TIM_1ms_Service_PeriodElapsedCallback);
+      pulse(1, 4, W25Q64JV_AutoPolling_Callback, BSP_Key_TIM_1ms_Process_PeriodElapsedCallback,
+            BMI088_TIM_1ms_Service_PeriodElapsedCallback,
+            UART_TIM_1ms_Recover_PeriodElapsedCallback);
       pulse(10, 1, BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback);
       pulse(50, 1, BSP_Key_TIM_50ms_Process_PeriodElapsedCallback);
       pulse(128, 1, BMI088_TIM_128ms_Calculate_PeriodElapsedCallback);

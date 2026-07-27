@@ -57,6 +57,12 @@ struct Struct_UART_Manage_Object
 
     // 接收时间戳
     uint64_t Rx_Timestamp;
+
+    // 错误中断只置位，由任务上下文完成 DMA 清理和持续重试。
+    volatile bool Rx_Restart_Pending;
+    uint32_t Rx_Error_Count;
+    uint32_t Rx_Restart_Count;
+    uint32_t Rx_Restart_Failure_Count;
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -77,6 +83,8 @@ extern struct Struct_UART_Manage_Object USART10_Manage_Object;
 void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function);
 
 void UART_Reinit(UART_HandleTypeDef *huart);
+
+void UART_TIM_1ms_Recover_PeriodElapsedCallback(void);
 
 uint8_t UART_Transmit_Data(UART_HandleTypeDef *huart, uint8_t *Data, uint16_t Length);
 
