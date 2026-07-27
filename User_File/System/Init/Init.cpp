@@ -21,6 +21,9 @@
 // 全局初始化完成标志位
 volatile bool init_finished = false;
 
+#define GIMBAL 0
+
+
 extern "C" void System_Init(void)
 {
     SEGGER_SYSVIEW_Conf();

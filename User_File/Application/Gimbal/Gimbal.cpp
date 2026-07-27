@@ -1,3 +1,5 @@
+#ifdef GIMBAL
+
 #include "Gimbal.h"
 #include "BSP_BMI088.h"
 #include "QD4310.h"
@@ -249,11 +251,13 @@ void Gimbal_Loop(void)
     // Yaw 采用电流控制：速度 PID 输出直接作为电机电流指令。
     QD4310_SetCurrent(&Gimbal.Yaw_Motor, Gimbal.Yaw_Speed_PID.Get_Out());
     // Pitch 采用 QD4310 内置位置环；下发前再次限幅，手动目标也不能绕过机械范围。
-    // Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
-    //     Gimbal.Target_Pitch_Angle,
-    //     GIMBAL_PITCH_MIN_ANGLE_RAD,
-    //     GIMBAL_PITCH_MAX_ANGLE_RAD);
+    Gimbal.Target_Pitch_Angle = Gimbal_Clamp(
+        Gimbal.Target_Pitch_Angle,
+        GIMBAL_PITCH_MIN_ANGLE_RAD,
+        GIMBAL_PITCH_MAX_ANGLE_RAD);
 
     
-    QD4310_SetSpeed(&Gimbal.Pitch_Motor, Gimbal.Target_Pitch_Speed);
+    QD4310_SetAngle(&Gimbal.Pitch_Motor, Gimbal.Target_Pitch_Angle);
 }
+
+#endif
