@@ -108,7 +108,7 @@ void Ins_Task(void *argument);
 void Can_Tx_Task(void *argument);
 void TIM1msTask(void *argument);
 void BMI088_Task(void *argument);
-void Gimbal_Task(void *argument);
+void Control_Task(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -174,7 +174,7 @@ void MX_FREERTOS_Init(void) {
   BMI088TaskHandle = osThreadNew(BMI088_Task, NULL, &BMI088Task_attributes);
 
   /* creation of GimbalTask */
-  GimbalTaskHandle = osThreadNew(Gimbal_Task, NULL, &GimbalTask_attributes);
+  GimbalTaskHandle = osThreadNew(Control_Task, NULL, &GimbalTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   StorageTaskHandle = osThreadNew(Storage_Task, NULL, &StorageTask_attributes);
@@ -278,22 +278,22 @@ __weak void BMI088_Task(void *argument)
   /* USER CODE END BMI088_Task */
 }
 
-/* USER CODE BEGIN Header_Gimbal_Task */
+/* USER CODE BEGIN Header_Control_Task */
 /**
 * @brief Function implementing the GimbalTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Gimbal_Task */
-__weak void Gimbal_Task(void *argument)
+/* USER CODE END Header_Control_Task */
+__weak void Control_Task(void *argument)
 {
-  /* USER CODE BEGIN Gimbal_Task */
+  /* USER CODE BEGIN Control_Task */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END Gimbal_Task */
+  /* USER CODE END Control_Task */
 }
 
 /* Private application code --------------------------------------------------*/

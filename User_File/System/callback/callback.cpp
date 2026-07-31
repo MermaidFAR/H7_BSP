@@ -20,6 +20,7 @@
 #include "bsp_w25q64jv.h"
 #include "cmsis_os2.h"
 #include "sys_timestamp.h"
+#include <cstdint>
 
 extern "C" {
     extern osThreadId_t GimbalTaskHandle;
@@ -53,6 +54,7 @@ void Task1s_Callback() {}
  */
 void Task1ms_Callback()
 {
+    // Balance 控制链直接使用 TIM4 的 1 ms 基准，即 1 kHz。
     osThreadFlagsSet(GimbalTaskHandle, 0x0001);
 }
 

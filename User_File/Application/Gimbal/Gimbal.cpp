@@ -1,4 +1,4 @@
-#ifdef GIMBAL
+#if GIMBAL
 
 #include "Gimbal.h"
 #include "BSP_BMI088.h"

@@ -63,6 +63,7 @@ include_directories(
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
+   
 )
 set_property(TARGET ${CMAKE_PROJECT_NAME} APPEND PROPERTY
     LINK_DEPENDS
@@ -104,6 +105,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/IIR/alg_filter_iir.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/PID/alg_pid.cpp
@@ -148,8 +150,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StorageTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Gimbal_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Control_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Gimbal/Gimbal.cpp
+        # ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Communication/Communication.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Balance/balance.cpp
+        User_File/Application/Communication/Com.cpp
 
 )
 
@@ -160,6 +165,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Complex
         User_File/Middleware/Algorithm/Filter/EKF
         User_File/Middleware/Algorithm/Filter/Frequency
+        User_File/Middleware/Algorithm/Filter/IIR
         User_File/Middleware/Algorithm/Filter/Kalman
         User_File/Middleware/Algorithm/FSM
         User_File/Middleware/Algorithm/Matrix
@@ -193,11 +199,14 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Pulse/
         User_File/Application/Gimbal/
         User_File/Application/Communication/
+        User_File/Application/Balance/
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+    BALANCE=1
+    GIMBAL=0
 )
 
 # Remove wrong libob.a library dependency when using cpp files
