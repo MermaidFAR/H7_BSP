@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include "sys_debug.h"
 #include "alg_pulse.h"
-
+#include "balance.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

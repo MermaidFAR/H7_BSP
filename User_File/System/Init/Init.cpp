@@ -1,5 +1,6 @@
 #include "Init.h"
 
+#include "Com.h"
 #include "SEGGER_SYSVIEW.h"
 #include "bsp_adc.h"
 #include "bsp_bmi088.h"
@@ -17,11 +18,9 @@
 #include "sys_debug.h"
 #include "sys_timestamp.h"
 #include "usart.h"
-
+#include "balance.h"
 // 全局初始化完成标志位
 volatile bool init_finished = false;
-
-#define GIMBAL 0
 
 
 extern "C" void System_Init(void)
@@ -38,7 +37,7 @@ extern "C" void System_Init(void)
     UART_Init(&huart4, nullptr);
     UART_Init(&huart5, nullptr);
     UART_Init(&huart6, nullptr);
-    UART_Init(&huart7, nullptr);
+    UART_Init(&huart7, Communication_Callback);
     UART_Init(&huart8, nullptr);
     UART_Init(&huart9, nullptr);
     UART_Init(&huart10, nullptr);
@@ -61,8 +60,8 @@ extern "C" void System_Init(void)
     BSP_W25Q64JV.Init();
     ADC_Init(&hadc1, 1);
     BSP_Power.Init(true, true, true);
-
     EricTool_USB.Init();
     BSP_BMI088.BMI088_Gyro.Start_FIFO_Acquisition();
+    
     init_finished = true;
 }

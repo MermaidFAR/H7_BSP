@@ -1,4 +1,4 @@
-#ifdef GIMBAL
+#if GIMBAL
 
 #ifndef __GIMBAL_H
 #define __GIMBAL_H

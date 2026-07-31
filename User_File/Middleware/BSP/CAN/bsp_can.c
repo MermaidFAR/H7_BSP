@@ -328,11 +328,31 @@ bool CAN_Tx_Perform(Struct_CAN_Tx_Msg *TxMsg) {
  *         适用于需要同时更新多条消息的场景，减少调用次数。
  *         
  */
-bool BSP_CAN_SendPer(void) {
-  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[0])) return Tx_Msg_Buffer[0].status == CAN_OK;
-  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[1])) return Tx_Msg_Buffer[1].status == CAN_OK;
-  if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[2])) return Tx_Msg_Buffer[2].status == CAN_OK;
-  return true;
+bool BSP_CAN_SendPer(void)
+{
+    bool result = true;
+
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        if (Tx_Msg_Buffer[i].hfdcan == NULL ||
+            Tx_Msg_Buffer[i].len == 0)
+        {
+            continue;
+        }
+
+        if (Tx_Msg_Buffer[i].timestamp[0] <=
+            Tx_Msg_Buffer[i].timestamp[1])
+        {
+            continue;
+        }
+
+        if (!BSP_CAN_SendMsg(&Tx_Msg_Buffer[i]))
+        {
+            result = false;
+        }
+    }
+
+    return result;
 }
 
 /**
