@@ -19,6 +19,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+// 合肥当地重力加速度，供BMI088加速度换算和有效性判断使用。
+const float GRAVITY_ACCELERATION = 9.7947f;
+
 static constexpr float BMI088_TEMPERATURE_MIN = -40.0f;
 static constexpr float BMI088_TEMPERATURE_MAX = 85.0f;
 static constexpr float BMI088_TEMPERATURE_MAX_STEP = 5.0f;

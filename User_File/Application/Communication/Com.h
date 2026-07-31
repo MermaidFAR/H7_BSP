@@ -17,6 +17,8 @@ typedef struct
 extern Frame_t RDK_Msg;
 
 extern volatile float RDK_Position_Cm;
+extern volatile float RDK_Speed_Cm_S;
+extern volatile int8_t RDK_Target_Control;
 
 void Communication_Callback(uint8_t* Buffer, uint16_t Length);
 bool Com_RegisterFrame(Frame_t* frame);

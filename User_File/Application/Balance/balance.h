@@ -9,19 +9,18 @@
 #include "cmsis_os2.h"
 #include "QD4310.h"
 #include "Com.h"
-#include "bsp_bmi088.h"
 
 
 typedef struct
 {
-    Class_PID Balance_PID;
+    Class_PID Balance_PID; ///< 位置外环，输出小球目标速度。
+    Class_PID Speed_PID;   ///< 速度内环，输出水管目标角度。
     float Target_Pos;
+    float Target_Speed;
     float Target_Angle;
 
     float Current_Pos;
-    float Acc;
-
-    uint16_t Control_Time;
+    float Current_Speed;
 
 } Balance_t;
 
