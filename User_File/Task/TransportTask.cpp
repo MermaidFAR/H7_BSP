@@ -24,10 +24,10 @@
 extern "C" void Transport_Task(void *argument)
 {
     MX_USB_DEVICE_Init();
-    // EricTool通道: 接收位置、速度目标、接收速度(速度反馈)、输出水管角。
+    // EricTool通道: 目标位置、接收位置、接收速度、输出水管角。
     EricTool_USB.Set_Data(4,
+                          (int) &Balance_Instance.Target_Pos,
                           (int) &RDK_Position_Cm,
-                          (int) &Balance_Instance.Target_Speed,
                           (int) &RDK_Speed_Cm_S,
                           (int) &Balance_Instance.Target_Angle);
     for (;;)

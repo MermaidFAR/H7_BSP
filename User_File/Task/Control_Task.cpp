@@ -1,5 +1,6 @@
 #include "Gimbal.h"
 #include "user_task.h"
+#include <cstdint>
 
 extern "C" void Control_Task(void* argument)
 {
@@ -8,11 +9,16 @@ extern "C" void Control_Task(void* argument)
 
     // Gimbal_Init();
     Balance_init();
-
+    uint8_t i = 0;
     for (;;)
     {
         osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
         // Gimbal_Loop();
+        if (RDK_Target_Control == 1 && i == 0)
+        {
+            Balance_Target_Sequence_Start();
+            i++;
+        }
         Balance_loop();
     }
 }

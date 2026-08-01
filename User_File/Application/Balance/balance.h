@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "alg_pid.h"
+#include "alg_slope.h"
 #include "cmsis_os2.h"
 #include "QD4310.h"
 #include "Com.h"
@@ -15,6 +16,7 @@ typedef struct
 {
     Class_PID Balance_PID; ///< 位置外环，输出小球目标速度。
     Class_PID Speed_PID;   ///< 速度内环，输出水管目标角度。
+    Class_Slope Target_Pos_Slope; ///< 目标位置斜坡。
     float Target_Pos;
     float Target_Speed;
     float Target_Angle;
@@ -27,6 +29,7 @@ typedef struct
 extern Balance_t Balance_Instance;
 void Balance_loop(void);
 void Balance_init(void);
+void Balance_Target_Sequence_Start(void);
 
 #endif
 #endif
