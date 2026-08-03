@@ -17,7 +17,7 @@ static constexpr float Ball_Speed_Limit = 10.0f;//无意义,最开始想做位�
 // 触发后先在0cm保持10s，再用约10s完成0→6.5→0→-5cm。
 static constexpr uint32_t Target_Hold_Time = 3000U;
 static constexpr uint32_t Target_Segment_Time = 5000U / 3U;
-static constexpr float Target_Positive_Position = 4.2f;
+static constexpr float Target_Positive_Position = 6.5f;
 static constexpr float Target_Negative_Position = -5.0f;
 static constexpr float Target_Slope_Step = Target_Positive_Position / Target_Segment_Time;
 
@@ -31,7 +31,7 @@ static void Target_Position_Calculate(void);
 PID_InitTypeDef Balance_Init = {
     .K_P = 0.0078f,
     .K_I = 0.0001f,
-    .K_D = 0.000001f,
+    .K_D = 0.000000f,
     .K_F = 0.0f,
     .I_Out_Max = 0.032f,
     .Out_Max = Ball_Speed_Limit,
