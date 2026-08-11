@@ -10,7 +10,7 @@
 
 #include "user_task.h"
 #include "usb_device.h"
-#include "balance.h"
+
 /* Private macros ------------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
@@ -24,7 +24,7 @@
 extern "C" void Transport_Task(void *argument)
 {
     MX_USB_DEVICE_Init();
-    EricTool_USB.Set_Data(2, (int) &Balance_Instance.Target_Pos, (int) &Balance_Instance.Current_Pos);
+    // EricTool_USB.Set_Data(2, (int) &Balance_Instance.Target_Pos, (int) &Balance_Instance.Current_Pos);
     for (;;)
     {
         EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback();

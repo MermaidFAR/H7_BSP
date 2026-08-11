@@ -18,7 +18,7 @@
 #include "sys_debug.h"
 #include "sys_timestamp.h"
 #include "usart.h"
-#include "balance.h"
+
 // 全局初始化完成标志位
 volatile bool init_finished = false;
 

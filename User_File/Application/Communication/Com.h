@@ -14,11 +14,7 @@ typedef struct
     uint16_t Checksum;
 } Frame_t;
 
-extern Frame_t RDK_Msg;
-
-extern volatile float RDK_Position_Cm;
 
 void Communication_Callback(uint8_t* Buffer, uint16_t Length);
-bool Com_RegisterFrame(Frame_t* frame);
 
 #endif // COM_H
