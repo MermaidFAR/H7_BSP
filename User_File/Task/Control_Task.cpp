@@ -7,13 +7,13 @@ extern "C" void Control_Task(void* argument)
     osThreadSetPriority(osThreadGetId(), osPriorityHigh1);
 
     // Gimbal_Init();
-    Balance_init();
+    // Balance_init();
 
     for (;;)
     {
         osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
         // Gimbal_Loop();
-        Balance_loop();
+        // Balance_loop();
     }
 }
 
