@@ -19,6 +19,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+const float GRAVITY_ACCELERATION = 9.8015f;
 static constexpr float BMI088_TEMPERATURE_MIN = -40.0f;
 static constexpr float BMI088_TEMPERATURE_MAX = 85.0f;
 static constexpr float BMI088_TEMPERATURE_MAX_STEP = 5.0f;

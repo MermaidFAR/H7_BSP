@@ -16,6 +16,7 @@
 #include "callback.h"
 #include "dvc_erictool.h"
 #include "sys_debug.h"
+#include "sys_imu.h"
 #include "sys_timestamp.h"
 #include "usart.h"
 
@@ -37,7 +38,7 @@ extern "C" void System_Init(void)
     UART_Init(&huart4, nullptr);
     UART_Init(&huart5, nullptr);
     UART_Init(&huart6, nullptr);
-    UART_Init(&huart7, Communication_Callback);
+    UART_Init(&huart7, nullptr);
     UART_Init(&huart8, nullptr);
     UART_Init(&huart9, nullptr);
     UART_Init(&huart10, nullptr);
@@ -53,6 +54,7 @@ extern "C" void System_Init(void)
 
     HAL_TIM_Base_Start_IT(&htim4);
     HAL_TIM_Base_Start_IT(&htim5);
+    System_IMU_Configure();
     BSP_BMI088.Init();
     BSP_WS2812.Init();
     BSP_Buzzer.Init();

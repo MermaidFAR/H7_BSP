@@ -107,6 +107,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/IIR/alg_filter_iir.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Kalman/alg_filter_kalman.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/VQF/alg_filter_vqf.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/PID/alg_pid.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Complex/alg_complex.cpp
@@ -117,6 +118,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/SPI/bsp_spi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/callback/callback.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Timestamp/sys_timestamp.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/IMU/sys_imu.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Power/bsp_power.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/bsp_bmi088.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/BMI088/Accel/bsp_bmi088_accel.cpp
@@ -134,7 +136,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/CanTxTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/debug/sys_debug.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Storage/sys_imu_bias_store.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/USB/bsp_usb.cpp
@@ -164,6 +165,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Filter/Frequency
         User_File/Middleware/Algorithm/Filter/IIR
         User_File/Middleware/Algorithm/Filter/Kalman
+        User_File/Middleware/Algorithm/Filter/VQF
         User_File/Middleware/Algorithm/FSM
         User_File/Middleware/Algorithm/Matrix
         User_File/Middleware/Algorithm/PID
@@ -174,6 +176,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/BSP/SPI
         User_File/System/callback
         User_File/System/Timestamp
+        User_File/System/IMU
         User_File/Device/Onboard/Power
         User_File/Device/Onboard/BMI088
         User_File/Device/Onboard/BMI088/Accel
@@ -182,7 +185,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/System/Init
         User_File/Task
         User_File/System/debug
-        User_File/System/Storage
         User_File/Middleware/BSP/CAN
         User_File/Middleware/BSP/UART
         User_File/Middleware/BSP/USB
