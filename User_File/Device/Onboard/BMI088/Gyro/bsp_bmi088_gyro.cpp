@@ -136,6 +136,11 @@ void Class_BMI088_Gyro::Init()
         }
     }
 
+    GPIO_InitTypeDef gpio_init = {};
+    gpio_init.Pin = BMI088_GYRO__INTERRUPT_Pin;
+    gpio_init.Mode = GPIO_MODE_IT_RISING;
+    gpio_init.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(BMI088_GYRO__INTERRUPT_GPIO_Port, &gpio_init);
 }
 
 void Class_BMI088_Gyro::Start_FIFO_Acquisition()
@@ -330,6 +335,8 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
                     ? BMI088_GYRO_FIFO_MAX_READ_FRAME_COUNT
                     : remaining;
             FIFO_Request = BMI088_GYRO_FIFO_REQUEST_DATA;
+            FIFO_Followup_Request_Count++;
+            result |= BMI088_GYRO_SPI_RESULT_FOLLOWUP_REQUIRED;
         }
         else
         {
@@ -340,9 +347,6 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
             FIFO_Batch_From_Interrupt = false;
             FIFO_Request = BMI088_GYRO_FIFO_REQUEST_STATUS;
         }
-
-        FIFO_Followup_Request_Count++;
-        result |= BMI088_GYRO_SPI_RESULT_FOLLOWUP_REQUIRED;
         return result;
     }
 

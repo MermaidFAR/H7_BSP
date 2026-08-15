@@ -134,16 +134,16 @@ protected:
         {offsetof(Struct_BMI088_Gyro_Register, GYRO_BANDWODTH_RW), 0x01 | 0x80},
         // INT3推挽高有效, 与MCU上升沿EXTI配置一致
         {offsetof(Struct_BMI088_Gyro_Register, INT3_INT4_IO_CONF_RW), 0x0d},
-        // FIFO watermark中断映射到INT3
-        {offsetof(Struct_BMI088_Gyro_Register, INT3_INT4_IO_MAP_RW), 0x04},
-        // FIFO超过7帧时产生watermark中断, 即每8帧触发
-        {offsetof(Struct_BMI088_Gyro_Register, FIFO_CONFIG_0_RW), 0x07},
+        // 数据就绪中断映射到INT3, 每帧驱动FIFO读取
+        {offsetof(Struct_BMI088_Gyro_Register, INT3_INT4_IO_MAP_RW), 0x01},
+        // FIFO每积累1帧产生watermark中断
+        {offsetof(Struct_BMI088_Gyro_Register, FIFO_CONFIG_0_RW), 0x00},
         // FIFO stream模式, 满时保留最新99帧
         {offsetof(Struct_BMI088_Gyro_Register, FIFO_CONFIG_1_RW), 0x80},
-        // 使能FIFO watermark中断
-        {offsetof(Struct_BMI088_Gyro_Register, FIFO_WM_EN_RW), 0x88},
-        // 由1ms服务任务每4ms轮询FIFO, 不依赖锁存中断边沿
-        {offsetof(Struct_BMI088_Gyro_Register, GYRO_INT_CTRL_RW), 0x00},
+        // 不使用FIFO watermark中断
+        {offsetof(Struct_BMI088_Gyro_Register, FIFO_WM_EN_RW), 0x08},
+        // 使能数据就绪中断
+        {offsetof(Struct_BMI088_Gyro_Register, GYRO_INT_CTRL_RW), 0x80},
     };
 
     enum Enum_BMI088_Gyro_FIFO_Request : uint8_t
@@ -152,7 +152,7 @@ protected:
         BMI088_GYRO_FIFO_REQUEST_DATA,
     };
 
-    static constexpr uint8_t BMI088_GYRO_FIFO_WATERMARK_FRAME_COUNT = 8U;
+    static constexpr uint8_t BMI088_GYRO_FIFO_WATERMARK_FRAME_COUNT = 1U;
     static constexpr uint8_t BMI088_GYRO_FIFO_FRAME_SIZE = 6U;
     static constexpr uint8_t BMI088_GYRO_FIFO_MAX_READ_FRAME_COUNT =
         (SPI_BUFFER_SIZE - 1U) / BMI088_GYRO_FIFO_FRAME_SIZE;
@@ -248,7 +248,14 @@ inline bool Class_BMI088_Gyro::Get_Valid_Flag() const
  */
 inline Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Get_Raw_Gyro() const
 {
-    return (Vector_Raw_Gyro);
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    const Class_Matrix_f32<3, 1> gyro = Vector_Raw_Gyro;
+    if (primask == 0U)
+    {
+        __enable_irq();
+    }
+    return gyro;
 }
 
 inline uint16_t Class_BMI088_Gyro::Get_Queue_Depth() const
@@ -314,7 +321,14 @@ inline float Class_BMI088_Gyro::Get_FIFO_Sample_Period_Us() const
 
 inline uint64_t Class_BMI088_Gyro::Get_FIFO_Last_Interrupt_Timestamp_Us() const
 {
-    return FIFO_Last_Interrupt_Timestamp_Us;
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    const uint64_t timestamp_us = FIFO_Last_Interrupt_Timestamp_Us;
+    if (primask == 0U)
+    {
+        __enable_irq();
+    }
+    return timestamp_us;
 }
 
 #endif

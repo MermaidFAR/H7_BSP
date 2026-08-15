@@ -222,7 +222,14 @@ inline bool Class_BMI088_Accel::Get_Valid_Flag() const
  */
 inline Class_Matrix_f32<3, 1> Class_BMI088_Accel::Get_Raw_Accel() const
 {
-    return (Vector_Raw_Accel);
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    const Class_Matrix_f32<3, 1> accel = Vector_Raw_Accel;
+    if (primask == 0U)
+    {
+        __enable_irq();
+    }
+    return accel;
 }
 
 /**

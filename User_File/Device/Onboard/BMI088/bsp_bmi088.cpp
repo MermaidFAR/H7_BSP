@@ -317,6 +317,7 @@ void Class_BMI088::SPI_RxCpltCallback()
             {
                 BMI088_Status_Mark_Ready_If_Clear(
                     Gyro_Status, SYS_Timestamp.Get_Now_Microsecond());
+                osThreadFlagsSet(BMI088TaskHandle, 0x0002);
             }
             if ((gyro_result &
                  BMI088_GYRO_SPI_RESULT_SAMPLES_QUEUED) != 0U)
@@ -370,7 +371,8 @@ void Class_BMI088::TIM_128ms_Calculate_PeriodElapsedCallback()
 void Class_BMI088::TIM_1ms_Service_PeriodElapsedCallback()
 {
     const uint64_t now_timestamp = SYS_Timestamp.Get_Now_Microsecond();
-    if ((now_timestamp - Gyro_FIFO_Last_Fallback_Poll_Timestamp) >= 4000U)
+    if ((now_timestamp - BMI088_Gyro.Get_FIFO_Last_Interrupt_Timestamp_Us()) >= 2000U &&
+        (now_timestamp - Gyro_FIFO_Last_Fallback_Poll_Timestamp) >= 1000U)
     {
         Gyro_FIFO_Last_Fallback_Poll_Timestamp = now_timestamp;
         BMI088_Status_Mark_Ready_If_Clear(Gyro_Status, now_timestamp);
@@ -639,11 +641,19 @@ void Class_BMI088::Calculate()
 
         if (accel_status_snapshot.Update_Flag)
         {
-            Vector_Pending_Accel = accel_snapshot;
-            Pending_Accel_Timestamp =
+            const uint64_t accel_timestamp =
                 BMI088_Status_Get_Update_Ready_Timestamp(accel_status_snapshot);
-            Pending_Accel_Valid = accel_valid_snapshot;
-            Accel_Observation_Pending = true;
+            const uint64_t accel_interval =
+                static_cast<uint64_t>(VQF_Config.Accel_D_T * 1000000.0f);
+            if (Pending_Accel_Timestamp == 0U ||
+                accel_timestamp / accel_interval !=
+                    Pending_Accel_Timestamp / accel_interval)
+            {
+                Vector_Pending_Accel = accel_snapshot;
+                Pending_Accel_Timestamp = accel_timestamp;
+                Pending_Accel_Valid = accel_valid_snapshot;
+                Accel_Observation_Pending = true;
+            }
             BMI088_Status_Clear_Update_If_Matches(Accel_Status, accel_status_snapshot);
         }
     }
