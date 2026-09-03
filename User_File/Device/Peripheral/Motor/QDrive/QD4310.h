@@ -14,9 +14,6 @@
 extern "C" {
 #endif
 
-
-#define MOTOR_IDX (16) // 最大支持16个电机实例
-
 // 命令枚举
 typedef enum
 {

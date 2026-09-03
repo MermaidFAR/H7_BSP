@@ -155,20 +155,31 @@ void BSP_CAN_ConfigInit(void)
  * - false: 注册失败 (回调列表已满，请增大 MAX_CAN_CALLBACKS 宏定义)
  * @note   调用此函数后务必检查返回值，确保注册成功。
  */
-bool BSP_CAN_RegisterCallback(uint32_t can_id, CAN_RxCallback_t pCallback)
+bool BSP_CAN_RegisterCallback(uint32_t can_id, FDCAN_HandleTypeDef* hfdcan, CAN_RxCallback_t pCallback, void* context)
 {
     for (int i = 0; i < MAX_CAN_CALLBACKS; i++)
     {
         // 找到一个空位，或者覆盖已有的相同 ID
-        if ((g_CanCallbacks[i].is_used == 0) || (g_CanCallbacks[i].ID == can_id))
+        if (g_CanCallbacks[i].is_used == 0)
         {
             g_CanCallbacks[i].ID = can_id;
+            g_CanCallbacks[i].hfdcan = hfdcan;
             g_CanCallbacks[i].func = pCallback;
+            g_CanCallbacks[i].is_used = 1;
+            g_CanCallbacks[i].context = context;
+            return true;
+        }
+        else if ((g_CanCallbacks[i].hfdcan == hfdcan) && (g_CanCallbacks[i].ID == can_id))
+        {
+            g_CanCallbacks[i].ID = can_id;
+            g_CanCallbacks[i].hfdcan = hfdcan;
+            g_CanCallbacks[i].func = pCallback;
+            g_CanCallbacks[i].context = context;
             g_CanCallbacks[i].is_used = 1;
             return true;
         }
     }
-    return false; 
+    return false;
 }
 
 /**
@@ -188,10 +199,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo0ITs)
             // 2. 遍历注册表
             for (int i = 0; i < MAX_CAN_CALLBACKS; i++)
             {
-                if ((g_CanCallbacks[i].is_used) && (g_CanCallbacks[i].ID == rxHeader.Identifier))
+                if (g_CanCallbacks[i].is_used && g_CanCallbacks[i].hfdcan == hfdcan && g_CanCallbacks[i].ID == rxHeader.Identifier)
                 {
                     // 3. 调用注册进来的函数
-                    g_CanCallbacks[i].func(hfdcan, rxHeader.Identifier, rxData, rxHeader.DataLength >> 16);
+                    g_CanCallbacks[i].func(hfdcan, rxHeader.Identifier, rxData, rxHeader.DataLength >> 16, g_CanCallbacks[i].context);
                     break; // 找到后退出
                 }
             }

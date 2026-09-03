@@ -18,7 +18,6 @@
 #include <stdint.h>
 #include <string.h>
 
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -40,6 +39,12 @@ extern "C"
  */
 #define MAX_CAN_CALLBACKS 16
 
+/**
+ * @brief  FDCAN 总线数量 (H7 系列通常有 3 个 FDCAN)
+ * @note   暂时无用,用二维数组太大,
+ */
+#define FDCAN_NUM (3) 
+
     //=====================结构体定义========================
 
     /**
@@ -49,16 +54,18 @@ extern "C"
      * @param  data   接收到的数据指针
      * @param  len    接收到的数据长度
      */
-    typedef void (*CAN_RxCallback_t)(FDCAN_HandleTypeDef* hcan, uint32_t id, uint8_t* data, uint32_t len);
+    typedef void (*CAN_RxCallback_t)(FDCAN_HandleTypeDef* hcan, uint32_t id, uint8_t* data, uint32_t len, void* context);
 
     /**
      * @brief  CAN 回调注册表条目结构体
      */
     typedef struct
     {
-        uint32_t ID;           /*!< 监听的 CAN ID */
-        CAN_RxCallback_t func; /*!< 对应的处理回调函数 */
-        uint8_t is_used;       /*!< 标记该条目是否已被占用 (1:占用, 0:空闲) */
+        uint32_t ID;                 /*!< 监听的 CAN ID */
+        FDCAN_HandleTypeDef* hfdcan; /*!<对应的FDCAN总线 */
+        CAN_RxCallback_t func;       /*!< 对应的处理回调函数 */
+        uint8_t is_used;             /*!< 标记该条目是否已被占用 (1:占用, 0:空闲) */
+        void* context;               /*!< 可选的上下文指针, 可用于传递额外信息给回调函数 */
     } CAN_CallbackEntry_t;
     /**
      * @brief  CAN 状态枚举类型
@@ -88,7 +95,6 @@ extern "C"
         CAN_StatusTypeDef status;
     } Struct_CAN_Tx_Msg;
 
-   
     //=====================对外接口========================
 
     /**
@@ -102,7 +108,7 @@ extern "C"
      * @param  can_id    需要监听的 CAN ID
      * @param  pCallback 回调函数指针
      */
-    bool BSP_CAN_RegisterCallback(uint32_t can_id, CAN_RxCallback_t pCallback);
+    bool BSP_CAN_RegisterCallback(uint32_t can_id, FDCAN_HandleTypeDef* hfdcan, CAN_RxCallback_t pCallback, void* context);
 
     /**
      * @brief  批量发送预设的 CAN 消息

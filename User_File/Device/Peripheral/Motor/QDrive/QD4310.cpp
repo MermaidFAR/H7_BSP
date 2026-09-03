@@ -23,12 +23,6 @@
 #include <string.h>
 
 /**
- * @brief  全局电机实例指针数组
- * @note   CAN 反馈回调通过 motor_id 索引查找对应电机实例
- */
-QD4310_t* g_QD4310Instances[MOTOR_IDX] = {0};
-
-/**
  * @brief  全局 CAN 发送消息缓冲
  * @note   所有 QD4310 实例共用, 由 QD4310_SendCommand 填充后通过 CAN_Tx_Perform 写入 Tx_Msg_Buffer
  */
@@ -48,14 +42,20 @@ Struct_CAN_Tx_Msg Q_msg = {
  * @note   通过 BSP_CAN_RegisterCallback 为每个电机 ID (0x500 + motor_id) 注册,
  *         内部按 id 低 8 位查找 g_QD4310Instances 并调用 QD4310_Update
  */
-static void QDrive_Callback(FDCAN_HandleTypeDef* hcan, uint32_t id, uint8_t* data, uint32_t len)
+static void QDrive_Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* data, uint32_t len, void* context)
 {
-    if (id >= 0x500 && id <= 0x508) {
-        uint8_t motor_id = id & 0xFF;
-        if (motor_id < MOTOR_IDX && g_QD4310Instances[motor_id] != NULL) {
-            QD4310_Update(g_QD4310Instances[motor_id], data);
-        }
+    QD4310_t* motor = (QD4310_t*) context;
+
+    if (motor == NULL ||
+        data == NULL ||
+        len < 8U ||
+        motor->hfdcan != hfdcan ||
+        id != motor->id + 0x500U)
+    {
+        return;
     }
+
+    QD4310_Update(motor, data);
 }
 
 /**
@@ -72,8 +72,7 @@ void QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef* hfdcan) {
     motor->angle = 0.0f;
     motor->current = 0.0f;
     motor->hfdcan = hfdcan;
-    g_QD4310Instances[motor->id] = motor;
-    BSP_CAN_RegisterCallback(motor->id + 0x500, QDrive_Callback);
+    BSP_CAN_RegisterCallback(motor->id + 0x500, hfdcan, QDrive_Callback, motor);
 }
 
 /**
