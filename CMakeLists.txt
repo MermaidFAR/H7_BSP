@@ -92,11 +92,16 @@ target_compile_definitions(FreeRTOS PRIVATE
     H7_FREERTOS_DTCM_HEAP_SIZE=${H7_FREERTOS_DTCM_HEAP_SIZE}U
 )
 
-# Link directories setup
-target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined library search paths
-    Middlewares/ST/ARM/DSP/Lib
+# CMSIS-DSP prebuilt library
+set(CMSIS_DSP_LIBRARY
+    "${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/ST/ARM/DSP/Lib/libarm_cortexM7lfsp_math.a"
 )
+
+if(NOT EXISTS "${CMSIS_DSP_LIBRARY}")
+    message(FATAL_ERROR
+        "CMSIS-DSP library is missing: ${CMSIS_DSP_LIBRARY}"
+    )
+endif()
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
@@ -216,5 +221,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
 
     # Add user defined libraries
-    arm_cortexM7lfsp_math
+    "${CMSIS_DSP_LIBRARY}"
 )
