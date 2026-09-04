@@ -1,162 +1,116 @@
 /**
  ******************************************************************************
  * @file    bsp_can.h
- * @brief   板级支持包：CAN总线驱动 (基于 STM32H7 FDCAN)
- * @details 包含CAN过滤器的配置、中断接收回调的分发管理以及线程安全的发送函数。
+ * @brief   板级支持包：CAN 总线驱动
+ * @details
+ * 接收方向使用 (FDCAN 句柄, CAN ID) 作为回调注册键。
+ * 发送方向保留两条通道：
+ * - CAN_Tx_Submit：插入队列，每次提交都按顺序发送。
+ * - CAN_Tx_Perform：周期缓冲，同一 (FDCAN, CAN ID) 只保留最新数据。
  * @author  zzm
  * @date    2026-05-18
- * @version v2.0
+ * @version v2.1
  ******************************************************************************
  */
 #ifndef BSP_CAN_H
 #define BSP_CAN_H
 
-#include "cmsis_os2.h"
 #include "fdcan.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-//=====================宏定义========================
+/** Classic CAN 单帧允许的最大数据长度。 */
+#define FDCAN_MAX_PAYLOAD (8)
 
 /**
- * @brief  FDCAN 最大负载长度 (Classic CAN模式)
- * @note 更改负载长度的，默认没有FDCAN电机,一切配置都是默认普通CAN，
- * @note 如果需要动态长度请严格思考自己是否需要该功能，缩短帧长度控制同时可能提高帧频率增加总线负载
- * @note 可能降低代码稳定性
+ * @brief CAN 接收回调类型。
+ * @param hfdcan 实际收到该帧的 FDCAN 句柄。
+ * @param id 接收到的标准帧 ID。
+ * @param data 接收数据，只在本次回调执行期间有效。
+ * @param len 接收数据长度。
+ * @param context 注册时保存的设备实例或用户数据。
+ * @note 回调运行在 FDCAN 接收中断中，不应阻塞。
  */
-#define FDCAN_MAX_PAYLOAD 8
+typedef void (*CAN_RxCallback_t)(FDCAN_HandleTypeDef *hfdcan,
+                                 uint32_t id,
+                                 uint8_t *data,
+                                 uint32_t len,
+                                 void *context);
 
 /**
- * @brief  最大支持的 CAN 回调函数数量
- * @note   如果注册失败，请增大此值
+ * @brief 一帧完整的 Classic CAN 发送数据。
+ * @note 队列和周期槽都会复制结构体内容，调用者可以使用局部变量。
  */
-#define MAX_CAN_CALLBACKS 16
+typedef struct
+{
+    FDCAN_HandleTypeDef *hfdcan;     /*!< 目标 FDCAN 总线句柄。 */
+    uint32_t id;                     /*!< 标准帧 ID，取值范围为 0x000~0x7FF。 */
+    uint8_t data[FDCAN_MAX_PAYLOAD]; /*!< 待发送的数据。 */
+    uint8_t len;                     /*!< 有效数据长度，取值范围为 1~8。 */
+} Struct_CAN_Tx_Msg;
 
 /**
- * @brief  FDCAN 总线数量 (H7 系列通常有 3 个 FDCAN)
- * @note   暂时无用,用二维数组太大,
+ * @brief 初始化三条 FDCAN 总线、插入队列和周期发送槽。
+ * @note 应在 RTOS 内核初始化完成后、创建 CAN 发送任务前调用一次。
  */
-#define FDCAN_NUM (3) 
+void BSP_CAN_ConfigInit(void);
 
-    //=====================结构体定义========================
+/**
+ * @brief 注册一个接收回调。
+ * @param can_id 要监听的标准帧 ID。
+ * @param hfdcan 要监听的 FDCAN 总线句柄。
+ * @param callback 收到匹配报文时调用的函数。
+ * @param context 回调对应的设备实例或用户数据，BSP 不解析其内容。
+ * @return true 注册成功；false 注册表已满或相同键已经注册。
+ * @note 注册键是 (hfdcan, can_id)，因此不同总线可以注册相同 ID。
+ * @note callback 在 FDCAN 接收中断中执行，不应进行阻塞操作。
+ */
+bool BSP_CAN_RegisterCallback(uint32_t can_id,
+                              FDCAN_HandleTypeDef *hfdcan,
+                              CAN_RxCallback_t callback,
+                              void *context);
 
-    /**
-     * @brief  CAN 接收回调函数指针类型定义
-     * @param  hfdcan FDCAN 句柄
-     * @param  id     接收到的 CAN ID
-     * @param  data   接收到的数据指针
-     * @param  len    接收到的数据长度
-     */
-    typedef void (*CAN_RxCallback_t)(FDCAN_HandleTypeDef* hcan, uint32_t id, uint8_t* data, uint32_t len, void* context);
+/**
+ * @brief 把一帧消息插入发送队列。
+ * @param tx_msg 要插入队列的完整 CAN 消息。
+ * @return true 已成功复制到队列；false 参数无效、队列未创建或队列已满。
+ * @note 每次提交都会按队列顺序处理，适合使能、失能、复位、回零等命令。
+ * @note 函数会复制消息内容，返回后调用者可以继续修改或释放原变量。
+ */
+bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg);
 
-    /**
-     * @brief  CAN 回调注册表条目结构体
-     */
-    typedef struct
-    {
-        uint32_t ID;                 /*!< 监听的 CAN ID */
-        FDCAN_HandleTypeDef* hfdcan; /*!<对应的FDCAN总线 */
-        CAN_RxCallback_t func;       /*!< 对应的处理回调函数 */
-        uint8_t is_used;             /*!< 标记该条目是否已被占用 (1:占用, 0:空闲) */
-        void* context;               /*!< 可选的上下文指针, 可用于传递额外信息给回调函数 */
-    } CAN_CallbackEntry_t;
-    /**
-     * @brief  CAN 状态枚举类型
-     */
-    typedef enum
-    {
-        CAN_OK = 0x00,
-        CAN_NULL,
-        CAN_ERROR,
-        CAN_LOCK,
-        CAN_BUSY,
-        CAN_TIMEOUT
-    } CAN_StatusTypeDef;
-    /**
-     * @brief  CAN 发送消息结构体
-     * @note   timestamp 语义:
-     *         - [0] 本次提交时间 (调用方在 CAN_Tx_Perform 前设置)
-     *         - [1] 上一次 BSP_CAN_SendMsg 实际发送完成时间 (CAN_Tx_Perform 自动回写)
-     */
-    typedef struct
-    {
-        FDCAN_HandleTypeDef* hfdcan;
-        uint32_t id;
-        uint8_t data[FDCAN_MAX_PAYLOAD];
-        uint32_t len;
-        uint64_t timestamp[2];
-        CAN_StatusTypeDef status;
-    } Struct_CAN_Tx_Msg;
+/**
+ * @brief 更新周期发送缓冲。
+ * @param tx_msg 要发布的最新周期消息。
+ * @return true 已更新或分配周期槽；false 参数无效或周期槽已满。
+ * @note BSP 自动按 (hfdcan, id) 查找或分配槽，不需要设备层保存槽号。
+ * @note 相同键只保留最新数据；不同总线或不同 ID 使用不同槽。
+ * @note 本函数只更新内存中的周期槽，不直接调用 HAL 发送。
+ */
+bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg);
 
-    //=====================对外接口========================
+/**
+ * @brief 按先进先出顺序处理插入发送队列。
+ * @note 通常由 CAN 发送任务周期调用。
+ */
+void BSP_CAN_SendAsync(void);
 
-    /**
-     * @brief  初始化 CAN 总线硬件及过滤器
-     * @note   配置为接收所有标准帧 ID，并初始化互斥锁
-     */
-    void BSP_CAN_ConfigInit(void);
-
-    /**
-     * @brief  注册 CAN 接收回调函数
-     * @param  can_id    需要监听的 CAN ID
-     * @param  pCallback 回调函数指针
-     */
-    bool BSP_CAN_RegisterCallback(uint32_t can_id, FDCAN_HandleTypeDef* hfdcan, CAN_RxCallback_t pCallback, void* context);
-
-    /**
-     * @brief  批量发送预设的 CAN 消息
-     * @return true: 全部发送成功, false: 至少有一条发送失败
-     * @note   此函数会尝试发送 Tx_Msg_Buffer 中的三条消息，并返回整体结果。
-     *         适用于需要同时更新多条消息的场景，减少调用次数。
-     */
-    bool BSP_CAN_SendPer(void);
-
-    /**
-     * @brief  异步发送 CAN 消息任务处理函数
-     * @note   此函数应在一个独立的 FreeRTOS 任务中运行，持续监听发送队列并处理消息。
-     */
-    void BSP_CAN_SendAsync(void);
-
-    /**
-     * @brief  通用 CAN 发送函数 (线程安全)
-     * @param  hfdcan: CAN 句柄
-     * @param  id: 目标 ID (标准帧)
-     * @param  data: 数据指针
-     * @param  len: 数据长度
-     * @return true: 消息成功提交到发送队列, false: 提交失败 (如无效参数或总线拥堵)
-     * @note   此函数会将消息封装成 Struct_CAN_Tx_Msg 结构体，并尝试提交到发送队列。
-     *         适用于需要即时发送单条消息的场景，且不要求严格的实时性。
-     */
-
-    bool CAN_Tx_Submit(Struct_CAN_Tx_Msg* TxHeader);
-
-    /**
-     * @brief  更新预设的 CAN 消息并发送
-     * @param  TxHeader: 包含 CAN 句柄、ID、数据和长度的结构体指针
-     * @return true: 消息成功提交到发送队列, false: 提交失败 (如无效参数或总线拥堵)
-     * @note   此函数会更新 Tx_Msg_Buffer 中对应 CAN 句柄的消息内容，并尝试发送。
-     *         适用于需要频繁更新同一条消息内容的场景，减少调用 BSP_CAN_SendMsg 的次数。
-     */
-    bool CAN_Tx_Perform(Struct_CAN_Tx_Msg* TxHeader);
-
-    //=====================淘汰接口========================
-
-    /**
-     * @note 接口转为静态不对外开放, 通过BSP_CAN_SendPer批量发送预设消息，重构了发送架构，但是新架构不兼容裸机
-     *       裸机开发请重启该函数。
-     *       发送函数不再直接接受消息参数，而是通过全局缓冲区 Tx_Msg_Buffer 来存储待发送的消息。
-     */
-    // bool BSP_CAN_SendMsg(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* data, uint32_t len);
+/**
+ * @brief 周期检查所有发送槽，并发送尚未处理的最新数据。
+ * @return true 所有待处理槽均已写入硬件 FIFO，或当前没有待处理数据；
+ *         false 至少有一个待处理槽暂时未能写入硬件 FIFO。
+ * @note 通常由 CAN 发送任务周期调用。
+ */
+bool BSP_CAN_SendPer(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // !BSP_CAN_H
+#endif

@@ -7,7 +7,7 @@
  *          通信架构:
  *          - MCU → 电机: CAN ID = 0x400 + motor_id, DLC = 3 (cmd + value_lo + value_hi)
  *          - 电机 → MCU: CAN ID = 0x500 + motor_id, DLC = 8 (enable + reserved + current + speed + angle)
- *          - 发送路径: QD4310_SendCommand → CAN_Tx_Perform (写入 Tx_Msg_Buffer) → CanTxTask 1kHz 周期发送
+ *          - 发送路径: 连续控制命令更新周期槽, 动作命令插入队列, 由 CanTxTask 统一发送
  *          - 接收路径: HAL FDCAN 中断 → BSP_CAN_RegisterCallback 分发 → QDrive_Callback → QD4310_Update
  *
  * @author  zzm
@@ -19,19 +19,6 @@
  */
 
 #include "QD4310.h"
-#include "sys_timestamp.h"
-#include <string.h>
-
-/**
- * @brief  全局 CAN 发送消息缓冲
- * @note   所有 QD4310 实例共用, 由 QD4310_SendCommand 填充后通过 CAN_Tx_Perform 写入 Tx_Msg_Buffer
- */
-Struct_CAN_Tx_Msg Q_msg = {
-    .hfdcan = NULL,
-    .id = 0x000,
-    .data = {0},
-    .len = 0
-};
 
 /**
  * @brief  QD4310 CAN 反馈帧统一回调入口
@@ -40,7 +27,7 @@ Struct_CAN_Tx_Msg Q_msg = {
  * @param  data 反馈数据 (8 字节)
  * @param  len  数据长度
  * @note   通过 BSP_CAN_RegisterCallback 为每个电机 ID (0x500 + motor_id) 注册,
- *         内部按 id 低 8 位查找 g_QD4310Instances 并调用 QD4310_Update
+ *         context 直接指向对应电机实例
  */
 static void QDrive_Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* data, uint32_t len, void* context)
 {
@@ -48,9 +35,9 @@ static void QDrive_Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* d
 
     if (motor == NULL ||
         data == NULL ||
-        len < 8U ||
+        len < 8 ||
         motor->hfdcan != hfdcan ||
-        id != motor->id + 0x500U)
+        id != (uint32_t)motor->id + 0x500)
     {
         return;
     }
@@ -63,7 +50,7 @@ static void QDrive_Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* d
  * @param  motor  电机结构体指针
  * @param  id     电机 ID (0~7), 决定 CAN 命令 ID (0x400+id) 和反馈 ID (0x500+id)
  * @param  hfdcan FDCAN 句柄指针
- * @note   调用后自动注册 CAN 反馈回调, 同时将实例写入全局数组供回调查找
+ * @note   调用后自动注册 CAN 反馈回调
  */
 void QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef* hfdcan) {
     motor->enabled = false;
@@ -93,22 +80,28 @@ static float QD4310_Clamp(float value, float min, float max) {
  * @param  motor 电机实例指针
  * @param  cmd   命令类型
  * @param  value 命令参数值 (int16_t)
- * @note   通过 CAN_Tx_Perform 写入全局 Tx_Msg_Buffer, 由 CanTxTask 在 1ms 周期内批量发出;
- *         通过 timestamp[0] 标记避免重复发送旧数据
+ * @note   电流、速度、角度和低速命令更新周期槽, 其余动作命令进入插入队列
  */
 void QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
-    static uint8_t TxBuffer[3];
-    TxBuffer[0] = (uint8_t)cmd;
-    TxBuffer[1] = (uint8_t)(value & 0xFF);
-    TxBuffer[2] = (uint8_t)((value >> 8) & 0xFF);
+    Struct_CAN_Tx_Msg message = {0};
 
-    Q_msg.hfdcan = motor->hfdcan;
-    Q_msg.id = motor->id + 0x400;
-    Q_msg.len = 3;
-    memcpy(Q_msg.data, TxBuffer, sizeof(TxBuffer));
+    message.hfdcan = motor->hfdcan;
+    message.id = motor->id + 0x400;
+    message.len = 3;
+    message.data[0] = (uint8_t)cmd;
+    message.data[1] = (uint8_t)(value & 0xFF);
+    message.data[2] = (uint8_t)((value >> 8) & 0xFF);
 
-    Q_msg.timestamp[0] = SYS_Timestamp_Get_Microsecond();
-    CAN_Tx_Perform(&Q_msg);
+    if (cmd == QD4310_CMD_CURRENT ||
+        cmd == QD4310_CMD_SPEED ||
+        cmd == QD4310_CMD_ANGLE ||
+        cmd == QD4310_CMD_LOW_SPEED)
+    {
+        CAN_Tx_Perform(&message);
+        return;
+    }
+
+    CAN_Tx_Submit(&message);
 }
 
 /**
