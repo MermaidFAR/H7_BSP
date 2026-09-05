@@ -5,7 +5,7 @@
  * @details 提供接收回调分发、插入队列和多 ID 周期缓冲。
  * @author  zzm
  * @date    2026-05-18
- * @version v2.1
+ * @version v2.2
  ******************************************************************************
  */
 
@@ -21,21 +21,26 @@
 /** 最多允许注册的接收回调数量。 */
 #define MAX_CAN_CALLBACKS  (16)
 
-/** 周期发送槽总数；每个不同的 (FDCAN, CAN ID) 占用一个槽。 */
+/** 周期发送槽总数；每个不同的总线、帧类型和发送键占用一个槽。 */
 #define CAN_TX_SLOT_COUNT  (32)
 
-/** 插入发送队列能够缓存的消息数量。 */
+/** BSP 管理的独立 CAN 总线数量。 */
+#define CAN_BUS_COUNT      (3)
+
+/** 每条总线的插入发送队列能够缓存的消息数量。 */
 #define CAN_TX_QUEUE_DEPTH (16)
 
 /* Private types -------------------------------------------------------------*/
 
 /**
  * @brief 一项 CAN 接收回调注册记录。
- * @note hfdcan 和 ID 共同组成唯一键。
+ * @note 同一总线和帧类型的 ID 匹配范围不能重叠。
  */
 typedef struct
 {
-    uint32_t ID;                 /*!< 要监听的标准帧 ID。 */
+    uint32_t ID;                 /*!< 要监听的 CAN ID，已与掩码相与。 */
+    uint32_t mask;               /*!< ID 匹配掩码。 */
+    uint32_t id_type;            /*!< 标准帧或扩展帧类型。 */
     FDCAN_HandleTypeDef *hfdcan; /*!< 要监听的 FDCAN 总线。 */
     CAN_RxCallback_t func;       /*!< 收到匹配报文时调用的函数。 */
     uint8_t is_used;             /*!< 该注册项是否已经启用。 */
@@ -44,7 +49,7 @@ typedef struct
 
 /**
  * @brief 一个周期发送槽。
- * @note 一个槽只属于一个固定的 (FDCAN, CAN ID)。
+ * @note 一个槽只属于固定总线、帧类型和默认 ID 键或非零逻辑键。
  */
 typedef struct
 {
@@ -53,6 +58,16 @@ typedef struct
     uint32_t sent_version;     /*!< 最近一次成功写入硬件 FIFO 的版本。 */
     uint8_t is_used;           /*!< 该槽是否已经分配给某个发送键。 */
 } Struct_CAN_Tx_Slot;
+
+/**
+ * @brief 单条总线的事件队列和队首重试状态。
+ */
+typedef struct
+{
+    osMessageQueueId_t queue;
+    Struct_CAN_Tx_Msg pending;
+    uint8_t pending_valid;
+} Struct_CAN_Tx_Bus;
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -64,11 +79,13 @@ static CAN_CallbackEntry_t Can_RxCallbacks[MAX_CAN_CALLBACKS];
 static Struct_CAN_Tx_Slot Can_TxSlots[CAN_TX_SLOT_COUNT];
 static uint16_t Can_TxRoundRobin;
 
-static osMessageQueueId_t Can_TxQueue;
+static Struct_CAN_Tx_Bus Can_TxBuses[CAN_BUS_COUNT];
 
 /* Private function declarations ---------------------------------------------*/
 
+static int16_t BSP_CAN_GetBusIndex(FDCAN_HandleTypeDef *hfdcan);
 static bool BSP_CAN_HandleIsValid(FDCAN_HandleTypeDef *hfdcan);
+static bool BSP_CAN_IdentifierIsValid(uint32_t id, uint32_t id_type);
 static bool BSP_CAN_MessageIsValid(const Struct_CAN_Tx_Msg *message);
 static uint32_t BSP_CAN_EnterCritical(void);
 static void BSP_CAN_ExitCritical(uint32_t primask);
@@ -78,15 +95,33 @@ static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message);
 /* Function prototypes -------------------------------------------------------*/
 
 /**
+ * @brief 获取句柄对应的总线下标，无效句柄返回 -1。
+ */
+static int16_t BSP_CAN_GetBusIndex(FDCAN_HandleTypeDef *hfdcan)
+{
+    if (hfdcan == &hfdcan1) return 0;
+    if (hfdcan == &hfdcan2) return 1;
+    if (hfdcan == &hfdcan3) return 2;
+    return -1;
+}
+
+/**
  * @brief 判断 FDCAN 句柄是否属于 BSP 管理的三条总线。
  * @param hfdcan 待检查的 FDCAN 句柄。
  * @return true 是有效句柄；false 不是有效句柄。
  */
 static bool BSP_CAN_HandleIsValid(FDCAN_HandleTypeDef *hfdcan)
 {
-    return hfdcan == &hfdcan1 ||
-           hfdcan == &hfdcan2 ||
-           hfdcan == &hfdcan3;
+    return BSP_CAN_GetBusIndex(hfdcan) >= 0;
+}
+
+/**
+ * @brief 检查帧类型及对应的 11 位或 29 位标识符范围。
+ */
+static bool BSP_CAN_IdentifierIsValid(uint32_t id, uint32_t id_type)
+{
+    return (id_type == FDCAN_STANDARD_ID && id <= 0x7FF) ||
+           (id_type == FDCAN_EXTENDED_ID && id <= 0x1FFFFFFF);
 }
 
 /**
@@ -98,7 +133,7 @@ static bool BSP_CAN_MessageIsValid(const Struct_CAN_Tx_Msg *message)
 {
     return message != NULL &&
            BSP_CAN_HandleIsValid(message->hfdcan) &&
-           message->id <= 0x7FF &&
+           BSP_CAN_IdentifierIsValid(message->id, message->id_type) &&
            message->len > 0 &&
            message->len <= FDCAN_MAX_PAYLOAD;
 }
@@ -133,7 +168,7 @@ static void BSP_CAN_ExitCritical(uint32_t primask)
 /**
  * @brief 配置并启动一条 FDCAN 总线的接收功能。
  * @param hfdcan 要配置的 FDCAN 总线句柄。
- * @details 标准帧全部进入 RX FIFO0，扩展帧和未匹配帧被拒绝，
+ * @details 标准帧全部进入 RX FIFO0，未匹配扩展帧也进入 FIFO0，远程帧拒绝，
  *          随后启用 FIFO0 新消息中断并启动外设。
  */
 static void BSP_CAN_ConfigBus(FDCAN_HandleTypeDef *hfdcan)
@@ -150,9 +185,9 @@ static void BSP_CAN_ConfigBus(FDCAN_HandleTypeDef *hfdcan)
     if (HAL_FDCAN_ConfigFilter(hfdcan, &filter) != HAL_OK ||
         HAL_FDCAN_ConfigGlobalFilter(hfdcan,
                                      FDCAN_REJECT,
-                                     FDCAN_REJECT,
-                                     FDCAN_FILTER_REMOTE,
-                                     FDCAN_FILTER_REMOTE) != HAL_OK ||
+                                     FDCAN_ACCEPT_IN_RX_FIFO0,
+                                     FDCAN_REJECT_REMOTE,
+                                     FDCAN_REJECT_REMOTE) != HAL_OK ||
         HAL_FDCAN_ActivateNotification(hfdcan,
                                        FDCAN_IT_RX_FIFO0_NEW_MESSAGE,
                                        0) != HAL_OK ||
@@ -164,24 +199,29 @@ static void BSP_CAN_ConfigBus(FDCAN_HandleTypeDef *hfdcan)
 
 /**
  * @brief 初始化 CAN BSP 使用的软件资源并启动三条 FDCAN 总线。
- * @details 清空周期发送槽，复位轮询位置，并在首次调用时创建插入发送队列。
+ * @details 清空周期发送槽，复位轮询位置，并在首次调用时创建每条总线的事件队列。
  * @note 消息队列创建失败时调用 Error_Handler。
  */
 void BSP_CAN_ConfigInit(void)
 {
+    uint16_t index;
+
     memset(Can_TxSlots, 0, sizeof(Can_TxSlots));
     Can_TxRoundRobin = 0;
-
-    if (Can_TxQueue == NULL)
+    for (index = 0; index < CAN_BUS_COUNT; index++)
     {
-        Can_TxQueue = osMessageQueueNew(CAN_TX_QUEUE_DEPTH,
-                                        sizeof(Struct_CAN_Tx_Msg),
-                                        NULL);
-    }
+        Can_TxBuses[index].pending_valid = 0;
+        if (Can_TxBuses[index].queue == NULL)
+        {
+            Can_TxBuses[index].queue = osMessageQueueNew(CAN_TX_QUEUE_DEPTH,
+                                                        sizeof(Struct_CAN_Tx_Msg),
+                                                        NULL);
+        }
 
-    if (Can_TxQueue == NULL)
-    {
-        Error_Handler();
+        if (Can_TxBuses[index].queue == NULL)
+        {
+            Error_Handler();
+        }
     }
 
     BSP_CAN_ConfigBus(&hfdcan1);
@@ -195,7 +235,7 @@ void BSP_CAN_ConfigInit(void)
  * @param hfdcan 要监听的 FDCAN 总线句柄。
  * @param callback 收到匹配报文时调用的函数。
  * @param context 原样传回 callback 的设备实例或用户数据。
- * @return true 注册成功；false 注册表已满或相同键已经存在。
+ * @return true 注册成功；false 参数无效、注册表已满或匹配范围已经存在。
  * @note 注册过程在临界区内完成，可以避免接收中断看到尚未填写完整的表项。
  */
 bool BSP_CAN_RegisterCallback(uint32_t can_id,
@@ -203,9 +243,34 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
                               CAN_RxCallback_t callback,
                               void *context)
 {
+    return BSP_CAN_RegisterCallbackEx(can_id,
+                                      0x7FF,
+                                      FDCAN_STANDARD_ID,
+                                      hfdcan,
+                                      callback,
+                                      context);
+}
+
+/**
+ * @brief 注册一个标准帧或扩展帧掩码回调，拒绝同总线、同类型的重叠范围。
+ */
+bool BSP_CAN_RegisterCallbackEx(uint32_t can_id,
+                                uint32_t can_mask,
+                                uint32_t id_type,
+                                FDCAN_HandleTypeDef *hfdcan,
+                                CAN_RxCallback_t callback,
+                                void *context)
+{
     uint32_t primask;
     uint16_t index;
     int16_t free_index = -1;
+
+    if (!BSP_CAN_HandleIsValid(hfdcan) || callback == NULL ||
+        !BSP_CAN_IdentifierIsValid(can_id, id_type) ||
+        !BSP_CAN_IdentifierIsValid(can_mask, id_type))
+    {
+        return false;
+    }
 
     primask = BSP_CAN_EnterCritical();
     for (index = 0; index < MAX_CAN_CALLBACKS; index++)
@@ -213,7 +278,9 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
         if (Can_RxCallbacks[index].is_used != 0)
         {
             if (Can_RxCallbacks[index].hfdcan == hfdcan &&
-                Can_RxCallbacks[index].ID == can_id)
+                Can_RxCallbacks[index].id_type == id_type &&
+                ((Can_RxCallbacks[index].ID ^ can_id) &
+                 Can_RxCallbacks[index].mask & can_mask) == 0)
             {
                 BSP_CAN_ExitCritical(primask);
                 return false;
@@ -232,7 +299,9 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
     }
 
     index = (uint16_t)free_index;
-    Can_RxCallbacks[index].ID = can_id;
+    Can_RxCallbacks[index].ID = can_id & can_mask;
+    Can_RxCallbacks[index].mask = can_mask;
+    Can_RxCallbacks[index].id_type = id_type;
     Can_RxCallbacks[index].hfdcan = hfdcan;
     Can_RxCallbacks[index].func = callback;
     Can_RxCallbacks[index].context = context;
@@ -248,14 +317,15 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
  * @brief HAL 的 FDCAN RX FIFO0 中断回调入口。
  * @param hfdcan 触发本次中断的 FDCAN 总线句柄。
  * @param RxFifo0ITs FIFO0 中断事件标志。
- * @details 函数会取空 FIFO0，并将每帧数据分发给键完全匹配的已注册回调。
+ * @details 函数会取空 FIFO0，只将 Classic CAN 数据帧分发给掩码匹配的回调。
  * @note 用户回调在中断上下文中执行，不应阻塞。
  */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
                                uint32_t RxFifo0ITs)
 {
     FDCAN_RxHeaderTypeDef rx_header;
-    uint8_t rx_data[FDCAN_MAX_PAYLOAD];
+    /* HAL 按 DLC 拷贝数据，先容纳最大 FD 帧，再检查是否允许分发。 */
+    uint8_t rx_data[64];
     uint16_t index;
 
     if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) == 0)
@@ -273,11 +343,21 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
             break;
         }
 
+        if (rx_header.FDFormat != FDCAN_CLASSIC_CAN ||
+            rx_header.RxFrameType != FDCAN_DATA_FRAME ||
+            rx_header.DataLength > FDCAN_DLC_BYTES_8 ||
+            !BSP_CAN_IdentifierIsValid(rx_header.Identifier, rx_header.IdType))
+        {
+            continue;
+        }
+
         for (index = 0; index < MAX_CAN_CALLBACKS; index++)
         {
             if (Can_RxCallbacks[index].is_used != 0 &&
                 Can_RxCallbacks[index].hfdcan == hfdcan &&
-                Can_RxCallbacks[index].ID == rx_header.Identifier)
+                Can_RxCallbacks[index].id_type == rx_header.IdType &&
+                Can_RxCallbacks[index].ID ==
+                    (rx_header.Identifier & Can_RxCallbacks[index].mask))
             {
                 Can_RxCallbacks[index].func(hfdcan,
                                             rx_header.Identifier,
@@ -298,16 +378,24 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
  */
 bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg)
 {
-    if (!BSP_CAN_MessageIsValid(tx_msg) || Can_TxQueue == NULL)
+    int16_t bus_index;
+
+    if (!BSP_CAN_MessageIsValid(tx_msg))
     {
         return false;
     }
 
-    return osMessageQueuePut(Can_TxQueue, tx_msg, 0, 0) == osOK;
+    bus_index = BSP_CAN_GetBusIndex(tx_msg->hfdcan);
+    if (Can_TxBuses[bus_index].queue == NULL)
+    {
+        return false;
+    }
+
+    return osMessageQueuePut(Can_TxBuses[bus_index].queue, tx_msg, 0, 0) == osOK;
 }
 
 /**
- * @brief 发布某个 (FDCAN 句柄, CAN ID) 的最新周期发送数据。
+ * @brief 发布某个总线、帧类型和发送键的最新周期数据。
  * @param tx_msg 要发布的完整 CAN 消息。
  * @return true 已更新已有槽或分配新槽；false 消息无效或周期槽已满。
  * @details 先查找键完全相同的槽；没有匹配项时自动使用第一个空槽。
@@ -335,7 +423,10 @@ bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg)
         if (Can_TxSlots[index].is_used != 0)
         {
             if (Can_TxSlots[index].message.hfdcan == tx_msg->hfdcan &&
-                Can_TxSlots[index].message.id == tx_msg->id)
+                Can_TxSlots[index].message.id_type == tx_msg->id_type &&
+                Can_TxSlots[index].message.slot_key == tx_msg->slot_key &&
+                (tx_msg->slot_key != 0 ||
+                 Can_TxSlots[index].message.id == tx_msg->id))
             {
                 slot_index = (int16_t)index;
                 break;
@@ -363,23 +454,52 @@ bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg)
     if (slot->is_used == 0)
     {
         memset(slot, 0, sizeof(*slot));
-        slot->message.hfdcan = tx_msg->hfdcan;
-        slot->message.id = tx_msg->id;
     }
 
     /* 在临界区内复制整帧，发送任务不会读到一半新、一半旧的数据。 */
-    memcpy(slot->message.data, tx_msg->data, tx_msg->len);
+    slot->message = *tx_msg;
     if (tx_msg->len < FDCAN_MAX_PAYLOAD)
     {
         memset(&slot->message.data[tx_msg->len],
                0,
                FDCAN_MAX_PAYLOAD - tx_msg->len);
     }
-    slot->message.len = tx_msg->len;
     slot->version++;
     /* 新槽最后再标记为可用，避免消费者看到尚未初始化完整的槽。 */
     slot->is_used = 1;
 
+    BSP_CAN_ExitCritical(primask);
+    return true;
+}
+
+/**
+ * @brief 停止并释放非零逻辑键的周期槽；与发送投递使用同一个临界区。
+ */
+bool CAN_Tx_Stop(FDCAN_HandleTypeDef *hfdcan,
+                 uint32_t id_type,
+                 uint32_t slot_key)
+{
+    uint32_t primask;
+    uint16_t index;
+
+    if (!BSP_CAN_HandleIsValid(hfdcan) || slot_key == 0 ||
+        !BSP_CAN_IdentifierIsValid(0, id_type))
+    {
+        return false;
+    }
+
+    primask = BSP_CAN_EnterCritical();
+    for (index = 0; index < CAN_TX_SLOT_COUNT; index++)
+    {
+        if (Can_TxSlots[index].is_used != 0 &&
+            Can_TxSlots[index].message.hfdcan == hfdcan &&
+            Can_TxSlots[index].message.id_type == id_type &&
+            Can_TxSlots[index].message.slot_key == slot_key)
+        {
+            memset(&Can_TxSlots[index], 0, sizeof(Can_TxSlots[index]));
+            break;
+        }
+    }
     BSP_CAN_ExitCritical(primask);
     return true;
 }
@@ -401,7 +521,7 @@ static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message)
     }
 
     tx_header.Identifier = message->id;
-    tx_header.IdType = FDCAN_STANDARD_ID;
+    tx_header.IdType = message->id_type;
     tx_header.TxFrameType = FDCAN_DATA_FRAME;
     tx_header.DataLength = message->len;
     tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
@@ -416,79 +536,92 @@ static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message)
 }
 
 /**
- * @brief 按先进先出顺序处理当前插入发送队列中的全部消息。
- * @details 每次先从软件队列取出一帧，再尝试写入对应总线的硬件发送 FIFO。
- * @note 当前实现不会把写入失败的消息重新放回软件队列。
+ * @brief 按各总线的先进先出顺序处理事件队列。
+ * @details 每路每轮最多投递 CAN_TX_QUEUE_DEPTH 帧，失败时保留队首并继续下一路。
+ * @note 仅由单个 CAN 发送任务调用，保证队列消费顺序。
  */
 void BSP_CAN_SendAsync(void)
 {
-    Struct_CAN_Tx_Msg message;
+    Struct_CAN_Tx_Bus *bus;
+    uint16_t bus_index;
+    uint16_t send_count;
 
-    while (osMessageQueueGet(Can_TxQueue,
-                             &message,
-                             NULL,
-                             0) == osOK)
+    for (bus_index = 0; bus_index < CAN_BUS_COUNT; bus_index++)
     {
-        BSP_CAN_SendMsg(&message);
+        bus = &Can_TxBuses[bus_index];
+        if (bus->queue == NULL)
+        {
+            continue;
+        }
+
+        for (send_count = 0; send_count < CAN_TX_QUEUE_DEPTH; send_count++)
+        {
+            if (bus->pending_valid == 0)
+            {
+                if (osMessageQueueGet(bus->queue,
+                                      &bus->pending,
+                                      NULL,
+                                      0) != osOK)
+                {
+                    break;
+                }
+                bus->pending_valid = 1;
+            }
+
+            if (!BSP_CAN_SendMsg(&bus->pending))
+            {
+                break;
+            }
+            bus->pending_valid = 0;
+        }
     }
 }
 
 /**
  * @brief 轮询周期槽，并发送每个槽尚未处理的最新版本。
  * @return true 所有待处理槽均已成功写入硬件 FIFO，或没有待处理数据；
- *         false 至少有一个待处理槽本轮发送失败。
- * @details 每轮从上次结束位置继续扫描，避免低下标槽长期优先。发送前在临界区
- *          内复制消息和版本，实际 HAL 发送在临界区外完成。发送成功后只确认本次
- *          快照的版本；若生产者在发送期间发布了新版本，新版本会保留到下一轮。
+ *         false 至少有一个周期槽因同总线事件待发或硬件忙而推迟发送。
+ * @details 同总线事件全部投递后才发送周期数据。槽检查、非阻塞 HAL 投递和确认
+ *          在同一个短临界区内完成，确保 Stop 返回后不会再发送旧快照。
  */
 bool BSP_CAN_SendPer(void)
 {
-    Struct_CAN_Tx_Msg message;
     Struct_CAN_Tx_Slot *slot;
-    uint32_t sending_version = 0;
+    Struct_CAN_Tx_Bus *bus;
     uint32_t primask;
     uint16_t start_index = Can_TxRoundRobin;
     uint16_t scan_count;
     uint16_t slot_index;
-    uint8_t pending;
+    int16_t bus_index;
     bool result = true;
 
     for (scan_count = 0; scan_count < CAN_TX_SLOT_COUNT; scan_count++)
     {
         slot_index = (uint16_t)((start_index + scan_count) % CAN_TX_SLOT_COUNT);
 
-        /* 只在临界区内读取共享槽，耗时的 HAL 调用留在临界区外。 */
         primask = BSP_CAN_EnterCritical();
         slot = &Can_TxSlots[slot_index];
-        pending = slot->is_used != 0 &&
-                  slot->version != slot->sent_version;
-
-        if (pending != 0)
+        if (slot->is_used != 0 && slot->version != slot->sent_version)
         {
-            message = slot->message;
-            sending_version = slot->version;
+            bus_index = BSP_CAN_GetBusIndex(slot->message.hfdcan);
+            bus = &Can_TxBuses[bus_index];
+            if (bus->pending_valid != 0 ||
+                (bus->queue != NULL && osMessageQueueGetCount(bus->queue) != 0))
+            {
+                result = false;
+            }
+            else if (BSP_CAN_SendMsg(&slot->message))
+            {
+                slot->sent_version = slot->version;
+                Can_TxRoundRobin =
+                    (uint16_t)((slot_index + 1) % CAN_TX_SLOT_COUNT);
+            }
+            else
+            {
+                result = false;
+            }
         }
         BSP_CAN_ExitCritical(primask);
-
-        if (pending == 0)
-        {
-            continue;
-        }
-
-        if (!BSP_CAN_SendMsg(&message))
-        {
-            result = false;
-            continue;
-        }
-
-        primask = BSP_CAN_EnterCritical();
-
-        /* 只确认快照版本；发送期间产生的新版本仍保持待发送状态。 */
-        Can_TxSlots[slot_index].sent_version = sending_version;
-        BSP_CAN_ExitCritical(primask);
-
-        Can_TxRoundRobin =
-            (uint16_t)((slot_index + 1) % CAN_TX_SLOT_COUNT);
     }
 
     return result;
