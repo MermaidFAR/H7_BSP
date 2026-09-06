@@ -65,7 +65,14 @@ include_directories(
 add_executable(${CMAKE_PROJECT_NAME}
    
 )
-include("${CMAKE_SOURCE_DIR}/User_Config/Linker/h7_linker.cmake")
+set_property(TARGET ${CMAKE_PROJECT_NAME} APPEND PROPERTY
+    LINK_DEPENDS
+        "${CMAKE_SOURCE_DIR}/STM32H723XG_FLASH.ld"
+        "${CMAKE_SOURCE_DIR}/User_Config/Linker/h7_memory_sections.ld"
+)
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+    "-T${CMAKE_SOURCE_DIR}/User_Config/Linker/h7_memory_sections.ld"
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
