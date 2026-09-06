@@ -69,12 +69,8 @@ extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   }
 }
 
-extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+extern "C" void TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 {
-    if (htim->Instance == TIM2)
-    {
-        HAL_IncTick();
-    }
     if (!init_finished)
     {
         return;

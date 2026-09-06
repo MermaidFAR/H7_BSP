@@ -19,6 +19,7 @@
 #define __TIM_CALLBACK_H
 
 #include <stdint.h>
+#include "stm32h7xx_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,12 @@ extern "C" {
 
 
 /* Exported functions prototypes ---------------------------------------------*/
+/**
+ * @brief 分发应用定时器中断，由 main.c 的 USER CODE Callback 1 调用。
+ * @note HAL Tick 由 CubeMX 生成的 HAL 回调入口维护，此处不重复递增。
+ */
+void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+
 void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length, uint16_t Rx_Length);
 
 void OSPI2_Polling_Callback();
