@@ -1,5 +1,6 @@
 #include "Gimbal.h"
 #include "user_task.h"
+#include "Balance.h"
 
 extern "C" void Control_Task(void* argument)
 {
@@ -7,13 +8,14 @@ extern "C" void Control_Task(void* argument)
     osThreadSetPriority(osThreadGetId(), osPriorityHigh1);
 
     // Gimbal_Init();
-    // Balance_init();
-
+    VOFA_Init();
+    Balance_Init();
     for (;;)
     {
         osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
         // Gimbal_Loop();
-        // Balance_loop();
+        Balance_Control();
+        /* USART10 在线调参及 100 Hz JustFloat 遥测；新命令下一控制周期生效。 */
+        VOFA_Control();
     }
 }
-
