@@ -38,7 +38,7 @@ typedef struct
     float Target_Angle;      /* 已标定直立零点，rad；LQR 不覆盖。 */
     float Target_Speed;      /* 目标前进速度，单位 rpm；正负表示前进或后退。 */
     float Target_Turn_Angle; /* 目标转向角，单位 rad/s；正负表示左右转。 */
-    
+
     float Speed_Feedback;    /* 原始合成轮速rpm；LQR使用修正后的Speed_M_S。 */
     /* 四状态增益G=-K；四项输出均启用，但位置误差更新暂被注释。 */
     float LQR_K[4];          /* 输入单位依次 rad、rad/s、m/s、m，输出共同电流 A。 */
