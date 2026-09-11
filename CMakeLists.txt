@@ -148,6 +148,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/BMI088_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StorageTask.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/DMmotor/dmmotor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Control_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Gimbal/Gimbal.cpp
@@ -193,6 +194,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Device/Onboard/WS2812
         User_File/Device/Peripheral/EricTool
         User_File/Device/Peripheral/Motor/QDrive
+        User_File/Device/Peripheral/Motor/DMmotor
         User_File/Middleware/Algorithm/Pulse/
         User_File/Application/Gimbal/
         User_File/Application/Communication/
