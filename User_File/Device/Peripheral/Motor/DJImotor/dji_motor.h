@@ -63,8 +63,8 @@ struct Struct_DJIMotor_Init_Config
     bool reverse = false;
     Enum_DJIMotor_Feedback angle_feedback = Enum_DJIMotor_Feedback::MOTOR;
     Enum_DJIMotor_Feedback speed_feedback = Enum_DJIMotor_Feedback::MOTOR;
-    const float *external_angle = nullptr;
-    const float *external_speed = nullptr;
+    const float *external_angle = nullptr; // rad
+    const float *external_speed = nullptr; // rad/s
     const float *current_feedforward = nullptr;
     const float *speed_feedforward = nullptr;
 };
@@ -95,12 +95,18 @@ struct Struct_DJIMotor_PID_Feedback
 struct Struct_DJIMotor_Feedback
 {
     uint16_t encoder = 0; // 协议原始编码器值，0~8191
-    float rotor_angle = 0.0f; // 转子侧单圈角度，deg，含方向配置
-    float rotor_total_angle = 0.0f; // 转子侧累计角度，deg
-    float rotor_speed = 0.0f; // 转子侧滤波速度，deg/s
-    float output_angle = 0.0f; // 输出侧单圈对应角度，deg
-    float output_total_angle = 0.0f; // 输出侧累计角度，deg
-    float output_speed = 0.0f; // 输出侧速度，deg/s
+    float rotor_angle = 0.0f; // 转子侧单圈角度，rad，含方向配置
+    float rotor_total_angle = 0.0f; // 转子侧累计角度，rad
+    float rotor_speed = 0.0f; // 转子侧滤波速度，rad/s
+    float output_angle = 0.0f; // 输出侧单圈对应角度，rad
+    float output_total_angle = 0.0f; // 输出侧累计角度，rad
+    float output_speed = 0.0f; // 输出侧速度，rad/s
+    float rotor_angle_degree = 0.0f; // 转子侧单圈角度，deg
+    float rotor_total_angle_degree = 0.0f; // 转子侧累计角度，deg
+    float rotor_speed_degree_per_second = 0.0f; // 转子侧速度，deg/s
+    float output_angle_degree = 0.0f; // 输出侧单圈对应角度，deg
+    float output_total_angle_degree = 0.0f; // 输出侧累计角度，deg
+    float output_speed_degree_per_second = 0.0f; // 输出侧速度，deg/s
     int16_t current_raw = 0; // 协议原始电流值，不是 A
     uint8_t temperature = 0; // 温度，摄氏度；M2006 不提供
     Struct_DJIMotor_PID_Feedback pid;
@@ -110,7 +116,10 @@ class Class_DJIMotor
 {
 public:
     bool Init(const Struct_DJIMotor_Init_Config &config);
+    // 角度环为 rad，速度环为 rad/s；开环/电流环仍为协议控制量。
     void SetRef(float ref);
+    // 角度环为 deg，速度环为 deg/s；内部转换为弧度制。
+    void SetRef_Degree(float ref);
     void Control();
     void Enable();
     bool Disable();
@@ -175,6 +184,10 @@ public:
                 float ref2 = 0.0f,
                 float ref3 = 0.0f,
                 float ref4 = 0.0f);
+    void SetRef_Degree(float ref1,
+                       float ref2 = 0.0f,
+                       float ref3 = 0.0f,
+                       float ref4 = 0.0f);
     void Update(float ref1,
                 float ref2 = 0.0f,
                 float ref3 = 0.0f,
@@ -183,6 +196,10 @@ public:
                  float ref2 = 0.0f,
                  float ref3 = 0.0f,
                  float ref4 = 0.0f);
+    bool Control_Degree(float ref1,
+                        float ref2 = 0.0f,
+                        float ref3 = 0.0f,
+                        float ref4 = 0.0f);
     void Control();
     bool Send();
     void Enable();
