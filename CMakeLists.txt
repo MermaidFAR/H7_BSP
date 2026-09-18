@@ -100,6 +100,7 @@ endif()
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Basic/alg_basic.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/DOB/alg_dob.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Frequency/alg_filter_frequency.cpp
@@ -113,6 +114,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Queue/alg_queue.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Slope/alg_slope.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/LQR/alg_lqr.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/SMC/alg_smc.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/ADC/bsp_adc.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/SPI/bsp_spi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/callback/callback.cpp
@@ -163,6 +165,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
         User_File/Middleware/Algorithm/Basic
         User_File/Middleware/Algorithm/Complex
+        User_File/Middleware/Algorithm/DOB
         User_File/Middleware/Algorithm/Filter/EKF
         User_File/Middleware/Algorithm/Filter/Frequency
         User_File/Middleware/Algorithm/Filter/IIR
@@ -175,6 +178,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Queue
         User_File/Middleware/Algorithm/Slope
         User_File/Middleware/Algorithm/LQR
+        User_File/Middleware/Algorithm/SMC
         User_File/Middleware/BSP/ADC
         User_File/Middleware/BSP/SPI
         User_File/System/callback

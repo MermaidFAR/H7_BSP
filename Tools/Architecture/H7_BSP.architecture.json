@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "H7_BSP · 嵌入式控制框架",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [960, 610],
+    "legend": {
+      "entries": {
+        "frontend": { "label": "应用接入" },
+        "backend": { "label": "框架组件" },
+        "external": { "label": "平台基础" }
+      }
+    }
+  },
+  "components": [
+    { "id": "application", "type": "frontend", "label": "Task / Application", "sublabel": "周期任务 · 控制入口 · 遥测", "pos": [345, 40], "size": [270, 80] },
+    { "id": "algorithm", "type": "backend", "label": "Algorithm · 算法库", "sublabel": "控制 · 观测 · 滤波 · 数学", "pos": [25, 190], "size": [240, 80] },
+    { "id": "device", "type": "backend", "label": "Device · 设备层", "sublabel": "电机 · 板载设备 · 外接协议", "pos": [345, 190], "size": [270, 80] },
+    { "id": "system", "type": "backend", "label": "System · 系统服务", "sublabel": "初始化 · 回调 · 时间戳 · 诊断", "pos": [695, 190], "size": [240, 80] },
+    { "id": "bsp", "type": "backend", "label": "BSP · 外设接口", "sublabel": "CAN · UART · SPI · ADC · OSPI · USB", "pos": [345, 330], "size": [270, 80] },
+    { "id": "rtos", "type": "external", "label": "FreeRTOS", "sublabel": "CMSIS-RTOS V2 · 任务与同步", "pos": [695, 330], "size": [240, 80] },
+    { "id": "platform", "type": "external", "label": "HAL / 芯片外设", "sublabel": "STM32H723VG · Cortex-M7", "pos": [345, 470], "size": [270, 80] }
+  ],
+  "connections": [
+    { "id": "use-algorithm", "from": "application", "to": "algorithm", "label": "计算", "fromSide": "left", "toSide": "top" },
+    { "id": "use-device", "from": "application", "to": "device", "label": "读写设备", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [480, 155] },
+    { "id": "use-system", "from": "application", "to": "system", "label": "公共服务", "fromSide": "right", "toSide": "top" },
+    { "id": "device-bsp", "from": "device", "to": "bsp", "label": "通信与采集", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [480, 300] },
+    { "id": "system-rtos", "from": "system", "to": "rtos", "label": "调度与同步", "fromSide": "bottom", "toSide": "top", "labelAt": [815, 300] },
+    { "id": "bsp-platform", "from": "bsp", "to": "platform", "label": "HAL 驱动", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [480, 440] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "设备适配", "items": ["DJI / DM 电机 · QD4310 / EricTool", "BMI088 · W25Q · 电源 · 按键与灯声"] },
+    { "dot": "emerald", "title": "算法积木", "items": ["PID / DOB / SMC · KF / EKF / VQF", "FIR / IIR · 斜坡 · 矩阵与四元数"] },
+    { "dot": "amber", "title": "工程基础", "items": ["CMake / Ninja · MPU / DMA · heap_5", "SystemView · RTT · Ozone"] }
+  ]
+}

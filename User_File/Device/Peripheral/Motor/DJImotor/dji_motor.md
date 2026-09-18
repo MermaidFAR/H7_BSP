@@ -74,7 +74,7 @@ config.feedback_timeout_ms = 20;
 
 if (motor.Init(config))
 {
-    motor.SetRef(90.0f);
+    motor.SetRef(1.5707963f); // 位置环目标 90° = pi/2 rad
 }
 ```
 
@@ -100,10 +100,29 @@ if (motor.Init(config))
 反馈集中在 `Struct_DJIMotor_Feedback feedback` 中，例如 `motor.feedback.output_speed`。
 原有 `motor.output_speed` 等访问需要增加 `.feedback`。
 
+驱动默认采用弧度制：位置环参考值和外部角度反馈为 `rad`，速度环参考值和外部速度
+反馈为 `rad/s`。电流环和开环参考值仍是对应协议控制量，不进行角度单位换算。
+从旧角度制配置迁移时，若要保持近似相同的控制输出，角度环和速度环中作用于误差的
+PID 增益通常需要乘以 `180/pi`，之后仍应结合实机重新整定。
+
+需要继续使用角度制业务代码时，可调用显式兼容接口：
+
+```c
+motor.SetRef_Degree(90.0f);                 // 位置环：90 deg
+gimbal.Control_Degree(yaw_deg, pitch_deg); // 位置环：deg；速度环：deg/s
+```
+
+这些接口只负责乘以 `pi/180`，随后复用默认弧度制控制链。开环和电流环不应使用
+`Degree` 接口，因为它们的参考值不是角度或角速度。
+
 - `feedback.encoder`：协议原始 13 位转子编码器值，范围 0~8191。
-- `feedback.rotor_angle`、`feedback.rotor_total_angle`：转子侧角度，单位 °。
-- `feedback.rotor_speed`：转子侧滤波速度，单位 °/s。
+- `feedback.rotor_angle`、`feedback.rotor_total_angle`：转子侧角度，单位 rad。
+- `feedback.rotor_speed`：转子侧滤波速度，单位 rad/s。
 - `feedback.output_angle`、`feedback.output_total_angle`、`feedback.output_speed`：上述转子量除以减速比。
+- `feedback.rotor_angle_degree`、`feedback.rotor_total_angle_degree`：转子侧角度，单位 °。
+- `feedback.rotor_speed_degree_per_second`：转子侧速度，单位 °/s。
+- `feedback.output_angle_degree`、`feedback.output_total_angle_degree`：输出侧角度，单位 °。
+- `feedback.output_speed_degree_per_second`：输出侧速度，单位 °/s。
 - `feedback.current_raw`：协议返回的原始实际转矩电流值，不声明为安培。
 - `feedback.temperature`：M3508 和 GM6020 的电机温度；C610 对应字节为空，因此保持 0。
 - `online`：最近一次接收或超时检查得到的在线状态。
@@ -211,6 +230,8 @@ ok = ok && gimbal.Init(&yaw_motor, &pitch_motor);
 
 bool submitted = gimbal.Control(yaw_target, pitch_target);
 ```
+
+其中 `yaw_target`、`pitch_target` 在位置环时使用 rad，在速度环时使用 rad/s。
 
 ### 500Hz 底盘与 1kHz 云台
 

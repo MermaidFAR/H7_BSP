@@ -314,7 +314,7 @@ public:
     }
 
     template<int tmp_row = row, int tmp_column = column>
-    inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> Get_Inverse() const;
+    inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> Get_Inverse(bool *__Success = NULL) const;
 
     // 列向量特有
 
@@ -476,12 +476,19 @@ inline Class_Matrix_f32<row, 1> Class_Matrix_f32<row, column>::Get_Column(const 
  * @tparam column 列数
  * @tparam tmp_row 行数
  * @tparam tmp_column 列数
- * @return Class_Matrix_f32<tmp_row, tmp_column> 逆矩阵
+ * @param[out] __Success 成功为true, 失败为false; 传NULL时不写回状态
+ * @return Class_Matrix_f32<tmp_row, tmp_column> 逆矩阵, 主元绝对值不大于阈值时返回零矩阵
+ * @note 零矩阵是求逆失败的占位结果; 需要区分失败时应传入__Success。
  */
 template<int row, int column>
 template<int tmp_row, int tmp_column>
-inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> Class_Matrix_f32<row, column>::Get_Inverse() const
+inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> Class_Matrix_f32<row, column>::Get_Inverse(bool *__Success) const
 {
+    if (__Success != NULL)
+    {
+        *__Success = false;
+    }
+
     // 扩展矩阵 [A|I]
     Class_Matrix_f32<tmp_row, 2 * tmp_row> extended_matrix = Namespace_ALG_Matrix::Zero<tmp_row, 2 * tmp_row>();
 
@@ -510,7 +517,7 @@ inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row
         // 最大元太小, 认为矩阵不可逆
         if (max_value <= Matrix_Compare_Epsilon)
         {
-            return (Namespace_ALG_Matrix::Identity<tmp_row, tmp_row>());
+            return (Namespace_ALG_Matrix::Zero<tmp_row, tmp_row>());
         }
         // 交换行, 将第i行与主元所在行交换
         if (max_index != i)
@@ -556,6 +563,11 @@ inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row
     for (int i = 0; i < tmp_row; i++)
     {
         memcpy(&result.Data[i * tmp_row], &extended_matrix.Data[i * 2 * tmp_row + tmp_row], sizeof(float) * tmp_row);
+    }
+
+    if (__Success != NULL)
+    {
+        *__Success = true;
     }
 
     return (result);
