@@ -164,6 +164,11 @@ extern "C" {
 
 void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback();
 
+/**
+ * @brief 10 ms 心跳节拍回调，每累计 500 ms 切换一次绿色灯状态
+ */
+void BSP_WS2812_TIM_10ms_Heartbeat_PeriodElapsedCallback();
+
 #ifdef __cplusplus
 }
 #endif

@@ -112,6 +112,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Queue/alg_queue.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Slope/alg_slope.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/LQR/alg_lqr.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/ADC/bsp_adc.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/SPI/bsp_spi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/callback/callback.cpp
@@ -153,6 +154,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Control_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Gimbal/Gimbal.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/Balance/Balance.cpp
 
 )
 
@@ -172,6 +174,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Quaternion
         User_File/Middleware/Algorithm/Queue
         User_File/Middleware/Algorithm/Slope
+        User_File/Middleware/Algorithm/LQR
         User_File/Middleware/BSP/ADC
         User_File/Middleware/BSP/SPI
         User_File/System/callback

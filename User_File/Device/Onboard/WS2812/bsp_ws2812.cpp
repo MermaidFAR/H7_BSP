@@ -87,6 +87,20 @@ void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback() {
   BSP_WS2812.TIM_10ms_Write_PeriodElapsedCallback();
 }
 
+void BSP_WS2812_TIM_10ms_Heartbeat_PeriodElapsedCallback() {
+  static uint8_t heartbeat_tick = 0U;
+  static bool led_on = false;
+
+  heartbeat_tick++;
+  if (heartbeat_tick < 50U) {
+    return;
+  }
+  heartbeat_tick = 0U;
+  led_on = !led_on;
+  BSP_WS2812.Set_Color(led_on ? WS2812_COLOR_GREEN : WS2812_COLOR_BLACK,
+                       0.1f);
+}
+
 #ifdef __cplusplus
 }
 #endif
