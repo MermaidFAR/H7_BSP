@@ -1,0 +1,3464 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="STM32H723 H7_BSP 的驱动、设备、算法与系统文档。">
+      
+      
+      
+        <link rel="canonical" href="https://mermaidfar.github.io/H7_BSP/%E5%BA%94%E7%94%A8/appTuner_PID%E5%9C%A8%E7%BA%BF%E8%B0%83%E5%8F%82/">
+      
+      
+        <link rel="prev" href="../../%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw_target_zero_%E9%9C%87%E8%8D%A1%E5%88%86%E6%9E%90/">
+      
+      
+        <link rel="next" href="../../%E8%AE%BE%E5%A4%87/WHEELTEC_N100%E6%83%AF%E5%AF%BC/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/MarinaEcho.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>appTuner PID 在线调参方案 - H7_BSP 电控平台</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#apptuner-pid" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="H7_BSP 电控平台" class="md-header__button md-logo" aria-label="H7_BSP 电控平台" data-md-component="logo">
+      
+  <img src="../../assets/MarinaEcho.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            H7_BSP 电控平台
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              appTuner PID 在线调参方案
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="light-blue"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/MermaidFAR/H7_BSP" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    MermaidFAR/H7_BSP
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="H7_BSP 电控平台" class="md-nav__button md-logo" aria-label="H7_BSP 电控平台" data-md-component="logo">
+      
+  <img src="../../assets/MarinaEcho.png" alt="logo">
+
+    </a>
+    H7_BSP 电控平台
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/MermaidFAR/H7_BSP" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    MermaidFAR/H7_BSP
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    总览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    平台认知
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    平台认知
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    平台架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    内存与总线架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    通信与采集 BSP
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    通信与采集 BSP
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E9%A9%B1%E5%8A%A8/CAN%E6%80%BB%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CAN 总线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E9%A9%B1%E5%8A%A8/UART%E4%B8%B2%E5%8F%A3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UART 串口
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E9%A9%B1%E5%8A%A8/SPI%E6%80%BB%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPI 总线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E9%A9%B1%E5%8A%A8/ADC%E9%87%87%E9%9B%86/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADC 采集
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E9%A9%B1%E5%8A%A8/OSPI_Flash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OSPI Flash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    板载与外设设备
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    板载与外设设备
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/BMI088_IMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BMI088 IMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/QD4310%E7%94%B5%E6%9C%BA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    QD4310 电机
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/DJI%E7%94%B5%E6%9C%BA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DJI 电机驱动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/%E8%BE%BE%E5%A6%99%E7%94%B5%E6%9C%BA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    达妙电机驱动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/W25Q64JV_Flash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    W25Q64JV Flash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/WS2812_LED/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WS2812 LED
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/%E8%9C%82%E9%B8%A3%E5%99%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    蜂鸣器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/%E7%94%B5%E6%BA%90%E7%AE%A1%E7%90%86/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    电源管理
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/%E6%8C%89%E9%94%AE%E6%A8%A1%E5%9D%97/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    按键模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/EricTool%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EricTool 调试工具
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    控制与算法
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    控制与算法
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/PID%E6%8E%A7%E5%88%B6%E5%99%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PID 控制器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E5%8A%9F%E7%8E%87%E6%8E%A7%E5%88%B6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    功率控制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/RLS%E5%9C%A8%E7%BA%BF%E8%BE%A8%E8%AF%86/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RLS 在线辨识
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E5%9B%9B%E5%85%83%E6%95%B0%E4%B8%8E%E5%A7%BF%E6%80%81/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    四元数与姿态
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E7%9F%A9%E9%98%B5%E8%BF%90%E7%AE%97/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    矩阵运算
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E5%9F%BA%E7%A1%80%E6%95%B0%E5%AD%A6%E5%B7%A5%E5%85%B7/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    基础数学工具
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E6%BB%A4%E6%B3%A2%E5%99%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    滤波器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E9%A2%91%E5%9F%9F%E6%BB%A4%E6%B3%A2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    频域滤波
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E7%8A%B6%E6%80%81%E6%9C%BA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    状态机
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E6%96%9C%E5%9D%A1%E8%A7%84%E5%88%92%E5%99%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    斜坡规划器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E5%A4%8D%E6%95%B0%E8%BF%90%E7%AE%97/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    复数运算
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%AE%97%E6%B3%95/%E6%95%B0%E6%8D%AE%E9%98%9F%E5%88%97/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    数据队列
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RTOS 与系统服务
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    RTOS 与系统服务
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    初始化流程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    任务架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/TIM_1ms_Task/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TIM_1ms_Task 分频器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/%E6%97%B6%E9%97%B4%E6%88%B3%E7%B3%BB%E7%BB%9F/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    时间戳系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/%E5%9B%9E%E8%B0%83%E7%B3%BB%E7%BB%9F/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    回调系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/FreeRTOS%E9%85%8D%E7%BD%AE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeRTOS 配置
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/%E6%89%8B%E5%86%99FreeRTOS%E4%BB%BB%E5%8A%A1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    手写 FreeRTOS 任务
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/USB_CDC%E9%80%9A%E4%BF%A1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB CDC 通信
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F/SystemView%E8%B0%83%E8%AF%95/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SystemView 调试
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    调参与实验记录
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    调参与实验记录
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw%E9%80%9F%E5%BA%A6%E7%8E%AF%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E4%B8%8EPID%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Yaw 速度环系统辨识
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw%E4%BD%8D%E7%BD%AE%E7%8E%AF%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E4%B8%8EPID%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Yaw 位置环系统辨识
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw_target_zero_%E9%9C%87%E8%8D%A1%E5%88%86%E6%9E%90/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Yaw target=0 震荡分析
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    规划与归档
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    规划与归档
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    appTuner PID 在线调参方案
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    appTuner PID 在线调参方案
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        历史架构草图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的三区数据模型
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的多实例支持
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#erictool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的 EricTool 协议
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="拟议的 EricTool 协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rx11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下行指令字典（RX，11 项）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tx13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        上行遥测通道（TX，13 通道）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的 Flash 持久化流程
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议 API（当前不存在）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="拟议 API（当前不存在）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        注册与初始化
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        运行时接口
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        结构体
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        待实现后的测试方案
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="待实现后的测试方案">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        编译验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erictool-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        功能测试（需硬件 + EricTool GUI）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        调参工作流
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        方案风险与限制（未板测）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        待实现后的测试计划
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="待实现后的测试计划">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        前置条件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-01：编译验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-02" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-02：首次上电默认值验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-03-flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-03：下行调参 — Flash 字段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-04-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-04：下行调参 — Target
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-05flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-05：Flash 持久化 — 掉电恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-06flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-06：Flash 持久化 — 异步提交窗口
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-07：多实例隔离
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-08now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-08：Now 保护
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-09outmax-ioutmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-09：OutMax / IOutMax 限幅
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-10：变速积分
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-11：微分先行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        测试检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        关联文档
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%E8%AE%BE%E5%A4%87/WHEELTEC_N100%E6%83%AF%E5%AF%BC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHEELTEC N100 惯导
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        历史架构草图
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的三区数据模型
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的多实例支持
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#erictool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的 EricTool 协议
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="拟议的 EricTool 协议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rx11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        下行指令字典（RX，11 项）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tx13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        上行遥测通道（TX，13 通道）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议的 Flash 持久化流程
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        拟议 API（当前不存在）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="拟议 API（当前不存在）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        注册与初始化
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        运行时接口
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        结构体
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        待实现后的测试方案
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="待实现后的测试方案">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        编译验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#erictool-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        功能测试（需硬件 + EricTool GUI）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        调参工作流
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        方案风险与限制（未板测）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        待实现后的测试计划
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="待实现后的测试计划">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        前置条件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-01：编译验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-02" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-02：首次上电默认值验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-03-flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-03：下行调参 — Flash 字段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-04-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-04：下行调参 — Target
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-05flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-05：Flash 持久化 — 掉电恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-06flash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-06：Flash 持久化 — 异步提交窗口
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-07：多实例隔离
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-08now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-08：Now 保护
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-09outmax-ioutmax" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-09：OutMax / IOutMax 限幅
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-10：变速积分
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tc-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TC-11：微分先行
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        测试检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        关联文档
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    总览
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    规划与归档
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="apptuner-pid">appTuner — PID 在线调参方案草稿（未接入当前主线）</h1>
+<div class="admonition abstract">
+<p class="admonition-title">文档摘要</p>
+<p>本文保留历史设计方案，描述拟通过 EricTool 调参、管理最多 4 路 PID 并写入 W25Q64JV 的思路。当前 H7_BSP 主线没有 appTuner 模块，以下类型、函数、任务和测试步骤均不是现成接口。</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">当前主线不可照此接入</p>
+<p>当前 <code>User_File/</code>、<code>Core/</code>、<code>Tests/</code> 与 <code>CMakeLists.txt</code> 中没有 <code>App_Tuner_*</code>、<code>PID_Tuner_Manager_t</code> 或 <code>Flash_Task</code> 的实现。<code>Status_Task</code> 当前以 20 Hz 更新健康快照，EricTool 遥测由 <code>Transport_Task</code> 处理。当前接收解析器识别冒号分隔的 <code>name:value#</code>，且尚未接入在线赋值。要实现本方案，须先完成源码、构建注册、协议/存储边界与主机及板上验证。</p>
+</div>
+<hr />
+<h2 id="_1">历史架构草图</h2>
+<pre class="mermaid"><code>graph TD
+    subgraph "上位机"
+        PC["EricTool GUI&lt;br/&gt;波形显示 + 参数下发"]
+    end
+
+    subgraph "MCU H7_BSP"
+        USB["USB CDC"]
+        ET["EricTool_USB"]
+        RX["App_Tuner_RX&lt;br/&gt;指令解析"]
+        TX["App_Tuner_TX&lt;br/&gt;指针注册"]
+        ST["拟扩展 Transport_Task&lt;br/&gt;发送周期待验证"]
+
+        subgraph "RAM 缓冲"
+            FLASH_M["Flash 参数镜像"]
+            RT["Target / Now&lt;br/&gt;实时注入"]
+        end
+
+        PID["Class_PID&lt;br/&gt;控制对象"]
+        MOTOR["电机 / 执行器"]
+
+        subgraph "Flash 子系统"
+            FT["App_Tuner_Flash_Task&lt;br/&gt;低优先级 RTOS 任务"]
+            W25Q["W25Q64JV&lt;br/&gt;8MB NOR Flash"]
+        end
+    end
+
+    PC --&gt;|"P:1.5#"| USB
+    USB --&gt; ET
+    ET --&gt; RX
+    RX --&gt;|"Flash 字段: 写 RAM + 标 dirty"| FLASH_M
+    RX --&gt;|"Target: 写 RAM"| RT
+    RX --&gt;|"立即推入"| PID
+    PID --&gt;|"Out / I_Out 回填"| FLASH_M
+
+    TX --&gt;|"Set_Data 注册指针"| ET
+    ST --&gt;|"EricTool_Send_Telemetry"| ET
+    ET --&gt;|"justfloat 帧"| USB
+    USB --&gt; PC
+
+    MOTOR --&gt;|"Now 写入"| RT
+
+    FT --&gt;|"dirty → Set_Write_Enable → Erase → Write"| W25Q
+    W25Q --&gt;|"上电 Init 读取"| FLASH_M</code></pre>
+<hr />
+<h2 id="_2">拟议的三区数据模型</h2>
+<p>appTuner 将 PID 参数按<strong>读写权限</strong>和<strong>存储介质</strong>分为三个区域：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">区域</th>
+<th style="text-align: left;">存储</th>
+<th style="text-align: left;">写入方</th>
+<th style="text-align: left;">字段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Flash 持久区</strong></td>
+<td style="text-align: left;">W25Q64JV</td>
+<td style="text-align: left;">EricTool (写 Flash) + 上电恢复</td>
+<td style="text-align: left;">K_P / K_I / K_D / K_F / Out_Max / I_Out_Max / Aspeed / Bspeed / SepThr / D_First / D_T</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>RAM 实时区</strong></td>
+<td style="text-align: left;">SRAM</td>
+<td style="text-align: left;">EricTool (Target) / 外部代码 (Now)</td>
+<td style="text-align: left;">Target / Now</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>只读遥测区</strong></td>
+<td style="text-align: left;">SRAM</td>
+<td style="text-align: left;">PID 计算后回填</td>
+<td style="text-align: left;">Out / I_Out</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>D_T</strong> 可变不可调：代码中设置，不在 EricTool 字典中</li>
+<li><strong>Now</strong> 不在 EricTool 字典中：由电机编码器等外部代码直接写入</li>
+<li><strong>Out / I_Out</strong> 仅 TX 遥测，不接受下行指令</li>
+</ul>
+<hr />
+<h2 id="_3">拟议的多实例支持</h2>
+<p>通过 <code>PID_Tuner_Manager_t</code> 管理最多 4 个 PID 实例：</p>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="cp">#define PID_TUNER_MAX 4</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">PID_Tuner_Instance_t</span><span class="w"> </span><span class="n">instance</span><span class="p">[</span><span class="n">PID_TUNER_MAX</span><span class="p">];</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">active_index</span><span class="p">;</span><span class="w">  </span><span class="c1">// 当前活跃实例, EricTool RX/TX 的目标</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">         </span><span class="c1">// 已注册实例数</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span><span class="w"> </span><span class="n">PID_Tuner_Manager_t</span><span class="p">;</span>
+</span></code></pre></div>
+<p>每个实例独占一个 W25Q64JV Sector（4KB），互不干扰。切换实例只需改 <code>active_index</code>。</p>
+<hr />
+<h2 id="erictool">拟议的 EricTool 协议</h2>
+<h3 id="rx11">下行指令字典（RX，11 项）</h3>
+<p>方案拟沿用当前解析器的 <code>variable:value#</code> 文本格式；仍需接入接收回调与实际赋值逻辑：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">索引</th>
+<th style="text-align: left;">指令名</th>
+<th style="text-align: left;">对应字段</th>
+<th style="text-align: left;">存储</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><code>P</code></td>
+<td style="text-align: left;">K_P</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;"><code>I</code></td>
+<td style="text-align: left;">K_I</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;"><code>D</code></td>
+<td style="text-align: left;">K_D</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;"><code>F</code></td>
+<td style="text-align: left;">K_F</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"><code>OutMax</code></td>
+<td style="text-align: left;">Out_Max</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;"><code>IOutMax</code></td>
+<td style="text-align: left;">I_Out_Max</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;"><code>Aspeed</code></td>
+<td style="text-align: left;">I_Variable_Speed_A</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;"><code>Bspeed</code></td>
+<td style="text-align: left;">I_Variable_Speed_B</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;"><code>SepThr</code></td>
+<td style="text-align: left;">I_Separate_Threshold</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;"><code>DFirst</code></td>
+<td style="text-align: left;">D_First（0/1）</td>
+<td style="text-align: left;">Flash</td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;"><code>Target</code></td>
+<td style="text-align: left;">Target</td>
+<td style="text-align: left;">RAM</td>
+</tr>
+</tbody>
+</table>
+<p>指数 0~9 修改时立即写入 RAM 并标记 dirty，由 Flash Task 异步提交。
+指数 10 只写 RAM，不触发 Flash 写入。</p>
+<h3 id="tx13">上行遥测通道（TX，13 通道）</h3>
+<p>拟由传输任务发送 justfloat 帧；发送周期及能否稳定交付须实测，拟议通道顺序如下：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">通道</th>
+<th style="text-align: left;">数据</th>
+<th style="text-align: left;">通道</th>
+<th style="text-align: left;">数据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">K_P</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">I_Variable_Speed_B</td>
+</tr>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">K_I</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">I_Separate_Threshold</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">K_D</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">Target</td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">K_F</td>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">Now</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">I_Out_Max</td>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;">Out</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Out_Max</td>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">I_Out</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">I_Variable_Speed_A</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="flash">拟议的 Flash 持久化流程</h2>
+<pre class="mermaid"><code>graph TD
+    A["上电 Init"] --&gt; B["Read_Data 从 Flash 读取"]
+    B --&gt; C{"K_P == NaN ?"}
+    C --&gt;|"是 (首次上电)"| D["Write_Flash_Defaults&lt;br/&gt;Set_Write_Enable → Erase → Write 默认值"]
+    C --&gt;|"否 (已有数据)"| E["保留 Flash 镜像"]
+    D --&gt; F["Push_Flash_Params_To_PID"]
+    E --&gt; F
+
+    subgraph "运行时 (EricTool RX)"
+        G["RX: P:2.5#"] --&gt; H["a-&gt;flash.K_P = 2.5"]
+        H --&gt; I["a-&gt;pid-&gt;Set_K_P(2.5)"]
+        I --&gt; J["a-&gt;dirty = true"]
+    end
+
+    subgraph "异步提交 (Flash Task, 100ms 周期)"
+        J --&gt; K{"dirty &amp;&amp; Is_Ready ?"}
+        K --&gt;|"是"| L["Set_Write_Enable"]
+        L --&gt; M["等待 Ready"]
+        M --&gt; N["Set_Sector_Erased"]
+        N --&gt; O["等待 Ready (~400ms)"]
+        O --&gt; P["Write_Data"]
+        P --&gt; Q["等待 Ready"]
+        Q --&gt; R["dirty = false"]
+        K --&gt;|"否"| S["下个周期重试"]
+    end</code></pre>
+<p><strong>关键设计</strong>：Erase 耗时 ~400ms，在低优先级 RTOS 任务中执行，通过 <code>osDelay</code> 让出 CPU 给 PID 实时计算。</p>
+<p><strong>空值检测</strong>：W25Q64JV 擦除后全为 <code>0xFF</code>，float 解析为 NaN。用 <code>std::isnan(K_P)</code> 判断首次上电，无需额外 Magic Number。</p>
+<hr />
+<h2 id="api">拟议 API（当前不存在）</h2>
+<h3 id="_4">注册与初始化</h3>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// 注册 PID 实例（必须在 Init 之前）</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">App_Tuner_Register_PID</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">motor_pid</span><span class="p">,</span><span class="w">  </span><span class="mh">0x000000</span><span class="p">);</span><span class="w">  </span><span class="c1">// PID_0, Sector 0</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">App_Tuner_Register_PID</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">steer_pid</span><span class="p">,</span><span class="w">  </span><span class="mh">0x001000</span><span class="p">);</span><span class="w">  </span><span class="c1">// PID_1, Sector 1</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1">// 模块初始化</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">App_Tuner_Init</span><span class="p">();</span><span class="w">  </span><span class="c1">// USB + EricTool + 逐实例读 Flash + 推入 PID</span>
+</span></code></pre></div>
+<h3 id="_5">运行时接口</h3>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// TX: 注册遥测指针（由 StatusTask 或调用方调用）</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">PID_Tuner</span><span class="p">.</span><span class="n">active_index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">  </span><span class="c1">// 切到 PID_0</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">App_Tuner_TX</span><span class="p">();</span><span class="w">              </span><span class="c1">// 覆盖 EricTool 遥测通道</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// RX: EricTool 下行处理（由 USB CDC 回调驱动）</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">App_Tuner_RX</span><span class="p">();</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">// Flash Task: 独立 RTOS 任务入口</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="kt">void</span><span class="w"> </span><span class="nf">StartFlashTask</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="c1">// 低优先级, 100ms 周期</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="n">App_Tuner_Flash_Task</span><span class="p">();</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">}</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1">// 外部写入 Now (电机编码器等)</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">PID_Tuner</span><span class="p">.</span><span class="n">instance</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">Now</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">encoder_value</span><span class="p">;</span>
+</span></code></pre></div>
+<h3 id="_6">结构体</h3>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Flash 持久化参数 (44 字节, 4 字节对齐)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">K_P</span><span class="p">,</span><span class="w"> </span><span class="n">K_I</span><span class="p">,</span><span class="w"> </span><span class="n">K_D</span><span class="p">,</span><span class="w"> </span><span class="n">K_F</span><span class="p">;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">I_Out_Max</span><span class="p">,</span><span class="w"> </span><span class="n">Out_Max</span><span class="p">;</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">I_Variable_Speed_A</span><span class="p">,</span><span class="w"> </span><span class="n">I_Variable_Speed_B</span><span class="p">,</span><span class="w"> </span><span class="n">I_Separate_Threshold</span><span class="p">;</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="n">Enum_PID_D_First</span><span class="w"> </span><span class="n">D_First</span><span class="p">;</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">D_T</span><span class="p">;</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span><span class="w"> </span><span class="n">Flash_PID_Params_t</span><span class="p">;</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1">// 单个 PID 实例</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="n">Flash_PID_Params_t</span><span class="w"> </span><span class="n">flash</span><span class="p">;</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">Target</span><span class="p">,</span><span class="w"> </span><span class="n">Now</span><span class="p">,</span><span class="w"> </span><span class="n">Out</span><span class="p">,</span><span class="w"> </span><span class="n">I_Out</span><span class="p">;</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">    </span><span class="n">Class_PID</span><span class="w"> </span><span class="o">*</span><span class="n">pid</span><span class="p">;</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">flash_addr</span><span class="p">;</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">dirty</span><span class="p">;</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">}</span><span class="w"> </span><span class="n">PID_Tuner_Instance_t</span><span class="p">;</span>
+</span></code></pre></div>
+<hr />
+<h2 id="_7">待实现后的测试方案</h2>
+<h3 id="_8">编译验证</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 在 H7_BSP 项目根目录下</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>ninja<span class="w"> </span>-C<span class="w"> </span>build/Debug
+</span></code></pre></div>
+<p>预期输出：目标构建与链接通过，无 error。</p>
+<h3 id="erictool-gui">功能测试（需硬件 + EricTool GUI）</h3>
+<p><strong>测试项 A — 下行调参</strong></p>
+<ul>
+<li>步骤：EricTool GUI 发送 <code>P:2.5#</code></li>
+<li>验证：PID 对象的 K_P 立即变为 2.5，遥测通道 0 显示 2.5</li>
+</ul>
+<p><strong>测试项 B — Flash 持久化</strong></p>
+<ul>
+<li>步骤：调参后断电重启</li>
+<li>验证：上电后 K_P 恢复为断电前值（而非默认值 1.0）</li>
+</ul>
+<p><strong>测试项 C — 首次上电默认值</strong></p>
+<ul>
+<li>步骤：擦除 W25Q64JV Sector 0，然后上电</li>
+<li>验证：K_P=1.0，其余 Flash 参数为 0</li>
+</ul>
+<p><strong>测试项 D — 多实例切换</strong></p>
+<ul>
+<li>步骤：<code>active_index=0</code>, 调 PID_0 → 切 <code>active_index=1</code>, 调 PID_1 → 切回 <code>active_index=0</code></li>
+<li>验证：各自的参数独立持久化，互不干扰</li>
+</ul>
+<p><strong>测试项 E — Now 外部写入</strong></p>
+<ul>
+<li>步骤：电机转动时观察 EricTool 遥测通道 10 (Now)</li>
+<li>验证：Now 值随电机转动实时变化，且无法通过 EricTool 下行修改</li>
+</ul>
+<h3 id="_9">调参工作流</h3>
+<pre class="mermaid"><code>graph TD
+    A["上电"] --&gt; B["从 Flash 恢复参数"]
+    B --&gt; C["EricTool 连接 USB CDC"]
+    C --&gt; D["上位机发送 P:1.5#"]
+    D --&gt; E["1ms 内 PID 生效"]
+    E --&gt; F["观察遥测波形"]
+    F --&gt; G{"满意 ?"}
+    G --&gt;|"否"| D
+    G --&gt;|"是"| H["等待 Flash Task 提交 (≤100ms)"]
+    H --&gt; I["可安全断电"]</code></pre>
+<hr />
+<h2 id="_10">方案风险与限制（未板测）</h2>
+<ul>
+<li><strong>Erase 粒度 4KB</strong>：W25Q64JV 最小擦除单位为 Sector，单次 Erase ~400ms</li>
+<li><strong>写入吞吐</strong>：每次提交写入整个 <code>Flash_PID_Params_t</code>（44 字节），Page Program 约 0.7ms</li>
+<li><strong>dirty 去抖</strong>：Flash Task 100ms 周期，调参后最多 100ms 延迟才写入 Flash。掉电可能丢失最近 100ms 的改动</li>
+<li><strong>W25Q64JV 写入寿命</strong>：10 万次擦写，正常调参使用足够</li>
+<li><strong>线程安全</strong>：Flash 写入仅由 Flash Task 执行，其他代码只操作 RAM。<code>active_index</code> 切换无锁保护，避免在 RX 中断中修改</li>
+</ul>
+<hr />
+<h2 id="_11">待实现后的测试计划</h2>
+<h3 id="_12">前置条件</h3>
+<ul>
+<li>H7_BSP 硬件已正常启动，W25Q64JV 就绪</li>
+<li>EricTool GUI 通过 USB CDC 连接，确认波形窗口有数据显示</li>
+<li>至少注册一个 PID 实例并完成 <code>App_Tuner_Init()</code></li>
+<li>已扩展 <code>Transport_Task</code> 或其他接收链，注册 EricTool 回调并由应用处理下行指令</li>
+<li><code>Flash_Task</code> 已创建（处理异步提交）</li>
+</ul>
+<h3 id="tc-01">TC-01：编译验证</h3>
+<ul>
+<li>操作：执行 <code>ninja -C build/Debug</code></li>
+<li>预期：目标构建与链接通过，无 error</li>
+</ul>
+<h3 id="tc-02">TC-02：首次上电默认值验证</h3>
+<ul>
+<li>操作：擦除 W25Q64JV 目标 Sector（如 <code>0x000000</code>），上电运行</li>
+<li>观测：EricTool 遥测通道 0 显示 K_P=1.0，通道 1~8 显示 0.0</li>
+<li>验证：默认值写入 Flash，从串口日志确认 <code>Write_Flash_Defaults</code> 执行</li>
+</ul>
+<h3 id="tc-03-flash">TC-03：下行调参 — Flash 字段</h3>
+<ul>
+<li>操作：EricTool GUI 发送 <code>P:2.5#</code></li>
+<li>观测：遥测通道 0 立即变为 2.5</li>
+<li>验证：PID 输出可见变化（若 Target≠Now）</li>
+</ul>
+<h3 id="tc-04-target">TC-04：下行调参 — Target</h3>
+<ul>
+<li>操作：EricTool GUI 发送 <code>Target:100#</code></li>
+<li>观测：遥测通道 9 立即变为 100</li>
+<li>验证：PID 立即开始计算，Out 通道可见响应。<code>dirty</code> 不被标记</li>
+</ul>
+<h3 id="tc-05flash">TC-05：Flash 持久化 — 掉电恢复</h3>
+<ul>
+<li>操作：调参后（如 P=2.5，Target=100），正常断电等待 5 秒，重新上电</li>
+<li>观测：上电后遥测通道 0 显示 2.5（而非默认值 1.0）</li>
+<li>验证：Flash 持久化正常。Target 不恢复（RAM only，上电后为 0）</li>
+</ul>
+<h3 id="tc-06flash">TC-06：Flash 持久化 — 异步提交窗口</h3>
+<ul>
+<li>操作：发送 <code>P:3.0#</code> 后<strong>立即</strong>断电（1 秒内）</li>
+<li>观测：重新上电后 K_P 可能仍为旧值（未及提交）</li>
+<li>验证：Flash Task 的 100ms 去抖周期有效。正常调参应等 1 秒以上再断电</li>
+</ul>
+<h3 id="tc-07">TC-07：多实例隔离</h3>
+<ul>
+<li>操作：<ul>
+<li><code>active_index=0</code>，发送 <code>P:2.0#</code> → PID_0 生效</li>
+<li><code>active_index=1</code>，发送 <code>P:3.0#</code> → PID_1 生效</li>
+<li>断电重启，切回 <code>active_index=0</code>，观察 K_P</li>
+</ul>
+</li>
+<li>预期：PID_0 恢复 2.0，PID_1 恢复 3.0，互不干扰</li>
+</ul>
+<h3 id="tc-08now">TC-08：Now 保护</h3>
+<ul>
+<li>操作：EricTool GUI 发送 <code>Now:50#</code></li>
+<li>预期：<code>Now</code> 不在字典中，指令被忽略（<code>Variable_Index=-1</code>）。Now 仍由外部代码控制</li>
+</ul>
+<h3 id="tc-09outmax-ioutmax">TC-09：OutMax / IOutMax 限幅</h3>
+<ul>
+<li>操作：注册 PID 实例，Target=100，Now=0。先不加限幅观察 Out 满幅输出。发送 <code>OutMax:10#</code></li>
+<li>观测：遥测通道 11 (Out) 被限制在 [-10, 10] 范围内</li>
+</ul>
+<h3 id="tc-10">TC-10：变速积分</h3>
+<ul>
+<li>操作：发送 <code>Aspeed:5#</code> <code>Bspeed:20#</code>，观察当 |error| 在 5~20 之间时积分项权重被线性缩小</li>
+<li>观测：遥测通道 12 (I_Out) 随误差大小非线性变化</li>
+</ul>
+<h3 id="tc-11">TC-11：微分先行</h3>
+<ul>
+<li>操作：发送 <code>DFirst:1#</code>，然后快速改变 Target</li>
+<li>观测：微分冲击消失（与 DFirst=0 时对比）</li>
+</ul>
+<h3 id="_13">测试检查清单</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">编号</th>
+<th style="text-align: left;">测试项</th>
+<th style="text-align: left;">状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">TC-01</td>
+<td style="text-align: left;">编译验证</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-02</td>
+<td style="text-align: left;">首次上电默认值</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-03</td>
+<td style="text-align: left;">下行调参 Flash 字段</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-04</td>
+<td style="text-align: left;">下行调参 Target</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-05</td>
+<td style="text-align: left;">Flash 持久化掉电恢复</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-06</td>
+<td style="text-align: left;">Flash 异步提交窗口</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-07</td>
+<td style="text-align: left;">多实例隔离</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-08</td>
+<td style="text-align: left;">Now 保护</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-09</td>
+<td style="text-align: left;">OutMax 限幅</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-10</td>
+<td style="text-align: left;">变速积分</td>
+<td style="text-align: left;">☐</td>
+</tr>
+<tr>
+<td style="text-align: left;">TC-11</td>
+<td style="text-align: left;">微分先行</td>
+<td style="text-align: left;">☐</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_14">关联文档</h2>
+<ul>
+<li><strong><a href="../../%E8%AE%BE%E5%A4%87/EricTool%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7/">EricTool 调试工具</a></strong> — justfloat 协议与遥测架构</li>
+<li><strong><a href="../../%E7%AE%97%E6%B3%95/PID%E6%8E%A7%E5%88%B6%E5%99%A8/">PID 控制器</a></strong> — Class_PID 算法实现</li>
+<li><strong><a href="../../%E9%A9%B1%E5%8A%A8/OSPI_Flash/">W25Q64JV Flash 驱动</a></strong> — NOR Flash 硬件层</li>
+<li><strong><a href="../../%E7%B3%BB%E7%BB%9F/%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a></strong> — 当前任务分工；Flash Task 仍属本方案待实现项</li>
+<li><strong><a href="../../%E7%B3%BB%E7%BB%9F/USB_CDC%E9%80%9A%E4%BF%A1/">USB CDC 通信</a></strong> — USB 驱动层</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../../%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw_target_zero_%E9%9C%87%E8%8D%A1%E5%88%86%E6%9E%90/" class="md-footer__link md-footer__link--prev" aria-label="上一页: Yaw target=0 震荡分析">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                Yaw target=0 震荡分析
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../%E8%AE%BE%E5%A4%87/WHEELTEC_N100%E6%83%AF%E5%AF%BC/" class="md-footer__link md-footer__link--next" aria-label="下一页: WHEELTEC N100 惯导">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                WHEELTEC N100 惯导
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.top", "navigation.indexes", "navigation.path", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
