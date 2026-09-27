@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="STM32H723 通用电控框架的阅读路径、代码入口和验证边界。">
+        <meta name="description" content="认识 STM32H723 电控框架，了解现有模块和入门阅读路径。">
       
       
       
@@ -317,7 +317,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        阅读路径
+        这里有什么
       
     </span>
   </a>
@@ -328,7 +328,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        当前实现与文档边界
+        从哪里开始
       
     </span>
   </a>
@@ -339,40 +339,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        代码入口
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        当前工程内存映射
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        验证口径
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        关联文档
+        阅读说明
       
     </span>
   </a>
@@ -2099,7 +2066,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        阅读路径
+        这里有什么
       
     </span>
   </a>
@@ -2110,7 +2077,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        当前实现与文档边界
+        从哪里开始
       
     </span>
   </a>
@@ -2121,40 +2088,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        代码入口
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        当前工程内存映射
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        验证口径
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        关联文档
+        阅读说明
       
     </span>
   </a>
@@ -2186,193 +2120,25 @@
 
 
 
-<h1 id="h7_bsp">H7_BSP 通用电控平台</h1>
-<div class="admonition abstract">
-<p class="admonition-title">平台定位</p>
-<p>H7_BSP 面向 STM32H723VGT6，提供可复用的通信 BSP、设备驱动、控制算法和系统服务。工程使用 CMSIS-RTOS V2 / FreeRTOS，保留既有 Class_ 接口及 C 风格实现。核心通信、初始化、任务及本次修订的设备与算法页面按 2026-09-27 的工程源码核对；历史实验仍须核对适用版本。</p>
-</div>
-<h2 id="_1">阅读路径</h2>
-<table>
-<thead>
-<tr>
-<th>你要解决的问题</th>
-<th>推荐入口</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>理解框架边界</td>
-<td><a href="%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84/">平台架构</a>、<a href="%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/">内存与总线架构</a></td>
-</tr>
-<tr>
-<td>理解启动和任务协作</td>
-<td><a href="%E7%B3%BB%E7%BB%9F/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B/">初始化流程</a>、<a href="%E7%B3%BB%E7%BB%9F/%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a>、<a href="%E7%B3%BB%E7%BB%9F/TIM_1ms_Task/">1 ms 调度</a></td>
-</tr>
-<tr>
-<td>接通信与采集链路</td>
-<td><a href="%E9%A9%B1%E5%8A%A8/CAN%E6%80%BB%E7%BA%BF/">CAN</a>、<a href="%E9%A9%B1%E5%8A%A8/UART%E4%B8%B2%E5%8F%A3/">UART</a>、<a href="%E9%A9%B1%E5%8A%A8/SPI%E6%80%BB%E7%BA%BF/">SPI</a>、<a href="%E9%A9%B1%E5%8A%A8/ADC%E9%87%87%E9%9B%86/">ADC</a>、<a href="%E9%A9%B1%E5%8A%A8/OSPI_Flash/">OSPI</a></td>
-</tr>
-<tr>
-<td>接电机与传感器</td>
-<td><a href="%E8%AE%BE%E5%A4%87/DJI%E7%94%B5%E6%9C%BA/">DJI</a>、<a href="%E8%AE%BE%E5%A4%87/%E8%BE%BE%E5%A6%99%E7%94%B5%E6%9C%BA/">达妙</a>、<a href="%E8%AE%BE%E5%A4%87/QD4310%E7%94%B5%E6%9C%BA/">QD4310</a>、<a href="%E8%AE%BE%E5%A4%87/BMI088_IMU/">BMI088</a></td>
-</tr>
-<tr>
-<td>复用控制算法</td>
-<td><a href="%E7%AE%97%E6%B3%95/PID%E6%8E%A7%E5%88%B6%E5%99%A8/">PID</a>、<a href="%E5%BA%94%E7%94%A8/%E5%8A%9F%E7%8E%87%E6%8E%A7%E5%88%B6/">功率控制</a>、<a href="%E7%AE%97%E6%B3%95/RLS%E5%9C%A8%E7%BA%BF%E8%BE%A8%E8%AF%86/">RLS 在线辨识</a>、<a href="%E7%AE%97%E6%B3%95/%E7%9F%A9%E9%98%B5%E8%BF%90%E7%AE%97/">矩阵运算</a>、<a href="%E7%AE%97%E6%B3%95/%E5%9B%9B%E5%85%83%E6%95%B0%E4%B8%8E%E5%A7%BF%E6%80%81/">姿态</a></td>
-</tr>
-<tr>
-<td>调参与排障</td>
-<td><a href="%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw%E9%80%9F%E5%BA%A6%E7%8E%AF%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E4%B8%8EPID%E4%BC%98%E5%8C%96/">Yaw 速度环历史实验</a>、<a href="%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw%E4%BD%8D%E7%BD%AE%E7%8E%AF%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E4%B8%8EPID%E4%BC%98%E5%8C%96/">Yaw 位置环历史实验</a>、<a href="%E7%B3%BB%E7%BB%9F/SystemView%E8%B0%83%E8%AF%95/">SystemView</a>；<a href="%E5%BA%94%E7%94%A8/appTuner_PID%E5%9C%A8%E7%BA%BF%E8%B0%83%E5%8F%82/">appTuner 方案草稿</a>尚未实现</td>
-</tr>
-</tbody>
-</table>
-<h2 id="_2">当前实现与文档边界</h2>
-<table>
-<thead>
-<tr>
-<th>范围</th>
-<th>当前核验</th>
-<th>文档使用方式</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>CAN / USB / OSPI / ADC</td>
-<td>已核对近期缓冲、提交失败和初始化返回值</td>
-<td>从更新后的 BSP 页面接入；主机回归不代替真实总线板测</td>
-</tr>
-<tr>
-<td>BMI088 与任务</td>
-<td>FIFO 批量采集、VQF 任务计算、有界初始化与错误位</td>
-<td>不沿用旧 EKF / <code>pulse(...)</code> 示例，先读初始化与任务页面</td>
-</tr>
-<tr>
-<td>DJI / 达妙电机</td>
-<td>单电机、分组与多模式接口仍在构建中</td>
-<td>检查反馈有效性、命令返回值及目标量纲</td>
-</tr>
-<tr>
-<td>One Euro、Sugeno 模糊推理</td>
-<td>CMake 已包含对应源文件</td>
-<td>当前接口到源码的 OneEuro、Fuzzy 目录查阅；本文不声明闭环效果</td>
-</tr>
-<tr>
-<td>功率控制与 RLS</td>
-<td>CMake 已包含定长辨识与力矩预算模块</td>
-<td>参阅<a href="%E5%BA%94%E7%94%A8/%E5%8A%9F%E7%8E%87%E6%8E%A7%E5%88%B6/">功率控制</a>与<a href="%E7%AE%97%E6%B3%95/RLS%E5%9C%A8%E7%BA%BF%E8%BE%A8%E8%AF%86/">RLS 在线辨识</a>；当前尚未接入电机发送或板上功率闭环</td>
-</tr>
-<tr>
-<td>WHEELTEC N100</td>
-<td>本次未核对实现</td>
-<td>保留在规划与归档，不作为已验收入口</td>
-</tr>
-<tr>
-<td>Yaw 辨识与调参</td>
-<td>历史实验文章</td>
-<td>参数和结果只对应文章记载的实验条件</td>
-</tr>
-<tr>
-<td>其余专题</td>
-<td>尚未完成逐页复核</td>
-<td>使用接口示例前核对当前源码</td>
-</tr>
-</tbody>
-</table>
-<h2 id="_3">代码入口</h2>
-<table>
-<thead>
-<tr>
-<th>层次</th>
-<th>源码目录</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>设备</td>
-<td><code>User_File/Device/Onboard/</code>、<code>User_File/Device/Peripheral/</code></td>
-</tr>
-<tr>
-<td>通信 BSP</td>
-<td><code>User_File/Middleware/BSP/</code></td>
-</tr>
-<tr>
-<td>通用算法</td>
-<td><code>User_File/Middleware/Algorithm/</code></td>
-</tr>
-<tr>
-<td>系统服务</td>
-<td><code>User_File/System/</code></td>
-</tr>
-<tr>
-<td>任务</td>
-<td><code>User_File/Task/</code></td>
-</tr>
-<tr>
-<td>内存布局</td>
-<td><code>User_Config/Linker/h7_memory.ld</code></td>
-</tr>
-<tr>
-<td>构建注册</td>
-<td><code>CMakeLists.txt</code></td>
-</tr>
-</tbody>
-</table>
-<h2 id="_4">当前工程内存映射</h2>
-<p>以下是当前链接器文件中的区域配置，描述工程实际分配，不代替芯片数据手册。</p>
-<table>
-<thead>
-<tr>
-<th>区域</th>
-<th>起始地址</th>
-<th>容量</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ITCMRAM</td>
-<td><code>0x00000000</code></td>
-<td>64 KiB</td>
-</tr>
-<tr>
-<td>DTCMRAM</td>
-<td><code>0x20000000</code></td>
-<td>128 KiB</td>
-</tr>
-<tr>
-<td>RAM_DMA</td>
-<td><code>0x24000000</code></td>
-<td>64 KiB</td>
-</tr>
-<tr>
-<td>RAM_D1</td>
-<td><code>0x24010000</code></td>
-<td>256 KiB</td>
-</tr>
-<tr>
-<td>RAM_D2</td>
-<td><code>0x30000000</code></td>
-<td>32 KiB</td>
-</tr>
-<tr>
-<td>RAM_D3</td>
-<td><code>0x38000000</code></td>
-<td>16 KiB</td>
-</tr>
-<tr>
-<td>FLASH</td>
-<td><code>0x08000000</code></td>
-<td>1024 KiB</td>
-</tr>
-</tbody>
-</table>
-<p>DMA 缓冲位置、总线可达性和 MPU 属性需要一起核对，不能只根据总 RAM 容量安排数据。</p>
-<h2 id="_5">验证口径</h2>
-<p>文档分别记录源码存在、构建通过、主机回归和板上实验。本次更新只核对当前源码、提交和对应主机回归入口，未进行固件烧录或电机板测。实验方案与历史参数进入实机前，应重新确认设备、版本和验收条件。</p>
-<h2 id="_6">关联文档</h2>
+<h1 id="h7_bsp">H7_BSP 电控框架</h1>
+<p>H7_BSP 是基于 STM32H723VGT6 的通用电控框架。工程将外设通信、硬件设备、控制算法和 FreeRTOS 系统服务组织在一起，方便在现有基础上接入设备、编写控制任务。这个站点集中介绍 H7_BSP 的代码与相关实验记录。</p>
+<h2 id="_1">这里有什么</h2>
 <ul>
-<li><a href="https://mermaidfar.github.io/H7_BSP/">H7_BSP 独立 GitHub Pages</a></li>
-<li><a href="https://github.com/MermaidFAR/H7_BSP">H7_BSP GitHub 源码仓库</a></li>
+<li><strong>通信与采集</strong>：<a href="%E9%A9%B1%E5%8A%A8/CAN%E6%80%BB%E7%BA%BF/">CAN</a>、<a href="%E9%A9%B1%E5%8A%A8/UART%E4%B8%B2%E5%8F%A3/">UART</a>、<a href="%E9%A9%B1%E5%8A%A8/SPI%E6%80%BB%E7%BA%BF/">SPI</a>、<a href="%E9%A9%B1%E5%8A%A8/ADC%E9%87%87%E9%9B%86/">ADC</a>、<a href="%E9%A9%B1%E5%8A%A8/OSPI_Flash/">OSPI Flash</a> 和 <a href="%E7%B3%BB%E7%BB%9F/USB_CDC%E9%80%9A%E4%BF%A1/">USB CDC</a>。</li>
+<li><strong>设备驱动</strong>：<a href="%E8%AE%BE%E5%A4%87/BMI088_IMU/">BMI088 IMU</a>、<a href="%E8%AE%BE%E5%A4%87/W25Q64JV_Flash/">W25Q64JV Flash</a>、<a href="%E8%AE%BE%E5%A4%87/WS2812_LED/">WS2812 LED</a>，以及 <a href="%E8%AE%BE%E5%A4%87/DJI%E7%94%B5%E6%9C%BA/">DJI</a>、<a href="%E8%AE%BE%E5%A4%87/%E8%BE%BE%E5%A6%99%E7%94%B5%E6%9C%BA/">达妙</a>、<a href="%E8%AE%BE%E5%A4%87/QD4310%E7%94%B5%E6%9C%BA/">QD4310</a> 电机等。按左侧导航还可以找到按键、蜂鸣器和电源管理页面。</li>
+<li><strong>控制与算法</strong>：<a href="%E7%AE%97%E6%B3%95/PID%E6%8E%A7%E5%88%B6%E5%99%A8/">PID</a>、<a href="%E7%AE%97%E6%B3%95/%E6%BB%A4%E6%B3%A2%E5%99%A8/">滤波器</a>、<a href="%E7%AE%97%E6%B3%95/%E7%9F%A9%E9%98%B5%E8%BF%90%E7%AE%97/">矩阵运算</a>、<a href="%E7%AE%97%E6%B3%95/%E5%9B%9B%E5%85%83%E6%95%B0%E4%B8%8E%E5%A7%BF%E6%80%81/">四元数与姿态</a>、<a href="%E7%AE%97%E6%B3%95/RLS%E5%9C%A8%E7%BA%BF%E8%BE%A8%E8%AF%86/">RLS 在线辨识</a>和<a href="%E5%BA%94%E7%94%A8/%E5%8A%9F%E7%8E%87%E6%8E%A7%E5%88%B6/">功率控制</a>。</li>
+<li><strong>系统与调试</strong>：<a href="%E7%B3%BB%E7%BB%9F/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B/">初始化流程</a>、<a href="%E7%B3%BB%E7%BB%9F/%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a>、<a href="%E7%B3%BB%E7%BB%9F/%E6%97%B6%E9%97%B4%E6%88%B3%E7%B3%BB%E7%BB%9F/">时间戳</a>、<a href="%E7%B3%BB%E7%BB%9F/%E5%9B%9E%E8%B0%83%E7%B3%BB%E7%BB%9F/">回调系统</a>和<a href="%E7%B3%BB%E7%BB%9F/SystemView%E8%B0%83%E8%AF%95/">SystemView 调试</a>。</li>
+<li><strong>实验记录</strong>：<a href="%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw%E9%80%9F%E5%BA%A6%E7%8E%AF%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E4%B8%8EPID%E4%BC%98%E5%8C%96/">Yaw 速度环</a>与<a href="%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86/Yaw%E4%BD%8D%E7%BD%AE%E7%8E%AF%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E4%B8%8EPID%E4%BC%98%E5%8C%96/">位置环</a>的系统辨识、调参文章，供理解当时的实验过程与条件。</li>
 </ul>
+<h2 id="_2">从哪里开始</h2>
+<ol>
+<li>先读<a href="%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84/">平台架构</a>，了解各模块如何分工；需要安排 DMA 缓冲区时，再看<a href="%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/">内存与总线架构</a>。</li>
+<li>再读<a href="%E7%B3%BB%E7%BB%9F/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B/">初始化流程</a>和<a href="%E7%B3%BB%E7%BB%9F/%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a>，了解工程如何启动、任务如何协作。</li>
+<li>按要接入的硬件或要实现的功能，从左侧导航进入对应的驱动、设备或算法页面，并对照 <a href="https://github.com/MermaidFAR/H7_BSP">H7_BSP 源码</a> 使用接口。</li>
+</ol>
+<h2 id="_3">阅读说明</h2>
+<p>专题页中的接口以对应源码为准。实验文章记录的是当时的测试条件；“规划与归档”栏目中的方案不代表已实现功能。主机回归也不能代替真实硬件上的验证。</p>
+<p>本文档也可通过 <a href="https://mermaidfar.github.io/H7_BSP/">H7_BSP GitHub Pages</a> 独立阅读。</p>
 
 
 
