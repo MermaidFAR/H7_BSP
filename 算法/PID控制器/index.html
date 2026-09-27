@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1944,7 +1944,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1960,7 +1960,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2143,7 +2143,7 @@
 
 
 <h1 id="pid">PID 控制器</h1>
-<p><code>Class_PID</code> 位于 <code>User_File/Middleware/Algorithm/PID/alg_pid.h/.cpp</code>，提供 P、I、D、目标增量前馈、死区、积分分离、变速积分、输出限幅与可选的 D 支路一阶 IIR 低通。接口存在不代表某组参数能在目标机构上无超调或稳定运行。</p>
+<p>PID 控制器根据目标值与测量值计算控制输出，支持 P、I、D、目标增量前馈、死区、积分分离、变速积分、输出限幅及可选的 D 支路低通。类型 <code>Class_PID</code> 位于 <code>User_File/Middleware/Algorithm/PID/alg_pid.h/.cpp</code>。</p>
 <h2 id="_1">初始化与周期</h2>
 <p><code>Init(K_P, K_I, K_D, K_F, I_Out_Max, Out_Max, D_T, Dead_Zone, I_Variable_Speed_A, I_Variable_Speed_B, I_Separate_Threshold, D_First, D_Filter_Cutoff)</code> 更新参数。前三项必填，其余有默认值；末尾 <code>D_Filter_Cutoff</code> 单位 Hz，零表示关闭 D 支路低通。<code>D_T</code> 的单位是秒，须大于零并与实际调用周期一致。配置值应为有限数；输出、死区等边界见源码。</p>
 <div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Class_PID</span><span class="w"> </span><span class="n">pid</span><span class="p">;</span>
@@ -2161,9 +2161,9 @@
 <li>P 项为 <code>K_P × error</code>。变速积分的 A/B 阈值控制积分速率；两者均为零时不启用变速积分。<code>K_I = 0</code> 或达到非零积分分离阈值时清空积分；<code>I_Out_Max</code> 非零时对本周期积分贡献限幅。</li>
 <li>默认 D 项对误差差分；启用 <code>PID_D_First_ENABLE</code> 后改为负的测量值差分。<code>D_Filter_Cutoff &gt; 0</code> 时先对差分速率做一阶 IIR，再乘 <code>K_D</code>；关闭时直接按 <code>D_T</code> 计算。</li>
 <li>前馈项是 <code>K_F × (Target - Pre_Target)</code>，<strong>不除以 D_T</strong>。目标不再变化时，该项回到零，不能把它描述成持续提供某个百分比的电机输出。</li>
-<li>四项相加后再按 <code>Out_Max</code> 限幅。需通过反馈、波形和板上测量判断实际超调、噪声与饱和。</li>
+<li>四项相加后再按 <code>Out_Max</code> 限幅。接入实际机构时，应通过反馈、波形和板上测量判断超调、噪声与饱和。</li>
 </ul>
-<p><code>Set_Target()</code>、<code>Set_Now()</code> 设置本周期输入；<code>Get_Out()</code>、<code>Get_Error()</code> 等读取状态。当前实现的 D 滤波和限幅有主机边界回归，但主机测试不代替电机闭环验收。</p>
+<p><code>Set_Target()</code>、<code>Set_Now()</code> 设置本周期输入；<code>Get_Out()</code>、<code>Get_Error()</code> 等读取状态。D 滤波和限幅有主机测试，但实际电机闭环参数仍需按设备反馈调试。</p>
 <p>关联：<a href="../%E6%96%9C%E5%9D%A1%E8%A7%84%E5%88%92%E5%99%A8/">斜坡规划器</a>、<a href="../%E9%A2%91%E5%9F%9F%E6%BB%A4%E6%B3%A2/">频域滤波</a>。</p>
 
 

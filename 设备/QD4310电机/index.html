@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1944,7 +1944,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1960,7 +1960,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2143,7 +2143,7 @@
 
 
 <h1 id="qd4310">QD4310 电机驱动</h1>
-<p>当前实现位于 <code>User_File/Device/Peripheral/Motor/QDrive/QD4310.h/.cpp</code>，使用 FDCAN 收发。<code>QD4310_Init()</code> 绑定电机实例、CAN 句柄并注册反馈回调；反馈更新由接收路径调用 <code>QD4310_Update()</code>。</p>
+<p>QD4310 电机通过 FDCAN 接入 H7_BSP。本页说明初始化、反馈单位和命令接口；驱动位于 <code>User_File/Device/Peripheral/Motor/QDrive/QD4310.h/.cpp</code>。</p>
 <h2 id="_1">状态和单位</h2>
 <p><code>QD4310_t</code> 保存 <code>enabled</code>、<code>id</code>、<code>speed</code>（rpm）、<code>angle</code>（rad）、<code>current</code>（A）和 <code>hfdcan</code>。接收回调解码 8 字节反馈并更新这些字段。是否在线、实际动作以及电机型号边界仍须结合反馈与实机状态判断。</p>
 <h2 id="_2">命令接口</h2>

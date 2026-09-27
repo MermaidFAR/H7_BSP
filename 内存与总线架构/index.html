@@ -27,7 +27,7 @@
     
     
       
-        <title>内存与总线架构 - H7_BSP 电控平台</title>
+        <title>内存与 DMA - H7_BSP 电控平台</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#stm32h7" class="md-skip">
+        <a href="#h7_bsp-dma" class="md-skip">
           跳转至
         </a>
       
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              内存与总线架构
+              内存与 DMA
             
           </span>
         </div>
@@ -382,7 +382,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -400,7 +400,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -429,49 +429,21 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        总线架构模型
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="总线架构模型">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tcm" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        TCM 总线
+        工程中的内存分区
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#axi" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dma" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AXI 总线
+        接入 DMA 时怎么放数据
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ahbapb" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AHB/APB 总线
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -479,129 +451,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        内存区域详解
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="内存区域详解">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#itcm-ram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ITCM RAM — 指令紧耦合内存
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dtcm-ram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DTCM RAM — 数据紧耦合内存
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#axi-sram-ram_d1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AXI SRAM (RAM_D1) — 通用高速存储
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        内存规划总览
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        链接器脚本修正
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="链接器脚本修正">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        问题
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        修正方案
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        数据布局原则
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#d-cache-dma" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        D-Cache 与 DMA 的一致性问题
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        关联文档
+        修改配置时检查什么
       
     </span>
   </a>
@@ -2105,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -2121,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2220,49 +2070,21 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        总线架构模型
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="总线架构模型">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tcm" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        TCM 总线
+        工程中的内存分区
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#axi" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dma" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AXI 总线
+        接入 DMA 时怎么放数据
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ahbapb" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AHB/APB 总线
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2270,129 +2092,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        内存区域详解
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="内存区域详解">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#itcm-ram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ITCM RAM — 指令紧耦合内存
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dtcm-ram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DTCM RAM — 数据紧耦合内存
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#axi-sram-ram_d1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AXI SRAM (RAM_D1) — 通用高速存储
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        内存规划总览
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        链接器脚本修正
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="链接器脚本修正">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        问题
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        修正方案
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        数据布局原则
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#d-cache-dma" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        D-Cache 与 DMA 的一致性问题
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        关联文档
+        修改配置时检查什么
       
     </span>
   </a>
@@ -2464,280 +2164,80 @@
 
 
 
-<h1 id="stm32h7">STM32H7 内存与总线架构详解</h1>
-<div class="admonition abstract">
-<p class="admonition-title">文档摘要</p>
-<p>STM32H7 系列拥有嵌入式 MCU 中最复杂的内存架构之一。本文档以 H723/H730 为基准，解析内部总线矩阵、内存区域功能划分，以及 DMA 控制器的访问约束。重点阐明一个关键工程陷阱：<strong>DMA 无法访问 TCM 内存</strong>，以及如何通过修改链接器脚本来正确规划数据布局。</p>
-</div>
-<hr />
-<h2 id="_1">总线架构模型</h2>
-<p>STM32H7 内部的数据通路可用三级交通网络来理解：</p>
-<pre class="mermaid"><code>graph TD
-    CPU["Cortex-M7 CPU"]
-
-    subgraph "TCM 总线（CPU 专属通道）"
-        ITCM["ITCM RAM&lt;br/&gt;指令紧耦合内存"]
-        DTCM["DTCM RAM&lt;br/&gt;数据紧耦合内存"]
-    end
-
-    subgraph "AXI 总线（高速主干道）"
-        AXI{"AXI 总线矩阵"}
-        RAM_D1["AXI SRAM · RAM_D1&lt;br/&gt;通用高速存储"]
-    end
-
-    subgraph "AHB/APB 总线（外设辅路）"
-        AHB{"AHB/APB 桥接"}
-        PERIPH["外设寄存器&lt;br/&gt;UART · SPI · GPIO"]
-    end
-
-    DMA["DMA1 / DMA2 / MDMA"]
-
-    CPU -- "零等待周期" --&gt; ITCM
-    CPU -- "零等待周期" --&gt; DTCM
-    CPU -- "AXI 端口" --&gt; AXI
-    DMA -- "AXI 端口" --&gt; AXI
-
-    AXI --&gt; RAM_D1
-    AXI --&gt; AHB
-    AHB --&gt; PERIPH
-
-    DMA -.-x|"❌ 不可达"| ITCM
-    DMA -.-x|"❌ 不可达"| DTCM
-    DMA -.-&gt;|"✅ 完全支持"| RAM_D1
-    DMA -.-&gt;|"✅ 完全支持"| PERIPH
-
-    classDef denied stroke:#f55,stroke-width:2px;
-    classDef allowed stroke:#5f5,stroke-width:2px;
-    class ITCM,DTCM denied;
-    class RAM_D1,PERIPH allowed;</code></pre>
-<h3 id="tcm">TCM 总线</h3>
-<p>TCM（Tightly-Coupled Memory）是 CPU 核心的<strong>专属数据通道</strong>。通过它访问 ITCM/DTCM 具有零等待周期、零总线仲裁的特性，是 CPU 性能的极限保障。代价是此通道对其他总线主设备（DMA、MDMA）完全不可见。</p>
-<h3 id="axi">AXI 总线</h3>
-<p>AXI（Advanced eXtensible Interface）是贯穿全芯片的<strong>高速主干道</strong>，支持并行传输和乱序完成。CPU、DMA1、DMA2、MDMA 均可通过 AXI 总线矩阵访问挂载在其上的 SRAM 和外设。</p>
-<h3 id="ahbapb">AHB/APB 总线</h3>
-<p>AHB/APB 是连接低速外设（UART、SPI、GPIO、I2C）的辅助总线，通过桥接器与 AXI 主干道相连。</p>
-<hr />
-<h2 id="_2">内存区域详解</h2>
-<h3 id="itcm-ram">ITCM RAM — 指令紧耦合内存</h3>
+<h1 id="h7_bsp-dma">H7_BSP 内存与 DMA 缓冲区</h1>
+<p>在 STM32H723 上接入 DMA 外设时，最重要的是确认缓冲区所在的内存可被对应 DMA 控制器访问，以及 CPU 与 DMA 是否会看到同一份数据。本页按 H7_BSP 现用的链接脚本和 MPU 配置说明放置方法；芯片的完整总线细节仍以器件手册为准。</p>
+<h2 id="_1">工程中的内存分区</h2>
+<p>下表来自 <code>User_Config/Linker/h7_memory.ld</code>。地址和容量是<strong>当前工程的分配</strong>，不是建议重新划分内存的步骤。</p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">属性</th>
-<th style="text-align: left;">值</th>
+<th>区域</th>
+<th>起始地址</th>
+<th>容量</th>
+<th>当前用途</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">起始地址</td>
-<td style="text-align: left;"><code>0x00000000</code></td>
+<td>ITCMRAM</td>
+<td><code>0x00000000</code></td>
+<td>64 KiB</td>
+<td>链接脚本定义了区域，普通代码仍放在 Flash</td>
 </tr>
 <tr>
-<td style="text-align: left;">典型大小</td>
-<td style="text-align: left;">64 KB</td>
+<td>DTCMRAM</td>
+<td><code>0x20000000</code></td>
+<td>128 KiB</td>
+<td>默认 <code>.data</code>、<code>.bss</code>、主栈与部分 FreeRTOS heap</td>
 </tr>
 <tr>
-<td style="text-align: left;">访问延迟</td>
-<td style="text-align: left;">零等待（CPU 专属）</td>
+<td>RAM_DMA</td>
+<td><code>0x24000000</code></td>
+<td>64 KiB</td>
+<td><code>.dma_buffer</code>，供 DMA 缓冲区使用</td>
 </tr>
 <tr>
-<td style="text-align: left;">DMA 可达</td>
-<td style="text-align: left;">❌ 不可达</td>
+<td>RAM_D1</td>
+<td><code>0x24010000</code></td>
+<td>256 KiB</td>
+<td><code>.ram_d1_data</code>，含剩余 FreeRTOS heap</td>
+</tr>
+<tr>
+<td>RAM_D2</td>
+<td><code>0x30000000</code></td>
+<td>32 KiB</td>
+<td>已定义区域，需按具体外设和链接段决定用途</td>
+</tr>
+<tr>
+<td>RAM_D3</td>
+<td><code>0x38000000</code></td>
+<td>16 KiB</td>
+<td>已定义区域，需按具体外设和链接段决定用途</td>
+</tr>
+<tr>
+<td>FLASH</td>
+<td><code>0x08000000</code></td>
+<td>1024 KiB</td>
+<td>程序代码与只读数据</td>
 </tr>
 </tbody>
 </table>
-<p><strong>用途</strong>：存放对执行速度要求极高的代码段，如高频中断服务函数、DSP 运算函数。</p>
-<p><strong>放置方法</strong>（GCC）：</p>
-<div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">__attribute__</span><span class="p">((</span><span class="n">section</span><span class="p">(</span><span class="s">&quot;.itcm_text&quot;</span><span class="p">)))</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kt">void</span><span class="w"> </span><span class="n">IMU_EXTI_Handler</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="c1">// 时间敏感的中断服务代码</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span>
+<p><code>Core/Src/main.c</code> 的 MPU region 0 覆盖 <code>0x24000000</code> 起的 64 KiB，配置为可共享、不可缓存；它与链接脚本中的 <code>RAM_DMA</code> 对齐。<code>RAM_D1</code> 从 <code>0x24010000</code> 开始，不与该区域重叠。FreeRTOS 使用 <code>heap_5</code>，默认把 49152 字节的 heap 留在 DTCMRAM，其余放到 <code>RAM_D1</code>；这不表示普通动态分配得到的指针一定适合作为 DMA 缓冲区。</p>
+<h2 id="dma">接入 DMA 时怎么放数据</h2>
+<p>DMA1/2 不能访问 DTCMRAM。普通全局变量和静态变量默认进入 <code>.data</code> 或 <code>.bss</code>，因此不要仅凭它们是“全局变量”就交给 DMA。需要 DMA 读写的缓冲区应显式放进 <code>.dma_buffer</code>：</p>
+<div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">__attribute__</span><span class="p">((</span><span class="n">section</span><span class="p">(</span><span class="s">&quot;.dma_buffer&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">aligned</span><span class="p">(</span><span class="mi">32</span><span class="p">)))</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">static</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">dma_rx_buffer</span><span class="p">[</span><span class="mi">512</span><span class="p">];</span>
 </span></code></pre></div>
-<h3 id="dtcm-ram">DTCM RAM — 数据紧耦合内存</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">属性</th>
-<th style="text-align: left;">值</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">起始地址</td>
-<td style="text-align: left;"><code>0x20000000</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">典型大小</td>
-<td style="text-align: left;">128 KB</td>
-</tr>
-<tr>
-<td style="text-align: left;">访问延迟</td>
-<td style="text-align: left;">零等待（CPU 专属）</td>
-</tr>
-<tr>
-<td style="text-align: left;">DMA 可达</td>
-<td style="text-align: left;">❌ <strong>不可达 — H7 平台最经典的陷阱</strong></td>
-</tr>
-</tbody>
-</table>
-<p><strong>致命陷阱</strong>：CubeMX 默认链接器脚本通常将 <code>.data</code> 和 <code>.bss</code> 段分配到 DTCM。这意味着所有 DMA 缓冲区也被放在了 DMA 不可达的区域，导致<strong>所有依赖 DMA 的外设静默失效</strong>——无报错、无 HardFault，只是数据永远为零。</p>
-<h3 id="axi-sram-ram_d1">AXI SRAM (RAM_D1) — 通用高速存储</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">属性</th>
-<th style="text-align: left;">值</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">起始地址</td>
-<td style="text-align: left;"><code>0x24000000</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">典型大小</td>
-<td style="text-align: left;">320 KB（H723）</td>
-</tr>
-<tr>
-<td style="text-align: left;">访问延迟</td>
-<td style="text-align: left;">AXI 总线仲裁延迟（通常 1~2 周期）</td>
-</tr>
-<tr>
-<td style="text-align: left;">DMA 可达</td>
-<td style="text-align: left;">✅ 完全支持</td>
-</tr>
-</tbody>
-</table>
-<p><strong>用途</strong>：所有需要 DMA 参与的数据缓冲区必须放在此区域：</p>
+<p><code>.dma_buffer</code> 在链接脚本中属于 <code>RAM_DMA</code>，并标为 <code>NOLOAD</code>；使用前由代码完成必要的初始化，不依赖启动代码清零。工程中的 UART、SPI、OSPI 和 ADC BSP 已按此方式放置其 DMA 管理对象或缓冲区。要新增缓冲区时，还需核对该 DMA 控制器是否能访问目标内存、传输长度、对齐以及与中断或任务共享数据的方式。</p>
+<p>CPU 专用的数据可以保留在默认段。若要把较大的非 DMA 数据放进 <code>RAM_D1</code>，可使用工程的 <code>.ram_d1_data</code> 段；该段同样是 <code>NOLOAD</code>。对 <code>RAM_D1</code> 或其他可能受 D-Cache 影响的内存进行 DMA 传输时，还需设计缓存维护或对应的 MPU 配置，不能套用 <code>RAM_DMA</code> 的不可缓存假设。</p>
+<h2 id="_2">修改配置时检查什么</h2>
 <ul>
-<li>FDCAN 接收/发送缓冲区</li>
-<li>UART DMA 接收 buffer</li>
-<li>SPI DMA 读写 buffer</li>
-<li>USB CDC 数据缓冲区</li>
-<li>通用全局变量和静态变量</li>
+<li>保持 <code>h7_memory.ld</code> 的 <code>RAM_DMA</code> 地址与大小、<code>H7_BSP.ioc</code> 的 MPU 设置及 <code>Core/Src/main.c</code> 中的 region 0 一致。链接脚本还用 <code>ASSERT</code> 防止 <code>RAM_DMA</code> 与 <code>RAM_D1</code> 重叠。</li>
+<li>改动链接段或新增较大缓冲区后，重新构建并查看 map 文件，确认段落在预期地址且没有溢出。</li>
+<li>修改 <code>H7_FREERTOS_DTCM_HEAP_SIZE</code> 时，同时检查任务栈、DTCMRAM 余量和 <code>RAM_D1</code> 余量；这项 CMake 配置只调整 FreeRTOS heap 的分配比例。</li>
+<li>上板后用实际 DMA 收发验证数据内容与持续传输情况。构建通过只能证明链接布局成立。</li>
 </ul>
-<hr />
-<h2 id="_3">内存规划总览</h2>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">内存区域</th>
-<th style="text-align: left;">起始地址</th>
-<th style="text-align: center;">DMA</th>
-<th style="text-align: left;">CubeMX 默认用途</th>
-<th style="text-align: left;">H7_BSP 推荐用途</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">ITCM</td>
-<td style="text-align: left;"><code>0x00000000</code></td>
-<td style="text-align: center;">❌</td>
-<td style="text-align: left;">闲置</td>
-<td style="text-align: left;">高频中断代码（可选）</td>
-</tr>
-<tr>
-<td style="text-align: left;">DTCM</td>
-<td style="text-align: left;"><code>0x20000000</code></td>
-<td style="text-align: center;">❌</td>
-<td style="text-align: left;">堆、栈、全局变量</td>
-<td style="text-align: left;"><strong>仅限</strong> RTOS 任务堆栈</td>
-</tr>
-<tr>
-<td style="text-align: left;">RAM_D1</td>
-<td style="text-align: left;"><code>0x24000000</code></td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: left;">闲置</td>
-<td style="text-align: left;"><strong>必须</strong> 放置所有全局/静态变量和 DMA 缓冲区</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="_4">链接器脚本修正</h2>
-<h3 id="_5">问题</h3>
-<p>CubeMX 默认生成的链接器脚本将 <code>.data</code> 和 <code>.bss</code> 段分配到 <code>DTCMRAM</code>：</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/* CubeMX 默认（有问题） */
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>MEMORY
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>{
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    DTCMRAM (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    RAM_D1  (xrw) : ORIGIN = 0x24000000, LENGTH = 320K
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>}
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>SECTIONS
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>{
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    .data : { *(.data .data*) } &gt; DTCMRAM AT&gt; FLASH
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    .bss  : { *(.bss .bss*)  } &gt; DTCMRAM
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>}
-</span></code></pre></div>
-<h3 id="_6">修正方案</h3>
-<p>将 <code>.data</code> 和 <code>.bss</code> 的目标内存区域从 <code>DTCMRAM</code> 改为 <code>RAM_D1</code>：</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>/* H7_BSP 修正后 */
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>SECTIONS
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>{
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    .data : { *(.data .data*) } &gt; RAM_D1 AT&gt; FLASH
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    .bss  : { *(.bss .bss*)  } &gt; RAM_D1
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    .dtcm_bss (NOLOAD) : {
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        *(.dtcm_bss)
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    } &gt; DTCMRAM
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>}
-</span></code></pre></div>
-<p>对于需要显式放置到 DTCM 的高频数据（如任务堆栈）：</p>
-<div class="language-c highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">__attribute__</span><span class="p">((</span><span class="n">section</span><span class="p">(</span><span class="s">&quot;.dtcm_bss&quot;</span><span class="p">)))</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">static</span><span class="w"> </span><span class="n">StackType_t</span><span class="w"> </span><span class="n">ins_task_stack</span><span class="p">[</span><span class="mi">512</span><span class="p">];</span>
-</span></code></pre></div>
-<hr />
-<h2 id="_7">数据布局原则</h2>
-<pre class="mermaid"><code>graph TD
-    Q{"这个数据由谁访问？"}
-    Q -- "仅 CPU 高频读写&lt;br/&gt;（任务堆栈、循环变量）" --&gt; DTCM["放入 DTCM&lt;br/&gt;零延迟访问"]
-    Q -- "需要 DMA 搬运&lt;br/&gt;（外设缓冲区）" --&gt; RAM_D1["放入 RAM_D1&lt;br/&gt;DMA 可达"]
-    Q -- "两者都需要" --&gt; RAM_D1
-    Q -- "高频执行的代码" --&gt; ITCM["放入 ITCM&lt;br/&gt;指令零延迟"]</code></pre>
-<div class="admonition tip">
-<p class="admonition-title">经验法则</p>
-<p>当不确定一个变量应该放在哪里时，<strong>默认放在 RAM_D1</strong>。只有在性能分析证明该变量是热点路径瓶颈时，才考虑将其迁移到 DTCM。</p>
-</div>
-<hr />
-<h2 id="d-cache-dma">D-Cache 与 DMA 的一致性问题</h2>
-<p>STM32H7 的 Cortex-M7 内核启用了 D-Cache。当 CPU 和 DMA 同时访问 RAM_D1 中的同一块数据时，可能出现缓存一致性问题：</p>
-<ul>
-<li><strong>CPU 写入 → DMA 读取</strong>：CPU 的写入可能还停留在 Cache 中，DMA 读到过期数据</li>
-<li><strong>DMA 写入 → CPU 读取</strong>：DMA 写入的新数据被 Cache 中的旧数据遮蔽</li>
-</ul>
-<p><strong>解决方案</strong>：</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">方案</th>
-<th style="text-align: left;">操作</th>
-<th style="text-align: left;">适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">手动 Cache 维护</td>
-<td style="text-align: left;"><code>SCB_CleanDCache_by_Addr()</code> / <code>SCB_InvalidateDCache_by_Addr()</code></td>
-<td style="text-align: left;">对性能要求高，手动管理</td>
-</tr>
-<tr>
-<td style="text-align: left;">MPU 配置 Non-Cacheable</td>
-<td style="text-align: left;">将 DMA 缓冲区所在区域配置为不可缓存</td>
-<td style="text-align: left;">一劳永逸</td>
-</tr>
-<tr>
-<td style="text-align: left;">使用 DTCM</td>
-<td style="text-align: left;">DTCM 不经过 Cache，天然无一致性问题</td>
-<td style="text-align: left;">仅限不需要 DMA 的数据</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="_8">关联文档</h2>
-<ul>
-<li><strong><a href="../%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84/">平台架构</a></strong> — 总体架构设计与中断优先级分层</li>
-<li><strong><a href="../%E9%A9%B1%E5%8A%A8/CAN%E6%80%BB%E7%BA%BF/">CAN 总线驱动</a></strong> — CAN 收发缓冲区的内存放置要求</li>
-<li><strong><a href="../%E9%A9%B1%E5%8A%A8/UART%E4%B8%B2%E5%8F%A3/">UART 串口驱动</a></strong> — <code>.dma_buffer</code> 段与 DMA 缓冲区布局</li>
-</ul>
+<p>相关入口：<a href="../%E9%A9%B1%E5%8A%A8/UART%E4%B8%B2%E5%8F%A3/">UART 串口</a>、<a href="../%E9%A9%B1%E5%8A%A8/SPI%E6%80%BB%E7%BA%BF/">SPI 总线</a>、<a href="../%E9%A9%B1%E5%8A%A8/ADC%E9%87%87%E9%9B%86/">ADC 采集</a>和<a href="../%E9%A9%B1%E5%8A%A8/OSPI_Flash/">OSPI Flash</a>。</p>
 
 
 

@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -873,7 +873,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板后检查
       
     </span>
   </a>
@@ -1966,7 +1966,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1982,7 +1982,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2103,7 +2103,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板后检查
       
     </span>
   </a>
@@ -2188,8 +2188,8 @@
 
 <h1 id="w25q64jv-flash">W25Q64JV 外部 Flash</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>W25Q64JV 是板载 64 Mbit（8 MB）NOR Flash，通过 OCTOSPI2 接入。<code>Class_W25Q64JV</code> 提供读写、擦除和自动轮询；初始化及底层提交失败会向上报告，不能把流程结束视为器件可用。</p>
+<p class="admonition-title">用途</p>
+<p>W25Q64JV 是通过 OCTOSPI2 接入的板载 64 Mbit（8 MB）NOR Flash，可用于非易失数据存储。本页介绍初始化状态、读写与擦除接口，以及等待操作完成的方法。</p>
 </div>
 <h2 id="_1">初始化与状态</h2>
 <p><code>BSP_W25Q64JV.Init()</code> 返回 <code>bool</code>，JEDEC ID 读取与配置尝试有上限。失败时 <code>System_Get_Init_Errors()</code> 置 <code>SYSTEM_INIT_ERROR_FLASH</code>，<code>Is_Initialized()</code> 和 <code>Is_Ready()</code> 不报告可用。内存映射模式由 <code>Enum_W25Q64JV_Mode</code> 选择，接入前需核对工程对应配置。</p>
@@ -2230,8 +2230,8 @@
 </tbody>
 </table>
 <p>32 KiB、64 KiB 与全片擦除接口也在头文件中；调用方应按当前签名检查可返回的错误状态、地址边界和对齐约束。写前先确认目标扇区可擦除、数据可覆盖，并按接口返回值与 <code>Is_Ready()</code> 判断操作结果。不要使用无超时的应用层等待循环把板载错误重新变成无限阻塞。</p>
-<h2 id="_3">验证边界</h2>
-<p><code>Tests/Initialization/README.md</code> 与 <code>Tests/Communication/README.md</code> 覆盖主机错误路径。真实擦写、断电保持、OSPI DMA 时序和长期寿命仍需板上验证。</p>
+<h2 id="_3">上板后检查</h2>
+<p>真实使用时检查擦写结果、断电保持与 OSPI DMA 时序，并按器件规格评估擦写寿命。主机错误路径测试见 <code>Tests/Initialization/README.md</code> 与 <code>Tests/Communication/README.md</code>。</p>
 <h2 id="_4">关联文档</h2>
 <ul>
 <li><a href="../../%E9%A9%B1%E5%8A%A8/OSPI_Flash/">OSPI BSP</a></li>

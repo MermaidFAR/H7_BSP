@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1649,7 +1649,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        关键配置参数
+        任务与节拍
       
     </span>
   </a>
@@ -1657,10 +1657,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#heap" class="md-nav__link">
     <span class="md-ellipsis">
       
-        中断优先级约束
+        Heap 放在哪里
       
     </span>
   </a>
@@ -1668,10 +1668,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#rtos" class="md-nav__link">
     <span class="md-ellipsis">
       
-        关联文档
+        中断调用 RTOS 接口
       
     </span>
   </a>
@@ -1955,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1971,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2070,7 +2070,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        关键配置参数
+        任务与节拍
       
     </span>
   </a>
@@ -2078,10 +2078,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#heap" class="md-nav__link">
     <span class="md-ellipsis">
       
-        中断优先级约束
+        Heap 放在哪里
       
     </span>
   </a>
@@ -2089,10 +2089,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#rtos" class="md-nav__link">
     <span class="md-ellipsis">
       
-        关联文档
+        中断调用 RTOS 接口
       
     </span>
   </a>
@@ -2165,117 +2165,58 @@
 
 
 <h1 id="freertos">FreeRTOS 配置</h1>
-<div class="admonition abstract">
-<p class="admonition-title">文档摘要</p>
-<p>H7_BSP 使用 FreeRTOS v10.x（CMSIS-RTOS V2 封装），关键配置在 <code>Core/Inc/FreeRTOSConfig.h</code> 中定义。本文档仅列出影响 H7_BSP 架构的关键参数。</p>
-</div>
-<hr />
-<h2 id="_1">关键配置参数</h2>
+<p>H7_BSP 通过 CMSIS-RTOS V2 创建和管理任务，底层使用 FreeRTOS。本页说明当前工程中影响任务周期、栈、heap 和中断调用的配置；要新增任务，可接着看<a href="../%E6%89%8B%E5%86%99FreeRTOS%E4%BB%BB%E5%8A%A1/">手写 FreeRTOS 任务</a>。</p>
+<h2 id="_1">任务与节拍</h2>
+<p>主要参数位于 <code>Core/Inc/FreeRTOSConfig.h</code>：</p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">参数</th>
-<th style="text-align: center;">默认值</th>
-<th style="text-align: left;">说明</th>
+<th>参数</th>
+<th>当前值</th>
+<th>使用时关注</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>configUSE_PREEMPTION</code></td>
-<td style="text-align: center;">1</td>
-<td style="text-align: left;">抢占式调度</td>
+<td><code>configUSE_PREEMPTION</code></td>
+<td><code>1</code></td>
+<td>高优先级就绪任务可以抢占低优先级任务</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>configTICK_RATE_HZ</code></td>
-<td style="text-align: center;">1000</td>
-<td style="text-align: left;">1 kHz 系统节拍</td>
+<td><code>configTICK_RATE_HZ</code></td>
+<td><code>1000</code></td>
+<td>1 tick 对应 1 ms；实际唤醒仍受调度和执行时间影响</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY</code></td>
-<td style="text-align: center;">5</td>
-<td style="text-align: left;">FreeRTOS API 可调用的中断优先级下限</td>
+<td><code>configMAX_PRIORITIES</code></td>
+<td><code>56</code></td>
+<td>FreeRTOS 任务优先级数量，<strong>不是 NVIC 中断优先级数</strong></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>configMAX_PRIORITIES</code></td>
-<td style="text-align: center;">16</td>
-<td style="text-align: left;">总优先级数（0~15）</td>
+<td><code>configMINIMAL_STACK_SIZE</code></td>
+<td><code>1024</code> words</td>
+<td>内核任务的最小栈配置；具体任务栈仍看线程属性</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>configMINIMAL_STACK_SIZE</code></td>
-<td style="text-align: center;">128 words</td>
-<td style="text-align: left;">最小任务堆栈</td>
+<td><code>configCHECK_FOR_STACK_OVERFLOW</code></td>
+<td><code>2</code></td>
+<td>启用栈溢出检查</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>configTOTAL_HEAP_SIZE</code></td>
-<td style="text-align: center;">动态</td>
-<td style="text-align: left;">堆内存大小</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>configUSE_TASK_NOTIFICATIONS</code></td>
-<td style="text-align: center;">1</td>
-<td style="text-align: left;">任务通知（INS_Task 依赖）</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>configUSE_MUTEXES</code></td>
-<td style="text-align: center;">1</td>
-<td style="text-align: left;">互斥锁（CAN 发送锁依赖）</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>configUSE_TIMERS</code></td>
-<td style="text-align: center;">1</td>
-<td style="text-align: left;">软件定时器</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>configCHECK_FOR_STACK_OVERFLOW</code></td>
-<td style="text-align: center;">2</td>
-<td style="text-align: left;">栈溢出检测（详细模式）</td>
+<td><code>configUSE_MUTEXES</code> / <code>configUSE_TIMERS</code></td>
+<td><code>1</code> / <code>1</code></td>
+<td>启用互斥锁与软件定时器</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="_2">中断优先级约束</h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY = 5
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>FreeRTOS API 可调用范围：优先级 5~15
-</span></code></pre></div>
-<table>
-<thead>
-<tr>
-<th style="text-align: center;">优先级</th>
-<th style="text-align: left;">类型</th>
-<th style="text-align: center;">可调用 FreeRTOS API？</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">0~4</td>
-<td style="text-align: left;">特权层（IMU EXTI）</td>
-<td style="text-align: center;"><strong>禁止</strong></td>
-</tr>
-<tr>
-<td style="text-align: center;">5~9</td>
-<td style="text-align: left;">通信层（CAN/UART DMA）</td>
-<td style="text-align: center;">仅 <code>FromISR</code> 后缀</td>
-</tr>
-<tr>
-<td style="text-align: center;">10~14</td>
-<td style="text-align: left;">低速层（PWM/LED）</td>
-<td style="text-align: center;">仅 <code>FromISR</code> 后缀</td>
-</tr>
-<tr>
-<td style="text-align: center;">15</td>
-<td style="text-align: left;">最低（SysTick）</td>
-<td style="text-align: center;">—</td>
-</tr>
-</tbody>
-</table>
-<p>此为 STM32H7 NVIC 优先级，<strong>数值越小优先级越高</strong>。</p>
-<hr />
-<h2 id="_3">关联文档</h2>
-<ul>
-<li><strong><a href="../../%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84/">平台架构</a></strong> — 中断优先级分层的完整说明</li>
-<li><strong><a href="../%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a></strong> — 各任务优先级与堆栈分配</li>
-<li><strong><a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/">内存与总线架构</a></strong> — 任务堆栈的内存布局（DTCM vs RAM_D1）</li>
-</ul>
+<p>任务入口、优先级和栈大小由 <code>Core/Src/freertos.c</code> 中的 <code>osThreadAttr_t</code> 决定。接入周期任务时，测量实际执行时间与栈水位，不只根据 1 ms tick 推断任务一定准时运行。</p>
+<h2 id="heap">Heap 放在哪里</h2>
+<p><code>configTOTAL_HEAP_SIZE</code> 为 65536 字节。工程使用 <code>heap_5</code>，由 <code>User_Config/FreeRTOS_Patch/heap_regions_patched.c</code> 定义两块 heap：默认 49152 字节位于 DTCMRAM，其余 16384 字节位于 <code>RAM_D1</code>。DTCM 部分大小由 CMake 的 <code>H7_FREERTOS_DTCM_HEAP_SIZE</code> 控制。</p>
+<p>从 FreeRTOS heap 分配内存时，不能假定返回指针来自哪一块区域。需要 DMA1/2 访问的缓冲区应使用专门的 <code>.dma_buffer</code> 段，方法见<a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/">内存与 DMA 缓冲区</a>。</p>
+<h2 id="rtos">中断调用 RTOS 接口</h2>
+<p><code>configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY</code> 为 <code>5</code>。STM32H7 的 NVIC 数值越小表示优先级越高；需要在中断中调用允许的 RTOS ISR 接口时，对应中断的数值优先级不得高于该阈值。当前工程的常用外设中断（包括 DMA、FDCAN、UART、BMI088 EXTI 和定时器）配置为数值 <code>5</code>。</p>
+<p>修改 <code>H7_BSP.ioc</code>、重新生成代码或添加中断后，检查生成的 NVIC 配置和实际调用的 RTOS 接口。中断处理保持简短，较长的滤波或控制计算放在任务中；相关路径见<a href="../../%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84/">平台架构</a>与<a href="../%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a>。</p>
+<p>工程还使用 <code>User_Config/FreeRTOS_Patch/</code> 中的自定义 port 和 heap 定义。更新 CubeMX、FreeRTOS 或构建配置时，要保留这些补丁并重新构建。</p>
 
 
 

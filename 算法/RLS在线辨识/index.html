@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1166,7 +1166,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        接入和验证
+        接入示例与检查
       
     </span>
   </a>
@@ -1944,7 +1944,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1960,7 +1960,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2070,7 +2070,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        接入和验证
+        接入示例与检查
       
     </span>
   </a>
@@ -2143,7 +2143,7 @@
 
 
 <h1 id="rls">定长 RLS 在线辨识</h1>
-<p><code>Class_RLS</code> 位于 <code>User_File/Middleware/Algorithm/RLS/alg_rls.h/.cpp</code>，已进入 H7 工程构建。它用定长数组估计线性模型 <code>measurement ≈ featuresᵀ × parameters</code>，最多六个参数，内部参数与协方差使用 <code>double</code>，不进行动态内存分配。它是通用算法组件；模型的物理意义、样本来源和时间对齐由调用方负责。</p>
+<p>RLS 在线辨识用于从连续样本估计线性模型的参数，例如根据输入特征与功率测量更新损耗系数。<code>Class_RLS</code> 使用定长数组，最多支持六个参数，不进行动态内存分配；接口位于 <code>User_File/Middleware/Algorithm/RLS/alg_rls.h/.cpp</code>。调用方负责选择有物理意义的特征，并保证样本时间对齐。</p>
 <h2 id="_1">接口与约束</h2>
 <table>
 <thead>
@@ -2180,8 +2180,8 @@
 </tbody>
 </table>
 <p>遗忘因子为一时保留历史观测权重，小于一时更快跟踪变化，也更敏感于噪声。<code>Update()</code> 会拒绝非有限输入、数值溢出以及失去正定性的候选协方差。返回值必须检查；零特征等缺少新信息的样本也可能改变协方差。</p>
-<h2 id="_2">接入和验证</h2>
-<p>当前<a href="../../%E5%BA%94%E7%94%A8/%E5%8A%9F%E7%8E%87%E6%8E%A7%E5%88%B6/">功率控制</a>在启用在线辨识时使用二维 RLS，特征为转速绝对值之和与实际力矩平方和。它仍未接入板上闭环。通用 RLS 的主机回归位于 <code>Tests/RLS/</code>，覆盖边界与失败状态保持；具体物理模型还需实际数据和运行时间验证。</p>
+<h2 id="_2">接入示例与检查</h2>
+<p><a href="../../%E5%BA%94%E7%94%A8/%E5%8A%9F%E7%8E%87%E6%8E%A7%E5%88%B6/">功率控制</a>启用在线辨识时使用二维 RLS，特征为转速绝对值之和与实际力矩平方和。接入实际系统时，需用测得的数据和运行时间检查模型效果；功率控制尚未接入板上闭环。通用 RLS 的主机测试位于 <code>Tests/RLS/</code>。</p>
 
 
 

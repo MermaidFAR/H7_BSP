@@ -369,7 +369,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1873,7 +1873,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1889,7 +1889,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2071,12 +2071,12 @@
   <a href="#h7_bsp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        H7_BSP 接入
+        拟接入 H7_BSP
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="H7_BSP 接入">
+    <nav class="md-nav" aria-label="拟接入 H7_BSP">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2094,7 +2094,7 @@
   <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        接收方式
+        接收设计思路
       
     </span>
   </a>
@@ -2291,12 +2291,12 @@
   <a href="#h7_bsp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        H7_BSP 接入
+        拟接入 H7_BSP
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="H7_BSP 接入">
+    <nav class="md-nav" aria-label="拟接入 H7_BSP">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2314,7 +2314,7 @@
   <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        接收方式
+        接收设计思路
       
     </span>
   </a>
@@ -2433,7 +2433,7 @@
         <a href="../../%E5%BA%94%E7%94%A8/appTuner_PID%E5%9C%A8%E7%BA%BF%E8%B0%83%E5%8F%82/" class="md-path__link">
           
   <span class="md-ellipsis">
-    规划与归档
+    规划资料（未实现）
   </span>
 
         </a>
@@ -2454,12 +2454,12 @@
 
 <h1 id="wheeltec-n100">WHEELTEC N100 惯导模块</h1>
 <div class="admonition warning">
-<p class="admonition-title">规划中 · 尚未实现</p>
-<p>本文档描述的功能模块<strong>尚未在当前 H7_BSP 代码库中实现</strong>。N100 是外接 AHRS 模块，通过 UART 接入，可作为 BMI088 的补充或替代方案。待后续硬件到位后，本文档将更新为实际 API。</p>
+<p class="admonition-title">接入方案 · 尚未实现</p>
+<p>H7_BSP 尚未集成 N100 驱动。本页记录外接模块的配置方法和拟议的 UART 接入思路，不能当作当前工程中可调用的 N100 接口。</p>
 </div>
 <div class="admonition abstract">
-<p class="admonition-title">文档摘要</p>
-<p>WHEELTEC N100 是一款集成三轴陀螺仪、三轴加速度计和三轴磁力计的九轴 AHRS 模块，内置 Sigma-Point 卡尔曼滤波器，最高支持 1000 Hz 传感器采样。H7_BSP 通过 UART 接口接入。</p>
+<p class="admonition-title">设备介绍</p>
+<p>WHEELTEC N100 集成三轴陀螺仪、三轴加速度计和三轴磁力计，可作为板载 BMI088 之外的姿态数据来源。若后续接入 H7_BSP，计划使用 UART 通信。</p>
 </div>
 <hr />
 <h2 id="_1">模块概述</h2>
@@ -2551,7 +2551,7 @@
 <p>每次校准操作后必须点击 <code>Write Flash</code> 保存参数，否则重启后失效。</p>
 </div>
 <hr />
-<h2 id="h7_bsp">H7_BSP 接入</h2>
+<h2 id="h7_bsp">拟接入 H7_BSP</h2>
 <h3 id="uart">UART 配置</h3>
 <table>
 <thead>
@@ -2579,20 +2579,11 @@
 </tr>
 </tbody>
 </table>
-<h3 id="_7">接收方式</h3>
-<p>使用 UART DMA + 空闲中断（IDLE Line Detection）模式：</p>
-<div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">HAL_UARTEx_ReceiveToIdle_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart_n100</span><span class="p">,</span><span class="w"> </span><span class="n">rx_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">RX_BUFFER_SIZE</span><span class="p">);</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kt">void</span><span class="w"> </span><span class="nf">HAL_UARTEx_RxEventCallback</span><span class="p">(</span><span class="n">UART_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">huart</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">Size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">huart</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">&amp;</span><span class="n">huart_n100</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="n">N100_ParseFrame</span><span class="p">(</span><span class="n">rx_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">Size</span><span class="p">);</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="n">HAL_UARTEx_ReceiveToIdle_DMA</span><span class="p">(</span><span class="o">&amp;</span><span class="n">huart_n100</span><span class="p">,</span><span class="w"> </span><span class="n">rx_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">RX_BUFFER_SIZE</span><span class="p">);</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
-</span></code></pre></div>
+<h3 id="_7">接收设计思路</h3>
+<p>可考虑复用现有 <a href="../../%E9%A9%B1%E5%8A%A8/UART%E4%B8%B2%E5%8F%A3/">UART BSP</a> 的 DMA + 空闲中断接收能力，再实现 N100 帧解析、时间戳和错误处理。具体回调注册和设备接口仍需在工程中设计与验证。</p>
 <div class="admonition danger">
 <p class="admonition-title">DMA 缓冲区内存位置</p>
-<p><code>rx_buffer</code> <strong>必须</strong>位于 RAM_D1。若放置 DTCM 中，DMA 将无法写入数据。详见 <strong><a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/">内存与总线架构</a></strong>。</p>
+<p>后续实现时，应按当前工程的 <code>.dma_buffer</code> / <code>RAM_DMA</code> 布局放置接收缓冲区，不能放在 DMA1/2 不可访问的 DTCM。详见<a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/">内存与总线架构</a>。</p>
 </div>
 <hr />
 <h2 id="_8">常见问题</h2>
@@ -2603,7 +2594,7 @@
 <h3 id="_11">嵌入式端接收数据全为零</h3>
 <ul>
 <li>检查 UART 波特率是否与模块配置一致</li>
-<li>确认 DMA 接收缓冲区位于 RAM_D1（非 DTCM）</li>
+<li>确认 DMA 接收缓冲区符合当前工程的 <code>RAM_DMA</code> 布局（非 DTCM）</li>
 <li>检查 UART 引脚 TX/RX 是否交叉连接</li>
 </ul>
 <hr />

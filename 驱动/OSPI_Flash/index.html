@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -646,7 +646,7 @@
   <a href="#w25q64jv" class="md-nav__link">
     <span class="md-ellipsis">
       
-        W25Q64JV 边界
+        接入 W25Q64JV
       
     </span>
   </a>
@@ -1955,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1971,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2081,7 +2081,7 @@
   <a href="#w25q64jv" class="md-nav__link">
     <span class="md-ellipsis">
       
-        W25Q64JV 边界
+        接入 W25Q64JV
       
     </span>
   </a>
@@ -2166,8 +2166,8 @@
 
 <h1 id="ospi-flash">OSPI Flash 驱动</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p><code>bsp_ospi</code> 封装 OCTOSPI 指令、DMA 收发和状态自动轮询，板载 W25Q64JV 在其上实现读写与擦除。提交失败会返回 HAL 状态，由器件层终止后续错误链。</p>
+<p class="admonition-title">用途</p>
+<p>OSPI BSP 提供 OCTOSPI 指令、DMA 收发和状态自动轮询，供板载 W25Q64JV 的读写与擦除流程使用。要操作 Flash，可先读<a href="../../%E8%AE%BE%E5%A4%87/W25Q64JV_Flash/">W25Q64JV 外部 Flash</a>；本页介绍底层接口与返回值。</p>
 </div>
 <h2 id="_1">接口与返回值</h2>
 <p><code>OSPI_Init()</code> 绑定句柄和状态匹配、接收完成、发送完成三类回调。以下操作返回 <code>HAL_StatusTypeDef</code>：</p>
@@ -2202,7 +2202,7 @@
 </tbody>
 </table>
 <p>调用方必须检查 <code>HAL_OK</code>、<code>HAL_BUSY</code> 与 <code>HAL_ERROR</code>。例如指令提交失败时不能继续发起 DMA 或自动轮询；DMA 启动失败也不能把后续回调当作必然到来。发送/接收完成回调记录状态时间戳并通知器件层，提交成功不表示 Flash 内部编程已完成。</p>
-<h2 id="w25q64jv">W25Q64JV 边界</h2>
+<h2 id="w25q64jv">接入 W25Q64JV</h2>
 <p><code>Class_W25Q64JV::Init()</code> 返回布尔结果，失败通过系统初始化错误位暴露。器件层对写使能、数据传输与状态轮询的返回值逐级检查；当前超时以<strong>本次忙传输开始时刻</strong>计时，不能借用上一次自动轮询的时间戳。需要区别指令提交失败、等待 WIP 清零超时，以及真实器件未响应。</p>
 <p>工程 <code>Tests/Communication/README.md</code> 与 <code>Tests/Initialization/README.md</code> 覆盖主机失败路径；实机仍需检查 OSPI DMA 时序、数据完整性和擦写寿命。</p>
 <h2 id="_2">关联文档</h2>

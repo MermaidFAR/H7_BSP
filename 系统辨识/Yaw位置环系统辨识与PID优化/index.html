@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -2038,7 +2038,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -2054,7 +2054,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2331,9 +2331,9 @@
 
 
 <h1 id="yaw-pid">Yaw 位置环系统辨识与 PID 优化</h1>
-<div class="admonition warning">
-<p class="admonition-title">历史实验记录</p>
-<p>本文记录 2026 年 7 月特定云台的辨识与仿真参数，不是当前主线的板上调参建议。2026-09-27 的 <code>d606170</code> 提交已从当前工作树移除 <code>sysid/</code>；历史日志、脚本和图像可在父提交 <code>4c1dbd4</code> 中追溯。应用到当前 BMI088、PID 与任务链前须重新确认时序、单位、反馈源并实测。下方“推荐”仅指当时仿真方案。</p>
+<div class="admonition note">
+<p class="admonition-title">历史实验</p>
+<p>本文记录 2026 年 7 月一套云台 Yaw 位置环的辨识与仿真过程，供理解串级控制和参数比较。表中的优选参数只针对当时的模型与设备；用于当前工程前，应重新确认时序、单位、反馈源并板测。</p>
 </div>
 <h2 id="_1">架构</h2>
 <p>串级控制：</p>
@@ -2458,7 +2458,7 @@ G_{pos}(s) = 0.50 \cdot \frac{e^{-0.174s}}{0.50s + 1}
 </tr>
 </tbody>
 </table>
-<p>推荐 K_P=0.12, K_I=1.30——NRMSE 最低，超调预计从 49% 降至 ~20%，上升时间改善到 ~600ms。</p>
+<p>当时仿真优选 K_P=0.12, K_I=1.30——NRMSE 最低，超调预计从 49% 降至 ~20%，上升时间改善到 ~600ms。</p>
 <h2 id="_7">最终参数汇总</h2>
 <table>
 <thead>

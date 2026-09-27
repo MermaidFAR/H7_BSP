@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -556,7 +556,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板前检查
       
     </span>
   </a>
@@ -1977,7 +1977,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1993,7 +1993,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2125,7 +2125,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板前检查
       
     </span>
   </a>
@@ -2210,8 +2210,8 @@
 
 <h1 id="can">CAN 总线驱动框架</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p><code>bsp_can</code> 管理三路 FDCAN 的接收分发、命令 FIFO 和周期最新值发送槽。提交成功只表示进入软件通道，HAL 接受只表示进入硬件 TX FIFO；两者都不证明总线发送或对端执行完成。</p>
+<p class="admonition-title">用途</p>
+<p>CAN BSP 为 FDCAN1/2/3 提供标准帧接收回调和两种发送方式：顺序命令队列适合不能跳过的指令，周期最新值槽适合持续刷新的控制量。本页说明如何注册回调、选择发送通道和排查发送问题。</p>
 </div>
 <h2 id="_1">初始化与接收</h2>
 <p><code>BSP_CAN_ConfigInit()</code> 在 RTOS 内核初始化之后创建 16 帧命令队列、清空周期槽并启动 FDCAN1/2/3。当前硬件过滤器接收标准帧，接收回调再按 <code>(hfdcan, can_id)</code> 匹配注册表。相同 ID 可在不同总线注册；同一键重复注册或表满返回 <code>false</code>。</p>
@@ -2248,11 +2248,12 @@
 </tbody>
 </table>
 <p><code>Can_Tx_Task</code> 每个 RTOS tick 先处理命令，再扫描周期槽。三路总线共享顺序命令队列；队首若因某一路 TX FIFO 满而失败，其他总线后续命令也会等待，但周期槽仍独立处理。<code>BSP_CAN_SendPer()</code> 返回 <code>false</code> 表示本轮至少一条待处理帧未写入硬件 FIFO，不等于已发数据被对端拒绝。</p>
+<p>提交成功只表示进入软件通道，HAL 接受只表示进入硬件 TX FIFO；还要结合总线状态和设备反馈判断是否送达、执行。</p>
 <h2 id="_3">自动重发与排障</h2>
 <p>当前 <code>H7_BSP.ioc</code> 和 <code>Core/Src/fdcan.c</code> 为三路 FDCAN 都启用硬件自动重发。CAN1↔CAN2 双节点对照观察到周期帧接收缺口消失；CAN3 尚未完成对端验证。若没有 ACK、接线或位时序不匹配，硬件可能持续重试并占满 TX FIFO。若每接收一帧又产生新命令，应沿设备回调与 <code>CAN_Tx_Submit()</code> 查应用层回显环；自动重发不会消除它。</p>
 <p>排查密集异常帧时，记录总线、方向、ID、DLC、数据和时间戳，并读取错误计数、bus-off、TX FIFO 空位及软件队列积压。此前观察到约 22 µs 的发帧间隔，成因未确认，不能直接据此断言是真实完整 Classic CAN 帧的线速。板上验证须同时检查 ACK、终端电阻、共地和发送触发频率。</p>
-<h2 id="_4">验证边界</h2>
-<p>工程 <code>Tests/Communication/README.md</code> 覆盖长度、远程帧、队列与失败路径；主机替身不能证明总线电气、仲裁、ACK 或电机实际动作。设备层还需检查接口返回值及反馈超时。</p>
+<h2 id="_4">上板前检查</h2>
+<p>接入设备时检查接口返回值、反馈超时、接线、终端电阻和 ACK。工程 <code>Tests/Communication/README.md</code> 覆盖长度、远程帧、队列与失败路径；这些主机测试不能代替总线和电机板测。</p>
 <h2 id="_5">关联文档</h2>
 <ul>
 <li><a href="../../%E8%AE%BE%E5%A4%87/DJI%E7%94%B5%E6%9C%BA/">DJI 电机</a></li>
@@ -2296,7 +2297,7 @@
       <nav class="md-footer__inner md-grid" aria-label="页脚" >
         
           
-          <a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 内存与总线架构">
+          <a href="../../%E5%86%85%E5%AD%98%E4%B8%8E%E6%80%BB%E7%BA%BF%E6%9E%B6%E6%9E%84/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 内存与 DMA">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2306,7 +2307,7 @@
                 上一页
               </span>
               <div class="md-ellipsis">
-                内存与总线架构
+                内存与 DMA
               </div>
             </div>
           </a>

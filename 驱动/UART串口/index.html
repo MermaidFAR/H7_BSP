@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -574,7 +574,7 @@
   <a href="#ping-pong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        乒乓双缓冲（Ping-Pong）零丢失
+        乒乓双缓冲（Ping-Pong）减少处理窗口
       
     </span>
   </a>
@@ -607,7 +607,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        错误自愈
+        错误恢复
       
     </span>
   </a>
@@ -2310,7 +2310,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -2326,7 +2326,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2448,7 +2448,7 @@
   <a href="#ping-pong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        乒乓双缓冲（Ping-Pong）零丢失
+        乒乓双缓冲（Ping-Pong）减少处理窗口
       
     </span>
   </a>
@@ -2481,7 +2481,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        错误自愈
+        错误恢复
       
     </span>
   </a>
@@ -2876,21 +2876,21 @@
 
 <h1 id="uart-bsp">UART 串口驱动 (BSP)</h1>
 <div class="admonition abstract">
-<p class="admonition-title">文档摘要</p>
-<p>本模块（<code>bsp_uart</code>）基于 STM32H7 DMA + 乒乓双缓冲实现不定长串口帧的零丢失接收与上层解耦。仿 SCUT-Robotlab 达妙 <code>drv_uart</code> 范式改写，针对 H7_BSP 的内存布局（DTCM 不可 DMA）与 DMA 资源约束（16 条 stream 耗尽）适配。支持 7 路 UART 的事件驱动与轮询双模式。</p>
+<p class="admonition-title">用途</p>
+<p>UART BSP 使用 DMA 与双缓冲接收不定长数据，并提供回调或任务轮询两种处理方式。需要接入串口设备时，先确认该 UART 的 DMA 资源和缓冲区位置，再按本页选择接收方式、初始化接口和发送接口。</p>
 </div>
 <hr />
 <h2 id="_1">设计理念</h2>
 <h3 id="dma">空闲中断 + DMA 收不定长帧</h3>
 <p>接收采用 <code>HAL_UARTEx_ReceiveToIdle_DMA</code>。DMA 自动搬运字节流，总线出现 IDLE（空闲）时硬件触发 <code>HAL_UARTEx_RxEventCallback</code>，天然支持"不知道长度的一帧"——帧结束即空闲，无需上层约定固定长度。</p>
-<h3 id="ping-pong">乒乓双缓冲（Ping-Pong）零丢失</h3>
-<p>每路 UART 配两块缓冲区 <code>Rx_Buffer_0/1</code>。<code>Rx_Buffer_Active</code> 指向 DMA 正在写入的那块，<code>Rx_Buffer_Ready</code> 指向已收完可安全读取的那块。一帧收完时仅交换两个指针角色，DMA 立刻在另一块上继续接收，<strong>不搬数据、不停机</strong>，从根本上消除"处理上一帧时丢失下一帧"的窗口。</p>
+<h3 id="ping-pong">乒乓双缓冲（Ping-Pong）减少处理窗口</h3>
+<p>每路 UART 配两块缓冲区 <code>Rx_Buffer_0/1</code>。<code>Rx_Buffer_Active</code> 指向 DMA 正在写入的那块，<code>Rx_Buffer_Ready</code> 指向已收完可读取的那块。一帧收完时交换两个指针角色，DMA 转到另一块继续接收。上层仍应及时消费就绪缓冲，避免后续帧覆盖尚未处理的数据。</p>
 <h3 id="_2">实例分支 + 单回调的点对点路由</h3>
 <p>与 CAN 的 ID 查表注册表不同，UART 是点对点链路。中断回调按 <code>huart-&gt;Instance</code> 定位到对应管理对象，直接调用其 <code>Callback_Function</code>。与同工程的 <code>bsp_spi</code> 同构。</p>
 <h3 id="_3">回调可选，支持轮询退化</h3>
 <p><code>UART_Init(huart, nullptr)</code> 时 DMA 照常接收、双缓冲照常切换、时间戳照常更新，但不触发回调；上层任务可自行轮询 <code>Rx_Buffer_Ready</code> 与 <code>Rx_Timestamp</code>，把数据处理放到任务上下文而非中断中。</p>
-<h3 id="_4">错误自愈</h3>
-<p><code>HAL_UART_ErrorCallback</code> 统一调用 <code>UART_Reinit()</code> 复位接收链路，避免一次帧错误（噪声/溢出）导致这路串口永久停摆。</p>
+<h3 id="_4">错误恢复</h3>
+<p><code>HAL_UART_ErrorCallback</code> 调用 <code>UART_Reinit()</code> 尝试恢复接收链路。若持续出现噪声或溢出，还需检查线路、波特率和上层处理速度。</p>
 <hr />
 <h2 id="_5">核心数据结构</h2>
 <div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Struct_UART_Manage_Object</span>
@@ -2916,7 +2916,7 @@
 <h3 id="uart5">半双工 UART5</h3>
 <p>UART5 仅有 RX DMA、无 TX DMA。<code>UART_Transmit_Data()</code> 检测 <code>huart-&gt;hdmatx == nullptr</code> 时自动回退 <code>HAL_UART_Transmit()</code> 阻塞发送。</p>
 <h3 id="dma_buffer"><code>.dma_buffer</code> 内存铁律</h3>
-<p>DTCMRAM（0x20000000）不能被 DMA1/DMA2 访问。所有管理对象（含双 512B 缓冲）必须 <code>__attribute__((section(".dma_buffer"), aligned(32)))</code>，落入 RAM_D1（MPU 配置为 non-cacheable）。</p>
+<p>DTCMRAM（0x20000000）不能被 DMA1/DMA2 访问。管理对象（含双 512B 缓冲）使用 <code>__attribute__((section(".dma_buffer"), aligned(32)))</code> 放入专用的 <code>RAM_DMA</code>（0x24000000 起的 64 KiB，不可缓存），而不是普通的 <code>RAM_D1</code> 段。</p>
 <h3 id="rx-dma-normal">RX DMA 模式必须为 NORMAL</h3>
 <p>双缓冲范式假设 DMA 搬完即停、由回调手动切缓冲重启。若 CubeMX 配成 <code>CIRCULAR</code>（DMA 永不停），与手动重启语义冲突会导致丢数据/错位。</p>
 <hr />
@@ -3058,7 +3058,7 @@
 <hr />
 <h2 id="_12">常见问题</h2>
 <h3 id="dma-dtcm">DMA 缓冲区误放 DTCM → 永远收不到数据</h3>
-<p>若误把缓冲放进 DTCMRAM，DMA 静默搬不动数据，表现为"永远收不到"，且不报错，极难排查。缓冲区必须在 <code>.dma_buffer</code> 段。</p>
+<p>若误把接收缓冲放进 DTCMRAM，DMA1/2 无法写入预期数据。排查时先看 map 文件，确认管理对象位于 <code>.dma_buffer</code> 段，再检查 DMA 状态与 UART 配置。</p>
 <h3 id="rx-dma-circular">RX DMA 被配成 CIRCULAR → 丢数据/错位</h3>
 <p>CubeMX 重新生成后务必确认 7 路 RX DMA 仍为 <code>DMA_NORMAL</code>。CIRCULAR 会破坏双缓冲语义。</p>
 <h3 id="_13">中断里执行重活</h3>

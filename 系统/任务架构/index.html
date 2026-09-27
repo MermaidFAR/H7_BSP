@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1955,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1971,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2166,8 +2166,8 @@
 
 <h1 id="_1">任务架构</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>H7_BSP 使用 CMSIS-RTOS V2 创建和调度任务。当前 <code>Core/Src/freertos.c</code> 创建 Transport、Ins、CanTx、Status、TIM_1ms、BMI088、Gimbal 和 Storage 任务；其中 <code>Ins_Task</code> 与控制任务保留部分占位逻辑，不能把任务已创建等同于应用闭环已接入。</p>
+<p class="admonition-title">阅读目标</p>
+<p>H7_BSP 通过 CMSIS-RTOS V2 组织传感器采集、CAN 发送、状态更新、USB 遥测和周期服务。本页列出各任务负责的工作，以及添加任务时要注意的执行周期与共享数据。</p>
 </div>
 <h2 id="_2">任务职责</h2>
 <table>
@@ -2192,7 +2192,7 @@
 <tr>
 <td><code>Ins_Task</code></td>
 <td>线程标志</td>
-<td>当前仅等待标志，未执行旧文档所述 EKF 解算</td>
+<td>当前仅等待标志；姿态计算由 <code>BMI088_Task</code> 中的 VQF 完成</td>
 </tr>
 <tr>
 <td><code>Can_Tx_Task</code></td>
@@ -2217,11 +2217,12 @@
 <tr>
 <td><code>Storage_Task</code></td>
 <td>项目自定义</td>
-<td>存储相关任务，接入前查当前实现</td>
+<td>存储相关任务，按应用需求接入</td>
 </tr>
 </tbody>
 </table>
-<p>实际优先级与栈大小以 <code>Core/Src/freertos.c</code> 的 <code>osThreadAttr_t</code> 为准；BMI088 和 Control 任务在入口处还会调整自身优先级。不要沿用旧版本的五任务表或原生 FreeRTOS 通知示例。</p>
+<p>实际优先级与栈大小以 <code>Core/Src/freertos.c</code> 的 <code>osThreadAttr_t</code> 为准；BMI088 和 Control 任务在入口处还会调整自身优先级。新增任务使用工程已有的 CMSIS-RTOS V2 接口。</p>
+<p><code>Ins_Task</code> 和控制任务仍包含占位逻辑；任务已创建不表示对应应用闭环已经接入。</p>
 <h2 id="_3">数据与调度边界</h2>
 <p>SPI/EXTI 中断只处理传输状态和通知，VQF 计算在 BMI088 任务中完成。CAN 设备层分别使用命令 FIFO 与周期槽，发送任务写入硬件 TX FIFO 不代表对端确认。状态任务只发布健康快照，不替代应用故障处置。USB 调试输出在 Transport 任务运行，长时间阻塞会影响遥测周期。</p>
 <p><code>osDelayUntil()</code> 可避免执行时间直接累积到下一次计划时刻，但回调或高优先级任务超时仍会造成实际晚点。接入新任务应测量执行时间与栈水位，并核对中断优先级和共享缓冲所有权。</p>

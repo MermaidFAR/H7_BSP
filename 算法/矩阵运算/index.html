@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1933,7 +1933,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1949,7 +1949,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2121,7 +2121,7 @@
 
 
 <h1 id="_1">矩阵运算</h1>
-<p><code>Class_Matrix_f32&lt;row, column&gt;</code> 是编译期固定尺寸的矩阵类型，定义于 <code>User_File/Middleware/Algorithm/Matrix/alg_matrix.h</code>。当前工程直接使用具体维度的类型，例如 <code>Class_Matrix_f32&lt;3, 1&gt;</code>；旧文档中的 <code>Class_Vector2/3</code> 等别名未定义。</p>
+<p>矩阵模块提供编译期固定尺寸的矩阵和列向量，适合在姿态、坐标变换与控制计算中使用。类型为 <code>Class_Matrix_f32&lt;row, column&gt;</code>，例如三维列向量可写成 <code>Class_Matrix_f32&lt;3, 1&gt;</code>；定义位于 <code>User_File/Middleware/Algorithm/Matrix/alg_matrix.h</code>。</p>
 <h2 id="_2">构造与计算</h2>
 <p><code>Namespace_ALG_Matrix</code> 提供 <code>Zero&lt;row, column&gt;()</code>、<code>Identity&lt;row, column&gt;()</code>、<code>Constant&lt;row, column&gt;(value)</code>，以及 <code>From_Angle(angle)</code>、<code>From_Axis_Angle(angle, axis)</code>、<code>From_Euler_Angle(yaw, pitch, roll)</code> 等旋转构造函数。</p>
 <p>矩阵类提供加减、乘法、标量运算与元素索引。常用成员包括 <code>Get_Transpose()</code>、方阵 <code>Get_Inverse(bool *success)</code>、列向量 <code>Get_Modulus()</code> 和 <code>Get_Normalization()</code>。逆矩阵失败时返回零矩阵；需要区分真实零值与失败，必须传入成功标志。</p>
@@ -2131,7 +2131,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Class_Matrix_f32</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inverse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">.</span><span class="n">Get_Inverse</span><span class="p">(</span><span class="o">&amp;</span><span class="n">invertible</span><span class="p">);</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">Class_Matrix_f32</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">transpose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">.</span><span class="n">Get_Transpose</span><span class="p">();</span>
 </span></code></pre></div>
-<p>当前接口没有 <code>Transpose()</code>、<code>Inverse()</code>、<code>Determinant()</code>、<code>Norm()</code> 或 <code>Namespace_ALG_Matrix::Dot/Cross</code> 这些旧页面中的名称。使用前请按维度核对模板可用操作。</p>
+<p>调用矩阵操作前按维度核对模板可用接口；例如转置使用 <code>Get_Transpose()</code>，求逆使用 <code>Get_Inverse(&amp;success)</code>，点积与叉积使用 <code>Namespace_ALG_Matrix</code> 中的 <code>Operator_Dot</code> 和 <code>Operator_Cross_*</code>。</p>
 <p>关联：<a href="../%E5%9B%9B%E5%85%83%E6%95%B0%E4%B8%8E%E5%A7%BF%E6%80%81/">四元数与姿态</a>。</p>
 
 

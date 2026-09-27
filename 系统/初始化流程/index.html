@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1520,7 +1520,7 @@
   <a href="#system_init" class="md-nav__link">
     <span class="md-ellipsis">
       
-        System_Init 的当前工作
+        System_Init 初始化哪些设备
       
     </span>
   </a>
@@ -1531,7 +1531,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板后检查
       
     </span>
   </a>
@@ -1966,7 +1966,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1982,7 +1982,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2092,7 +2092,7 @@
   <a href="#system_init" class="md-nav__link">
     <span class="md-ellipsis">
       
-        System_Init 的当前工作
+        System_Init 初始化哪些设备
       
     </span>
   </a>
@@ -2103,7 +2103,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板后检查
       
     </span>
   </a>
@@ -2188,8 +2188,8 @@
 
 <h1 id="_1">初始化流程</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p><code>main.c</code> 完成 MPU、时钟和 CubeMX 外设初始化后调用 <code>System_Init()</code>，然后初始化 RTOS、创建任务并启动调度。设备初始化失败会记录位掩码；<code>init_finished</code> 只表示该流程已结束。</p>
+<p class="admonition-title">阅读目标</p>
+<p>本页沿启动顺序介绍 MPU、时钟、外设、板载设备和 RTOS 任务如何接起来，并说明如何查询设备初始化错误。需要增加设备或任务时，可从这里找到对应的接入位置。</p>
 </div>
 <h2 id="_2">启动链路</h2>
 <pre class="mermaid"><code>graph TD
@@ -2200,7 +2200,7 @@
     E --&gt; F["MX_FREERTOS_Init"]
     F --&gt; G["osKernelStart"]</code></pre>
 <p>DMA 与对应外设的初始化顺序由当前 <code>Core/Src/main.c</code> 确定。改动 IOC 或重生成代码后，应重新核对顺序、FreeRTOS 补丁和链接布局。</p>
-<h2 id="system_init">System_Init 的当前工作</h2>
+<h2 id="system_init">System_Init 初始化哪些设备</h2>
 <p><code>User_File/System/Init/Init.cpp</code> 配置 SystemView 与时间戳，注册 UART、SPI、OSPI 回调，启动 TIM4/TIM5，并调用 <code>System_IMU_Configure()</code>。随后依次初始化 BMI088、WS2812、蜂鸣器、按键、W25Q64JV、ADC1、电源和 EricTool USB。BMI088 成功时才启动陀螺仪 FIFO 采集。</p>
 <table>
 <thead>
@@ -2226,8 +2226,8 @@
 </table>
 <p>调用 <code>System_Get_Init_Errors()</code> 获取位掩码。BMI088 和 Flash 通信/配置尝试次数有上限，失败会返回，不会无限阻塞启动；返回后也不应让依赖失败设备的应用继续按正常状态工作。<code>init_finished = true</code> 不表示错误位为零。</p>
 <p>CAN 软件发送资源通过 <code>BSP_CAN_ConfigInit()</code> 在 RTOS 内核初始化后建立，再由 <code>Can_Tx_Task</code> 周期处理。USB 设备由 <code>Transport_Task</code> 初始化。任务创建入口和实际栈大小以当前 <code>Core/Src/freertos.c</code> 与 <code>H7_BSP.ioc</code> 为准。</p>
-<h2 id="_3">验证边界</h2>
-<p>初始化主机回归见 H7 工程 <code>Tests/Initialization/README.md</code>；它覆盖失败传播和超时边界，不验证真实 SPI/OSPI/ADC 电气行为。烧录后仍需读取错误位并观测设备输出。</p>
+<h2 id="_3">上板后检查</h2>
+<p>烧录后读取 <code>System_Get_Init_Errors()</code>，并观测依赖设备的实际输出。H7 工程 <code>Tests/Initialization/README.md</code> 中的主机测试覆盖失败传播和超时，不能代替 SPI、OSPI、ADC 的板上检查。</p>
 <h2 id="_4">关联文档</h2>
 <ul>
 <li><a href="../%E4%BB%BB%E5%8A%A1%E6%9E%B6%E6%9E%84/">任务架构</a></li>

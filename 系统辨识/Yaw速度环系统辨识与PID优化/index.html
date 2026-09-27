@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -2138,7 +2138,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -2154,7 +2154,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2531,10 +2531,9 @@
 
 
 <h1 id="yaw-pid">Yaw 速度环系统辨识与 PID 优化</h1>
-<div class="admonition warning">
-<p class="admonition-title">历史实验记录</p>
-<p>本文的参数、模型和实测结果对应 2026 年 7 月的特定云台实验，不是当前 H7_BSP 主线的推荐参数或板上固件状态。2026-09-27 的 <code>d606170</code> 提交已从当前工作树移除 <code>sysid/</code> 目录；原始数据与脚本可在其父提交 <code>4c1dbd4</code> 的 Git 历史中追溯。当前项目的 BMI088、PID 与任务链已演进，复用结论前须重采数据并板测。</p>
-<p>下方 <code>probe-rs --chip STM32H723ZG</code> 是原实验记录的命令；当前板型为 STM32H723VGT6，不能直接把该参数作为现行烧录配置。</p>
+<div class="admonition note">
+<p class="admonition-title">历史实验</p>
+<p>本文记录 2026 年 7 月一套云台 Yaw 速度环的辨识与调参过程，适合了解采样、建模和参数比较的方法。结果只适用于当时的硬件与任务配置；在当前 H7_BSP 上复用前，需要重新采样并实机调试。</p>
 </div>
 <h2 id="_1">背景</h2>
 <p>云台 Yaw 轴使用 QD4310 电机 + BMI088 IMU 组成速度闭环。原参数 K_P=0.035, K_I=0.348 存在换向响应慢、积分拖累等问题。通过 probe-rs + DAPLink 全自动调试管线完成了系统辨识和 PID 参数寻优。</p>
@@ -2575,6 +2574,7 @@
 </tr>
 </tbody>
 </table>
+<p>表中的 <code>STM32H723ZG</code> 是原实验使用的芯片参数，当前板型为 STM32H723VGT6；烧录时请按实际芯片重新选择。</p>
 <h2 id="_3">数据采集</h2>
 <p>固件注入多激励信号序列（35s），通过 SEGGER RTT 实时输出目标速度、实测速度、PID 输出和陀螺原始值：</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>激励设计:

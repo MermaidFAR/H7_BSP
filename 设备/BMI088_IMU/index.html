@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1977,7 +1977,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1993,7 +1993,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2210,8 +2210,8 @@
 
 <h1 id="bmi088-imu">BMI088 六轴 IMU 驱动</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>H7_BSP 使用 BMI088 加速度计与陀螺仪，经 SPI DMA 采集数据；陀螺仪走 FIFO 批量读取，姿态解算使用 VQF。以下行为按 2026-09-27 的工程源码核对。主机回归覆盖初始化与时间戳边界，不代替板上温漂、SPI 时序和姿态精度验收。</p>
+<p class="admonition-title">用途</p>
+<p>BMI088 为 H7_BSP 提供加速度、角速度和姿态数据。驱动经 SPI DMA 采样，批量读取陀螺仪 FIFO；<code>BMI088_Task</code> 使用 VQF 计算姿态。本页从数据流开始，说明初始化、时间戳和读取接口。</p>
 </div>
 <h2 id="_1">代码入口与数据流</h2>
 <table>
@@ -2254,7 +2254,7 @@
 <ul>
 <li>调整 VQF 参数时，在 <code>Init()</code> 前设置配置，并统一角速度、加速度及时间单位。</li>
 <li>从 <code>Get_Quaternion()</code>、<code>Get_Euler_Angle()</code> 等接口取姿态；跨任务读取调试状态时关注数据快照与更新时刻。</li>
-<li>初始化、FIFO 时间戳主机回归见工程 <code>Tests/Initialization/README.md</code>；实机仍需验证传感器输出、加热安全和动态姿态。</li>
+<li>上板后检查传感器输出、SPI 时序、温漂、加热安全和动态姿态；初始化与 FIFO 时间戳的主机测试见工程 <code>Tests/Initialization/README.md</code>。</li>
 </ul>
 <h2 id="_4">关联文档</h2>
 <ul>

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="H7_BSP 达妙电机的当前模式、控制接口、命令返回值与反馈单位。">
+        <meta name="description" content="H7_BSP 达妙电机的模式选择、控制接口、命令返回值与反馈单位。">
       
       
       
@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -878,7 +878,7 @@
   <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证范围
+        上板前确认
       
     </span>
   </a>
@@ -1999,7 +1999,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -2015,7 +2015,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2169,7 +2169,7 @@
   <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证范围
+        上板前确认
       
     </span>
   </a>
@@ -2254,8 +2254,8 @@
 
 <h1 id="_1">达妙电机驱动</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>H7_BSP 已包含 <code>Class_DMMotor</code>，并已将 <code>dmmotor.cpp</code> 加入 CMake 编译清单。本文于 2026-09-19 对照当前头文件更新，替代旧的“尚未实现”模板说明。本次文档核对未进行实机验收。</p>
+<p class="admonition-title">用途</p>
+<p>达妙电机驱动通过 CAN 提供 MIT、位置速度、速度和力位混合等控制模式。本页说明如何选择模式、设置目标，并通过命令返回值与反馈判断电机状态。</p>
 </div>
 <h2 id="_2">源码入口</h2>
 <ul>
@@ -2375,8 +2375,8 @@
 <li>明确处理模式命令失败；以反馈确认状态转换。</li>
 <li>原有模板中的 <code>Motor_DM_</code> 示例不再作为当前工程接口；具体函数签名以当前头文件为准。</li>
 </ul>
-<h2 id="_7">验证范围</h2>
-<p>本文核验范围是驱动接口与构建接入。命令成功返回、软件回归通过和实机闭环验收分别记录，不相互替代。</p>
+<h2 id="_7">上板前确认</h2>
+<p>核对设备型号、协议量程、CAN ID 和运动方向，并在实机上确认使能、失能与闭环动作。命令入队成功只说明软件接受了请求，仍需通过反馈确认电机状态。</p>
 <h2 id="_8">关联文档</h2>
 <ul>
 <li><a href="../../%E9%A9%B1%E5%8A%A8/CAN%E6%80%BB%E7%BA%BF/">CAN 总线</a></li>

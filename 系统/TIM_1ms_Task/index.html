@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1944,7 +1944,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1960,7 +1960,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2144,8 +2144,8 @@
 
 <h1 id="tim_1ms_task">TIM_1ms_Task 周期调度</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p><code>TIM1msTask</code> 以 CMSIS-RTOS V2 的绝对 tick 延时运行，使用固定 <code>PulseEntry_t</code> 回调表和 <code>Pulse_Dispatch()</code> 按周期分发。原来的 <code>pulse(...)</code> 可变参数接口与全局计数器已移除。</p>
+<p class="admonition-title">用途</p>
+<p><code>TIM1msTask</code> 为按键、Flash、BMI088、UART 和 LED 等模块分发周期服务。需要增加周期回调时，在固定的 <code>PulseEntry_t</code> 表中配置周期和函数，并评估回调执行时间。</p>
 </div>
 <h2 id="_1">调度入口</h2>
 <p>回调表定义在 <code>User_File/Task/TIM_1ms_Task.cpp</code>，分发函数位于 <code>User_File/Middleware/Algorithm/Pulse/</code>。任务每轮调用 <code>Pulse_Dispatch(table, count, pulse_tick_ms)</code>，然后递增计数并调用 <code>osDelayUntil()</code> 等待下一个绝对 tick。回调执行超时仍会使任务晚点，不能把绝对延时理解为硬实时保证。</p>

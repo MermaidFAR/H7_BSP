@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1933,7 +1933,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1949,7 +1949,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2121,7 +2121,7 @@
 
 
 <h1 id="_1">板载按键</h1>
-<p><code>Class_Key</code> 使用板载 <code>KEY__INPUT</code> GPIO，并通过 <code>BSP_Key</code> 全局实例提供当前状态。当前实现按 50 ms 周期读取电平，1 ms 调度回调更新状态枚举；实际事件时间粒度主要受 50 ms 采样限制。</p>
+<p>板载按键通过 <code>KEY__INPUT</code> GPIO 提供按下与松开的状态，可从全局实例 <code>BSP_Key</code> 读取。它按 50 ms 周期采样电平，因此按键事件的时间粒度主要受该采样周期限制。</p>
 <h2 id="_2">状态接口</h2>
 <p><code>Get_Key_Status()</code> 返回 <code>Enum_BSP_Key_Status</code>：</p>
 <table>
@@ -2156,7 +2156,7 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span>
 </span></code></pre></div>
 <p><code>BSP_Key.Init()</code> 在系统初始化中调用。<code>BSP_Key_TIM_1ms_Process_PeriodElapsedCallback()</code> 与 <code>BSP_Key_TIM_50ms_Process_PeriodElapsedCallback()</code> 已注册到 <a href="../../%E7%B3%BB%E7%BB%9F/TIM_1ms_Task/">TIM_1ms_Task</a>。</p>
-<p>当前源码<strong>没有</strong> <code>IsPressed()</code>、<code>GetClickCount()</code>、长按或多击判定。需要这些语义时应在应用层根据状态与时间戳实现，并验证轮询周期。</p>
+<p>需要长按、双击或点击计数时，在应用层结合按键状态和时间戳实现，并按 50 ms 采样周期验证识别效果。</p>
 <p>源码：<code>User_File/Device/Onboard/Key/bsp_key.h</code>、<code>bsp_key.cpp</code>。</p>
 
 

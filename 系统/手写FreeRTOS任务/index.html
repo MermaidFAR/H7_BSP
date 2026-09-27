@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1977,7 +1977,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1993,7 +1993,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2210,7 +2210,7 @@
 
 <h1 id="freertos">手写 FreeRTOS 任务</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前工程边界</p>
+<p class="admonition-title">接入方式</p>
 <p>H7_BSP 由 CubeMX 生成 <code>Core/Src/freertos.c</code> 的任务创建骨架，用户任务实现在 <code>User_File/Task/</code>。本工程统一使用 CMSIS-RTOS V2；任务文件不要直接包含 FreeRTOS 原生头文件，也不要引入 <code>cmsis_os.h</code>（V1）。</p>
 </div>
 <h2 id="_1">接入位置</h2>
@@ -2229,7 +2229,7 @@
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="_3">事件任务与共享数据</h2>
-<p><code>BMI088_Task</code> 使用 <code>osThreadFlagsWait()</code> 等待 FIFO 续传或样本就绪标志，随后在任务上下文中清空样本队列并计算姿态。<code>Ins_Task</code> 当前仅等待线程标志，不再承担旧文档中的 EKF 计算。新任务应选择 CMSIS-RTOS V2 的线程标志、消息队列或互斥锁，并按该 API 对应的 ISR 使用限制来调用；共享 DMA 缓冲区还需核对地址可达性、缓存属性与数据寿命。</p>
+<p><code>BMI088_Task</code> 使用 <code>osThreadFlagsWait()</code> 等待 FIFO 续传或样本就绪标志，随后在任务上下文中清空样本队列并计算姿态。<code>Ins_Task</code> 当前仅等待线程标志。新任务应按需求选择 CMSIS-RTOS V2 的线程标志、消息队列或互斥锁，并遵守对应的 ISR 调用限制；共享 DMA 缓冲区还需核对地址可达性、缓存属性与数据寿命。</p>
 <h2 id="_4">工程约束</h2>
 <p>工程当前使用带 SystemView 探针的 FreeRTOS port 补丁与 <code>heap_5</code>。打开 IOC 时保持仓库配套的 FreeRTOS 版本，不直接迁移固件包或换用旧示例里的 <code>heap_4.c</code> / Cortex-M4 port。实际配置以 <code>Core/Inc/FreeRTOSConfig.h</code>、<code>User_Config/FreeRTOS_Patch/</code> 和根 CMake 为准。</p>
 <h2 id="_5">关联文档</h2>

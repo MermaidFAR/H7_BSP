@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1955,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1971,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2166,8 +2166,8 @@
 
 <h1 id="adc">ADC 采集驱动</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p><code>ADC_Init()</code> 校验句柄、采样数量、校准结果及 DMA 启动结果，成功才返回 <code>true</code>。系统初始化当前为 ADC1 请求一个样本；其他通道需要按 CubeMX 配置和应用需求接入。</p>
+<p class="admonition-title">用途</p>
+<p>ADC BSP 负责校准、启动 DMA 采样并提供采样缓冲。需要读取模拟量时，先在 CubeMX 中配置通道，再用 <code>ADC_Init()</code> 启动采集并检查返回值。工程启动时已为 ADC1 请求一个样本。</p>
 </div>
 <h2 id="_1">接口</h2>
 <div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kt">bool</span><span class="w"> </span><span class="nf">ADC_Init</span><span class="p">(</span><span class="n">ADC_HandleTypeDef</span><span class="w"> </span><span class="o">*</span><span class="n">hadc</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">Sample_Number</span><span class="p">);</span>
@@ -2179,7 +2179,7 @@
 </span></code></pre></div>
 <p>管理对象中的 <code>ADC_Data[128]</code> 持续由 DMA 更新。读取多通道或跨上下文使用时，应确认采样顺序、缓冲区可达性及数据一致性；此接口本身不提供完整采样快照。</p>
 <h2 id="_2">系统接入</h2>
-<p><code>System_Init()</code> 调用 <code>ADC_Init(&amp;hadc1, 1)</code>；失败时在 <code>System_Get_Init_Errors()</code> 中置 <code>SYSTEM_INIT_ERROR_ADC1</code>。<code>init_finished</code> 仅表示初始化流程结束。ADC 参数与失败路径主机回归见 H7 工程 <code>Tests/Initialization/README.md</code>，板上采样精度仍需单独验证。</p>
+<p><code>System_Init()</code> 调用 <code>ADC_Init(&amp;hadc1, 1)</code>；失败时在 <code>System_Get_Init_Errors()</code> 中置 <code>SYSTEM_INIT_ERROR_ADC1</code>。<code>init_finished</code> 仅表示初始化流程结束。接入新通道时要确认采样顺序，并在板上检查实际电压与精度。参数和失败路径的主机测试见 H7 工程 <code>Tests/Initialization/README.md</code>。</p>
 <h2 id="_3">关联文档</h2>
 <ul>
 <li><a href="../../%E7%B3%BB%E7%BB%9F/%E5%88%9D%E5%A7%8B%E5%8C%96%E6%B5%81%E7%A8%8B/">初始化流程</a></li>

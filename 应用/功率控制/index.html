@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1160,7 +1160,7 @@
   <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        接入前确认
       
     </span>
   </a>
@@ -1966,7 +1966,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1982,7 +1982,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2114,7 +2114,7 @@
   <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        接入前确认
       
     </span>
   </a>
@@ -2187,7 +2187,7 @@
 
 
 <h1 id="_1">功率控制与力矩预算</h1>
-<p><code>PowerControl</code> 位于 <code>User_File/Application/PowerControl/</code>，已注册到 H7 工程构建。它是无硬件、任务或动态内存依赖的计算模块：根据本周期功率预算与最多四个电机的目标力矩、转速，返回统一缩放后的力矩。<strong>当前没有接入电机发送、裁判系统功率预算或板上底盘闭环。</strong></p>
+<p>功率控制模块根据本周期的功率预算、目标力矩和电机转速，为最多四个电机计算统一缩放后的力矩指令。<code>PowerControl</code> 位于 <code>User_File/Application/PowerControl/</code>，只负责计算；应用层还需提供功率预算、读取反馈并发送电机命令。</p>
 <h2 id="_2">输入与输出契约</h2>
 <p><code>PowerControlConfig_t</code> 指定电机数、静态功率、速度摩擦系数、力矩平方损耗系数、保留功率，以及可选的 RLS 辨识参数。电机数须在 1～4 之间；功率单位 W，输入与输出力矩为<strong>电机输出轴 N·m</strong>，同轴转速为 rad/s。接入方负责把设备协议量纲转换到这些单位。</p>
 <p><code>PowerControlInput_t</code> 的 <code>desired_torque_nm[]</code>、<code>speed_rad_s[]</code> 和 <code>power_limit_w</code> 必须来自本周期有效输入。<code>Set_Input(&amp;input)</code> 成功后调用一次 <code>TIM_Calculate_PeriodElapsedCallback()</code>，再通过 <code>Get_Output()</code> 读取 <code>PowerControlOutput_t</code>。每次计算消耗一帧输入；缺失或无效输入、计算失败时输出清零，调用方必须检查布尔返回值。</p>
@@ -2202,8 +2202,8 @@
 <h2 id="_4">在线辨识</h2>
 <p>启用 <code>enable_rls</code> 后，<code>Update_Identification(measured_power_w, actual_torque_nm, speed_rad_s)</code> 用新的一帧、时间对齐的有效功率与实际力矩/速度更新摩擦和铜耗系数。只接受驱动工况；重复旧样本、失效反馈或制动帧不应调用。估计系数受配置的初始基线与上限约束；<code>Reset_Identification()</code> 恢复初值，<code>Get_Model_Coefficients()</code> 读取当前值。</p>
 <p>内部使用<a href="../../%E7%AE%97%E6%B3%95/RLS%E5%9C%A8%E7%BA%BF%E8%BE%A8%E8%AF%86/">定长 RLS</a>。调用方须负责功率测量来源、样本时间对齐、调度同步及最终命令发送；本模块本身不控制硬件。</p>
-<h2 id="_5">验证边界</h2>
-<p><code>Tests/PowerControl/</code> 主机测试直接编译生产源码，覆盖预算限幅、制动、低于基线、RLS 更新及错误输入清零。通过主机测试不表示真实底盘功率、温升或裁判系统限制已经验收。板载供电电压与输出开关另见<a href="../../%E8%AE%BE%E5%A4%87/%E7%94%B5%E6%BA%90%E7%AE%A1%E7%90%86/">电源管理</a>。</p>
+<h2 id="_5">接入前确认</h2>
+<p>当前模块尚未接入电机发送、裁判系统功率预算或板上底盘闭环。接入时须测量真实功率、温升和电机反馈，并核对裁判系统限制。<code>Tests/PowerControl/</code> 主机测试覆盖预算限幅、制动、低于基线、RLS 更新和错误输入清零；板载供电电压与输出开关另见<a href="../../%E8%AE%BE%E5%A4%87/%E7%94%B5%E6%BA%90%E7%AE%A1%E7%90%86/">电源管理</a>。</p>
 
 
 

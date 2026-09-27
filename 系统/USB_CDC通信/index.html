@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1738,7 +1738,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板后检查
       
     </span>
   </a>
@@ -1966,7 +1966,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1982,7 +1982,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2114,7 +2114,7 @@
   <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        上板后检查
       
     </span>
   </a>
@@ -2188,8 +2188,8 @@
 
 <h1 id="usb-cdc">USB CDC 通信</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>H7_BSP 使用 USB_OTG_HS 的 Device Only FS 模式提供 CDC 虚拟串口。USB CDC 是 EricTool 调试通道；以下说明对应当前 BSP 缓冲所有权与重枚举处理，不代表板上热插拔已完成验收。</p>
+<p class="admonition-title">用途</p>
+<p>H7_BSP 用 USB CDC 虚拟串口传输 EricTool 调试数据。本页说明接收缓冲的使用方式，以及异步发送时调用方如何处理返回值和数据所有权。</p>
 </div>
 <h2 id="_1">代码入口</h2>
 <table>
@@ -2223,8 +2223,8 @@
 <h2 id="_3">异步发送</h2>
 <p><code>USB_Transmit_Data(Data, Length)</code> 接受 1～512 字节，复制到 BSP 专用 TX 缓冲后交给 CDC 异步发送。调用方返回后可复用原始 <code>Data</code>；在途发送尚未结束时返回 <code>USBD_BUSY</code>，不覆盖已提交内容；无效参数或设备未就绪返回失败。返回成功表示提交给 USB 栈，不能推断主机应用已经接收。当前 USB PCD 未启用 DMA。</p>
 <p><code>Transport_Task</code> 初始化 USB 后设置 EricTool 遥测数据，并每 1 ms 调用发送入口；它不是通用的协议转发队列。接收文本命令的格式和边界见 <a href="../../%E8%AE%BE%E5%A4%87/EricTool%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7/">EricTool 调试工具</a>。</p>
-<h2 id="_4">验证边界</h2>
-<p>工程 <code>Tests/Communication/README.md</code> 覆盖缓冲切换、重枚举与忙时发送所有权，使用的是主机替身。板上 USB 枚举、断连恢复和持续传输仍应实测。</p>
+<h2 id="_4">上板后检查</h2>
+<p>接入前确认 USB_OTG_HS 使用 Device Only FS 模式；上板后测试枚举、断连恢复和持续传输。工程 <code>Tests/Communication/README.md</code> 的主机测试覆盖缓冲切换、重枚举和忙时发送所有权，不能代替热插拔实测。</p>
 
 
 

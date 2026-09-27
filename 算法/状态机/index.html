@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1323,7 +1323,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        当前接口
+        接口与示例
       
     </span>
   </a>
@@ -1933,7 +1933,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1949,7 +1949,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2048,7 +2048,7 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        当前接口
+        接口与示例
       
     </span>
   </a>
@@ -2121,8 +2121,8 @@
 
 
 <h1 id="_1">有限状态机</h1>
-<p>当前 <code>alg_fsm.h</code> 提供定长模板 <code>Class_FSM&lt;Status_Max&gt;</code>，按数字状态编号保存启用阶段和停留周期数。它不是按字符串注册状态与转移条件的运行时状态机。</p>
-<h2 id="_2">当前接口</h2>
+<p>有限状态机用于按数字编号管理当前状态及其停留周期数。<code>Class_FSM&lt;Status_Max&gt;</code> 在编译时确定状态容量；状态转移条件由任务或应用代码决定，适合状态数量固定的控制流程。</p>
+<h2 id="_2">接口与示例</h2>
 <ul>
 <li><code>Init(initial_serial)</code>：设置初始状态，清空所有 <code>Status[i].Count_Time</code>。</li>
 <li><code>Set_Status(next_serial)</code>：禁用并清零原状态，启用新状态。</li>
@@ -2136,7 +2136,7 @@
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">fsm</span><span class="p">.</span><span class="n">Set_Status</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>状态转移条件由使用方在任务或应用层编写；当前类没有 <code>Add_State()</code>、<code>Add_Transition()</code> 或 <code>Update()</code>。调用方须保证状态编号小于模板容量，并按实际调度周期解释 <code>Count_Time</code>。</p>
+<p>调用方须保证状态编号小于模板容量，并按实际调度周期解释 <code>Count_Time</code>。转移时调用 <code>Set_Status()</code>；此类型不负责自动评估转移条件。</p>
 <p>源码：<code>User_File/Middleware/Algorithm/FSM/alg_fsm.h</code>。</p>
 
 

@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1875,7 +1875,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1891,7 +1891,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2809,7 +2809,7 @@
         <a href="./" class="md-path__link">
           
   <span class="md-ellipsis">
-    规划与归档
+    规划资料（未实现）
   </span>
 
         </a>
@@ -2830,12 +2830,12 @@
 
 <h1 id="apptuner-pid">appTuner — PID 在线调参方案草稿（未接入当前主线）</h1>
 <div class="admonition abstract">
-<p class="admonition-title">文档摘要</p>
-<p>本文保留历史设计方案，描述拟通过 EricTool 调参、管理最多 4 路 PID 并写入 W25Q64JV 的思路。当前 H7_BSP 主线没有 appTuner 模块，以下类型、函数、任务和测试步骤均不是现成接口。</p>
+<p class="admonition-title">方案介绍</p>
+<p>这是一份尚未实现的在线调参方案：设想通过 EricTool 调整最多四路 PID，并将参数保存到 W25Q64JV。下文用于讨论数据模型、通信和存储流程，不提供可直接调用的 appTuner 接口。</p>
 </div>
 <div class="admonition warning">
-<p class="admonition-title">当前主线不可照此接入</p>
-<p>当前 <code>User_File/</code>、<code>Core/</code>、<code>Tests/</code> 与 <code>CMakeLists.txt</code> 中没有 <code>App_Tuner_*</code>、<code>PID_Tuner_Manager_t</code> 或 <code>Flash_Task</code> 的实现。<code>Status_Task</code> 当前以 20 Hz 更新健康快照，EricTool 遥测由 <code>Transport_Task</code> 处理。当前接收解析器识别冒号分隔的 <code>name:value#</code>，且尚未接入在线赋值。要实现本方案，须先完成源码、构建注册、协议/存储边界与主机及板上验证。</p>
+<p class="admonition-title">当前可用范围</p>
+<p>H7_BSP 主线已通过 <code>Transport_Task</code> 提供 EricTool 上行遥测，文本解析器也能识别 <code>name:value#</code>；在线赋值和 Flash 参数持久化尚未接入。图中的 <code>App_Tuner_*</code>、<code>PID_Tuner_Manager_t</code> 和 <code>Flash_Task</code> 均为拟议组件。</p>
 </div>
 <hr />
 <h2 id="_1">历史架构草图</h2>

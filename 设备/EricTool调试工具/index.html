@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1955,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1971,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2165,10 +2165,10 @@
 
 
 <h1 id="erictool">EricTool 调试工具</h1>
-<p><code>Class_EricTool_USB</code> 和 <code>Class_EricTool_UART</code> 定义在 <code>User_File/Device/Peripheral/EricTool/dvc_erictool.h/.cpp</code>，提供 justfloat 遥测打包及文本指令解析。<strong>当前主线实际使用 USB 上行遥测；UART 类和下行解析接口存在，但不等于板上已启用在线改参。</strong></p>
+<p>EricTool 用于把板上的浮点调试数据送到上位机。H7_BSP 主线通过 USB CDC 发送姿态角遥测；工程还提供 UART 类和文本解析接口，但在线修改参数需要应用层另行接入。</p>
 <h2 id="_1">当前任务链</h2>
 <p><code>System_Init()</code> 调用 <code>EricTool_USB.Init()</code>；<code>Transport_Task</code> 初始化 USB CDC，注册三个姿态角数据地址，然后在循环中调用 <code>EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback()</code> 并 <code>osDelay(1)</code>。方法名保留了“1ms”，但任务实际调用间隔由 RTOS tick 和调度决定，不能保证每帧都按精确 1 ms 发出。<code>Status_Task</code> 当前以 20 Hz 更新健康快照，不负责 EricTool 发送。</p>
-<p>当前没有看到 <code>EricTool_UART.Init()</code> 的主线调用，也没有把 EricTool 的 USB 接收解析器注册到 <code>USB_Init()</code> 回调链。不要把两个类都当成已运行的通道。</p>
+<p>主线没有调用 <code>EricTool_UART.Init()</code>，也没有将 EricTool 的 USB 接收解析器注册到 <code>USB_Init()</code> 回调链；按现有任务配置，应只把 USB 上行遥测视为已启用通道。</p>
 <h2 id="_2">上行帧与接口</h2>
 <p>发送帧由 N 个 32 位浮点值和默认帧尾 <code>0x7f800000</code> 构成。USB 版本的 <code>Set_Data(Number, ...)</code> 保存待采样变量地址，最多有 24 个槽位；发送函数将当前地址中的 4 字节值打包，再经 <code>USB_Transmit_Data()</code> 提交。底层 USB 忙时可能丢弃本次发送，不提供逐帧交付保证。</p>
 <div class="language-c highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">// 当前 Transport_Task.cpp 选择的三个通道：</span>

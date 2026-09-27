@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1278,7 +1278,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        接入时检查
       
     </span>
   </a>
@@ -1955,7 +1955,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1971,7 +1971,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2081,7 +2081,7 @@
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证边界
+        接入时检查
       
     </span>
   </a>
@@ -2166,8 +2166,8 @@
 
 <h1 id="_1">滤波器库</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>H7_BSP 的算法层包含 VQF、Kalman、EKF、One Euro、FIR/IIR 及多项式滤波等组件。库源码进入构建不代表已接入应用闭环；当前 BMI088 姿态链使用 VQF，由 <code>BMI088_Task</code> 逐帧调用 <code>BSP_BMI088.Calculate()</code>。</p>
+<p class="admonition-title">用途</p>
+<p>滤波器库提供姿态估计、状态估计和信号平滑组件，包括 VQF、Kalman、EKF、One Euro、FIR/IIR 与多项式滤波。可按输入信号和目标用途选择；板载 BMI088 姿态链使用 VQF。</p>
 </div>
 <h2 id="_2">按用途选择</h2>
 <table>
@@ -2201,8 +2201,8 @@
 </tbody>
 </table>
 <p>旧版文档中的 <code>BSP_BMI088.EKF_Calculate()</code> 与 <code>Ins_Task</code> 姿态计算示例已不适用当前工程。使用 VQF 前应确认 <code>BSP_BMI088.Is_Initialized()</code>，观测队列、丢样和 SPI 恢复计数见 BMI088 页面。通用 EKF 类仍存在，但不等于当前 IMU 链使用它。</p>
-<h2 id="_3">验证边界</h2>
-<p>算法主机测试验证函数契约和边界输入，不等同于传感器噪声、温漂及设备闭环表现。实际部署时测量采样间隔、延迟和计算耗时，并核对单位与初始化状态。</p>
+<h2 id="_3">接入时检查</h2>
+<p>接入时核对单位、初始化状态、采样间隔、延迟与计算耗时；再通过传感器数据和实际闭环观察噪声与温漂。算法主机测试覆盖函数契约和边界输入，不能代替设备实测。</p>
 <h2 id="_4">关联文档</h2>
 <ul>
 <li><a href="../../%E8%AE%BE%E5%A4%87/BMI088_IMU/">BMI088 IMU</a></li>

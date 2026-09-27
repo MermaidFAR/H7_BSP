@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="H7_BSP 当前 DJI 电机接口、分组控制与接入边界。">
+        <meta name="description" content="H7_BSP DJI 电机驱动的接入顺序、分组控制与反馈单位。">
       
       
       
@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -850,7 +850,7 @@
   <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证范围
+        上板前确认
       
     </span>
   </a>
@@ -1999,7 +1999,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -2015,7 +2015,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2169,7 +2169,7 @@
   <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        验证范围
+        上板前确认
       
     </span>
   </a>
@@ -2254,8 +2254,8 @@
 
 <h1 id="dji">DJI 电机驱动</h1>
 <div class="admonition abstract">
-<p class="admonition-title">当前实现</p>
-<p>H7_BSP 已包含 DJI 电机驱动与分组发送实现，支持配置 M2006、M3508 和 GM6020。当前接口与 2026-09-27 的反馈、输出边界修复已核对；本次文档核对未进行实机验收。</p>
+<p class="admonition-title">用途</p>
+<p>DJI 电机驱动用于通过 CAN 接入 M2006、M3508 和 GM6020，并按报文 ID 对电机分组发送控制量。本页先说明接入顺序，再介绍目标单位、反馈字段和接口返回值。</p>
 </div>
 <h2 id="_1">源码入口</h2>
 <table>
@@ -2379,8 +2379,8 @@
 <p>外部角度、速度和前馈配置保存的是指针，调用者必须保证变量在使用期间有效，并统一零点、正方向与单位。</p>
 <p>接收中断更新运动反馈，<code>Control</code> 更新 PID 状态，整个反馈结构不是原子快照。32 位 MCU 跨上下文读取反馈时间戳时，使用 <code>Get_Last_Feedback_Timestamp_Us()</code>。</p>
 <p>接收的编码器原始值若不在 0～8191 内，驱动丢弃该反馈，不更新运动状态。<code>Control()</code> 的计算输出若为非有限值，会清零后再限幅与组包。这是异常输入的故障边界，不代表传感器故障已恢复；上层仍需结合反馈超时和健康状态处理。</p>
-<h2 id="_6">验证范围</h2>
-<p>本页确认了当前源码接口和构建接入。接线、具体电调协议量程、闭环参数以及负载运动结果，仍需结合目标硬件完成验证；旧模板中的 <code>Motor_DJI_</code> 示例不再作为当前 API 使用。</p>
+<h2 id="_6">上板前确认</h2>
+<p>按目标电机和电调核对接线、协议量程、反馈方向、闭环参数，再通过实机反馈和负载运动确认控制效果。接口使用 <code>Class_DJIMotor</code> 与 <code>Class_DJIMotor_Group</code>。</p>
 <h2 id="_7">关联文档</h2>
 <ul>
 <li><a href="../../%E9%A9%B1%E5%8A%A8/CAN%E6%80%BB%E7%BA%BF/">CAN 总线</a></li>

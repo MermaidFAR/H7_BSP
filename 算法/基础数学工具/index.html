@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1885,7 +1885,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1901,7 +1901,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2054,7 +2054,7 @@
 
 
 <h1 id="_1">基础数学工具</h1>
-<p><code>alg_basic.h/.cpp</code> 提供数值限幅、绝对值、sinc、浮点有效性检查、整数/浮点映射和字节序辅助。只有模板函数 <code>Basic_Math_Constrain</code>、<code>Basic_Math_Abs</code> 的实现位于头文件；不要假设该模块全部是 <code>inline</code>。</p>
+<p>基础数学工具提供数值限幅、绝对值、sinc、浮点有效性检查、范围映射和字节序辅助，适合在驱动与控制算法中复用。接口定义位于 <code>User_File/Middleware/Algorithm/</code> 下的 <code>alg_basic.h/.cpp</code>。</p>
 <table>
 <thead>
 <tr>
@@ -2098,7 +2098,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="c1">// 处理无效输入</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>旧文档提到的 <code>Basic_Math_Dead_Zone</code>、<code>Basic_Math_Ramp</code>、<code>Basic_Math_Lerp</code> 当前不存在。死区逻辑在 <a href="../PID%E6%8E%A7%E5%88%B6%E5%99%A8/">PID 控制器</a>中，斜坡规划见<a href="../%E6%96%9C%E5%9D%A1%E8%A7%84%E5%88%92%E5%99%A8/">斜坡规划器</a>。</p>
+<p><code>Basic_Math_Constrain</code> 和 <code>Basic_Math_Abs</code> 的模板实现位于头文件，其余接口按声明使用。需要死区逻辑可看 <a href="../PID%E6%8E%A7%E5%88%B6%E5%99%A8/">PID 控制器</a>，需要平滑调整目标值可看<a href="../%E6%96%9C%E5%9D%A1%E8%A7%84%E5%88%92%E5%99%A8/">斜坡规划器</a>。</p>
 
 
 

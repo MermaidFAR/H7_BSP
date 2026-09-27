@@ -371,7 +371,7 @@
   <span class="md-ellipsis">
     
   
-    内存与总线架构
+    内存与 DMA
   
 
     
@@ -1933,7 +1933,7 @@
   <span class="md-ellipsis">
     
   
-    规划与归档
+    规划资料（未实现）
   
 
     
@@ -1949,7 +1949,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    规划与归档
+    规划资料（未实现）
   
 
           </label>
@@ -2135,7 +2135,7 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">Class_Matrix_f32</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="w"> </span><span class="n">euler</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="p">.</span><span class="n">Get_Euler_Angle</span><span class="p">();</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kt">float</span><span class="w"> </span><span class="n">yaw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">euler</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
 </span></code></pre></div>
-<p>旧文档中的 <code>Conjugate()</code>、<code>Normalize()</code>、<code>Rotate()</code>、<code>Slerp()</code> 和 <code>ToEulerYaw/Pitch/Roll()</code> 并非当前公开接口；不要照抄那些示例。</p>
+<p>使用共轭、归一化或欧拉角转换时，以本页列出的 <code>Get_Conjugate()</code>、<code>Get_Normalization()</code> 和 <code>Get_Euler_Angle()</code> 等接口为准；此类型不提供 <code>Slerp()</code>。</p>
 <p>源码：<code>User_File/Middleware/Algorithm/Quaternion/alg_quaternion.h/.cpp</code>。</p>
 
 
