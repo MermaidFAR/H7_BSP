@@ -481,10 +481,14 @@ void DMA1_Stream7_IRQHandler(void)
 void TIM5_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM5_IRQn 0 */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
   // traceISR_ENTER();
   /* USER CODE END TIM5_IRQn 0 */
   HAL_TIM_IRQHandler(&htim5);
   /* USER CODE BEGIN TIM5_IRQn 1 */
+  __DMB();
+  __set_PRIMASK(primask);
   // traceISR_EXIT();
   /* USER CODE END TIM5_IRQn 1 */
 }
