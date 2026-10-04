@@ -121,7 +121,12 @@ static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage)
     }
 
     UART_HandleTypeDef *huart = manage->UART_Handler;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    manage->Rx_Restart_Pending = false;
     manage->Rx_Buffer_Active = nullptr;
+    __DMB();
+    __set_PRIMASK(primask);
 
     if (HAL_UART_AbortReceive(huart) != HAL_OK)
     {
@@ -143,7 +148,6 @@ static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage)
         return false;
     }
 
-    manage->Rx_Restart_Pending = false;
     manage->Rx_Restart_Count++;
     return true;
 }
