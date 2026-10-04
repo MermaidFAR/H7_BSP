@@ -189,6 +189,13 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   StorageTaskHandle = osThreadNew(Storage_Task, NULL, &StorageTask_attributes);
+  if (TransportTaskHandle == NULL || InsTaskHandle == NULL ||
+      CanTxTaskHandle == NULL || StatusTaskHandle == NULL ||
+      TIM_1ms_TaskHandle == NULL || BMI088TaskHandle == NULL ||
+      StorageTaskHandle == NULL)
+  {
+    Error_Handler();
+  }
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
