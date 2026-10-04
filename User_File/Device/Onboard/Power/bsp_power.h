@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_adc.h"
+#include "sys_timestamp.h"
 #include "gpio.h"
 #include "stm32h7xx_hal.h"
 
@@ -43,7 +44,7 @@ protected:
     // 初始化相关常量
 
     // 绑定的ADC
-    Struct_ADC_Manage_Object *ADC_Manage_Object;
+    Struct_ADC_Manage_Object *ADC_Manage_Object = nullptr;
     // 绑定的ADC缓冲区偏移量
     uint16_t ADC_Buffer_Offset = 0;
 
@@ -73,8 +74,19 @@ extern Class_Power BSP_Power;
  */
 inline float Class_Power::Get_Power_Voltage() const
 {
-    // 读取ADC值, 偏移量为0
-    uint32_t adc_value = ADC_Manage_Object->ADC_Data[ADC_Buffer_Offset];
+    uint32_t adc_value = 0;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (ADC_Manage_Object != nullptr && ADC_Manage_Object->ADC_Handler != nullptr &&
+        ADC_Manage_Object->Sample_Valid &&
+        HAL_ADC_GetError(ADC_Manage_Object->ADC_Handler) == HAL_ADC_ERROR_NONE &&
+        __HAL_ADC_GET_FLAG(ADC_Manage_Object->ADC_Handler, ADC_FLAG_OVR) == RESET &&
+        SYS_Timestamp.Get_Current_Timestamp() - ADC_Manage_Object->Sample_Timestamp <= 100000)
+    {
+        adc_value = ADC_Manage_Object->ADC_Data[ADC_Buffer_Offset];
+    }
+    __DMB();
+    if (primask == 0) __enable_irq();
     // 计算电压, 假设ADC分辨率为16位,
     float voltage = ((float) (adc_value) / (float) (1 << 16)) * 3.3f * 11.0f;
     // 返回电压值

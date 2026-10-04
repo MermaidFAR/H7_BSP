@@ -13,6 +13,8 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_adc.h"
+#include "sys_timestamp.h"
+#include <string.h>
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -30,6 +32,15 @@ Struct_ADC_Manage_Object ADC3_Manage_Object = {nullptr};
 
 /* Function prototypes -------------------------------------------------------*/
 
+static Struct_ADC_Manage_Object *ADC_Get_Manage_Object(ADC_HandleTypeDef *hadc)
+{
+    if (hadc == nullptr) return nullptr;
+    if (hadc->Instance == ADC1) return &ADC1_Manage_Object;
+    if (hadc->Instance == ADC2) return &ADC2_Manage_Object;
+    if (hadc->Instance == ADC3) return &ADC3_Manage_Object;
+    return nullptr;
+}
+
 /**
  * @brief 初始化ADC
  *
@@ -38,29 +49,56 @@ Struct_ADC_Manage_Object ADC3_Manage_Object = {nullptr};
  */
 bool ADC_Init(ADC_HandleTypeDef *hadc, uint16_t Sample_Number)
 {
-    if (hadc == nullptr || Sample_Number == 0 || Sample_Number > ADC_BUFFER_SIZE ||
+    Struct_ADC_Manage_Object *manage = ADC_Get_Manage_Object(hadc);
+    if (manage == nullptr) return false;
+    memset(manage, 0, sizeof(*manage));
+    if (Sample_Number == 0 || Sample_Number > ADC_BUFFER_SIZE ||
         HAL_ADCEx_Calibration_Start(hadc, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
     {
         return false;
     }
+    manage->ADC_Handler = hadc;
+    return HAL_ADC_Start_DMA(hadc, (uint32_t *)manage->ADC_Data, Sample_Number) == HAL_OK;
+}
 
-    HAL_StatusTypeDef start_status = HAL_ERROR;
-    if (hadc->Instance == ADC1)
+extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    Struct_ADC_Manage_Object *manage = ADC_Get_Manage_Object(hadc);
+    if (manage != nullptr && manage->ADC_Handler == hadc)
     {
-        ADC1_Manage_Object.ADC_Handler = hadc;
-        start_status = HAL_ADC_Start_DMA(hadc, (uint32_t *) &ADC1_Manage_Object.ADC_Data, Sample_Number);
+        manage->Sample_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
+        manage->Sample_Valid = HAL_ADC_GetError(hadc) == HAL_ADC_ERROR_NONE &&
+                               __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_OVR) == RESET;
     }
-    else if (hadc->Instance == ADC2)
+}
+
+extern "C" void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+    Struct_ADC_Manage_Object *manage = ADC_Get_Manage_Object(hadc);
+    if (manage != nullptr && manage->ADC_Handler == hadc)
+        manage->Sample_Valid = false;
+}
+
+// ADC1 板载电源采样：单通道、单次转换，循环 DMA。
+void ADC_TIM_10ms_PeriodElapsedCallback(void)
+{
+    ADC_HandleTypeDef *hadc = ADC1_Manage_Object.ADC_Handler;
+    if (hadc == nullptr) return;
+    if (HAL_ADC_GetError(hadc) != HAL_ADC_ERROR_NONE ||
+        __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_OVR) != RESET ||
+        HAL_DMA_GetState(hadc->DMA_Handle) != HAL_DMA_STATE_BUSY)
     {
-        ADC2_Manage_Object.ADC_Handler = hadc;
-        start_status = HAL_ADC_Start_DMA(hadc, (uint32_t *) &ADC2_Manage_Object.ADC_Data, Sample_Number);
+        ADC1_Manage_Object.Sample_Valid = false;
+        if (HAL_ADC_Stop_DMA(hadc) == HAL_OK)
+        {
+            // HAL Start_DMA 不清除这些错误状态，残留时完成回调仍会转入错误分支。
+            CLEAR_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA);
+            HAL_ADC_Start_DMA(hadc, (uint32_t *)ADC1_Manage_Object.ADC_Data, 1);
+        }
+        return;
     }
-    else if (hadc->Instance == ADC3)
-    {
-        ADC3_Manage_Object.ADC_Handler = hadc;
-        start_status = HAL_ADC_Start_DMA(hadc, (uint32_t *) &ADC3_Manage_Object.ADC_Data, Sample_Number);
-    }
-    return start_status == HAL_OK;
+    if (HAL_ADC_Start(hadc) != HAL_OK)
+        ADC1_Manage_Object.Sample_Valid = false;
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

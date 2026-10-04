@@ -310,6 +310,15 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
         }
         Temperature_Stale_Latched = false;
 
+        const float voltage = BSP_Power.Get_Power_Voltage();
+        if (Basic_Math_Is_Invalid_Float(voltage) || voltage < 10.0f)
+        {
+            Heater_PWM_Compare = 0;
+            __HAL_TIM_SET_COMPARE(htim, TIM_Channel, 0);
+            PID_Temperature.Set_Integral_Error(0);
+            return;
+        }
+
         // 是否开启预热
         if (temperature_state.Temperature < HEATER_PREHEAT_BASE_TEMPERATURE)
         {
@@ -334,7 +343,7 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
             PID_Temperature.TIM_Calculate_PeriodElapsedCallback();
             tmp = PID_Temperature.Get_Out();
         }
-        float output = tmp / (BSP_Power.Get_Power_Voltage() * BSP_Power.Get_Power_Voltage()) * HEATER_NOMINAL_VOLTAGE * HEATER_NOMINAL_VOLTAGE;
+        float output = tmp / (voltage * voltage) * HEATER_NOMINAL_VOLTAGE * HEATER_NOMINAL_VOLTAGE;
         Basic_Math_Constrain(&output, 0.0f, 10000.0f);
         Heater_PWM_Compare = static_cast<uint32_t>(output);
         __HAL_TIM_SET_COMPARE(htim, TIM_Channel, Heater_PWM_Compare);

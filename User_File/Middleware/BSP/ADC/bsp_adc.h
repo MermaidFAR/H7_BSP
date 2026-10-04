@@ -34,6 +34,8 @@ struct Struct_ADC_Manage_Object
 {
     ADC_HandleTypeDef *ADC_Handler;
     uint16_t ADC_Data[ADC_BUFFER_SIZE];
+    volatile bool Sample_Valid;
+    volatile uint64_t Sample_Timestamp;
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -45,6 +47,7 @@ extern struct Struct_ADC_Manage_Object ADC3_Manage_Object;
 /* Exported function declarations --------------------------------------------*/
 
 bool ADC_Init(ADC_HandleTypeDef *hadc, uint16_t Sample_Number);
+void ADC_TIM_10ms_PeriodElapsedCallback(void);
 
 #endif
 
