@@ -62,6 +62,8 @@ typedef struct
  */
 void BSP_CAN_ConfigInit(void);
 
+void BSP_CAN_Recover(void);
+
 /**
  * @brief 注册一个接收回调。
  * @param can_id 要监听的标准帧 ID。

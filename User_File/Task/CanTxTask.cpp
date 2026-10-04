@@ -28,6 +28,7 @@ extern "C" void Can_Tx_Task(void *argument)
   for (;;) {
     xLastWakeTime += 1;
     osDelayUntil(xLastWakeTime);
+    BSP_CAN_Recover();
     BSP_CAN_SendAsync();
     BSP_CAN_SendPer();
   }

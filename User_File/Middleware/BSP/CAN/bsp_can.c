@@ -13,6 +13,7 @@
 
 #include "bsp_can.h"
 #include "cmsis_os2.h"
+#include "sys_timestamp.h"
 
 #include <string.h>
 
@@ -67,6 +68,7 @@ static uint16_t Can_TxRoundRobin;
 static osMessageQueueId_t Can_TxQueue;
 static Struct_CAN_Tx_Msg Can_TxPendingMessage;
 static uint8_t Can_TxPending;
+static uint64_t Can_LastRecovery[3];
 
 /* Private function declarations ---------------------------------------------*/
 
@@ -211,6 +213,11 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
     uint32_t primask;
     uint16_t index;
     int16_t free_index = -1;
+
+    if (!BSP_CAN_HandleIsValid(hfdcan) || can_id > 0x7FF || callback == NULL)
+    {
+        return false;
+    }
 
     primask = BSP_CAN_EnterCritical();
     for (index = 0; index < MAX_CAN_CALLBACKS; index++)
@@ -412,6 +419,8 @@ static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message)
     FDCAN_TxHeaderTypeDef tx_header = {0};
 
     if (!BSP_CAN_MessageIsValid(message) ||
+        (message->hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0 ||
+        (message->hfdcan->Instance->CCCR & FDCAN_CCCR_INIT) != 0 ||
         HAL_FDCAN_GetTxFifoFreeLevel(message->hfdcan) == 0)
     {
         return false;
@@ -430,6 +439,22 @@ static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message)
     return HAL_FDCAN_AddMessageToTxFifoQ(message->hfdcan,
                                          &tx_header,
                                          message->data) == HAL_OK;
+}
+
+void BSP_CAN_Recover(void)
+{
+    FDCAN_HandleTypeDef *buses[] = {&hfdcan1, &hfdcan2, &hfdcan3};
+    uint64_t now = SYS_Timestamp_Get_Microsecond();
+    for (uint8_t index = 0; index < 3; index++)
+    {
+        if ((buses[index]->Instance->PSR & FDCAN_PSR_BO) != 0 &&
+            (buses[index]->Instance->CCCR & FDCAN_CCCR_INIT) != 0 &&
+            now - Can_LastRecovery[index] >= 100000)
+        {
+            Can_LastRecovery[index] = now;
+            CLEAR_BIT(buses[index]->Instance->CCCR, FDCAN_CCCR_INIT);
+        }
+    }
 }
 
 /**
