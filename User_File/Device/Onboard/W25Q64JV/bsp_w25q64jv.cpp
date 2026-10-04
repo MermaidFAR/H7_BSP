@@ -37,6 +37,7 @@ bool Class_W25Q64JV::Init(const Enum_W25Q64JV_Mode &__Flash_Mode)
 {
     Initialized = false;
     Busy_Flag = false;
+    Auto_Polling_Pending = false;
     Write_Enable_Activated_Flag = false;
     OSPI_Manage_Object = &OSPI2_Manage_Object;
     Flash_Mode = __Flash_Mode;
@@ -250,9 +251,8 @@ void Class_W25Q64JV::OSPI_StatusMatchCallback()
     {
         return;
     }
-    SEGGER_RTT_printf(0, "StatMatch Busy=%d Instr=%02X\n", Busy_Flag, Current_Instruction);
-
     Busy_Flag = false;
+    Auto_Polling_Pending = false;
     Write_Enable_Activated_Flag = false;
 
     if (Current_Instruction == W25Q64JV_Command_WRITE_ENABLE)
@@ -262,36 +262,43 @@ void Class_W25Q64JV::OSPI_StatusMatchCallback()
 }
 
 /**
- * @brief OSPI 接收完成回调，接收后发起 WIP 轮询
+ * @brief OSPI 接收完成回调，登记 WIP 轮询请求
  *
  */
 void Class_W25Q64JV::OSPI_RxCallback()
 {
-    if (Initialized && !Suppress_AutoPolling)
-        Auto_Polling_With_Timeout();
+    if (Initialized && Busy_Flag && !Suppress_AutoPolling)
+        Auto_Polling_Pending = true;
 }
 
 /**
- * @brief OSPI 发送完成回调，发送后发起 WIP 轮询
+ * @brief OSPI 发送完成回调，登记 WIP 轮询请求
  *
  */
 void Class_W25Q64JV::OSPI_TxCallback()
 {
-    if (Initialized && !Suppress_AutoPolling)
-        Auto_Polling_With_Timeout();
+    if (Initialized && Busy_Flag && !Suppress_AutoPolling)
+        Auto_Polling_Pending = true;
 }
 
 /**
- * @brief 1ms 定时器回调，用于检测自动轮询超时
+ * @brief 1ms 任务服务，续接自动轮询并检测超时
  *
  */
 void Class_W25Q64JV::TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback()
 {
-    if (Initialized && Busy_Flag && (SYS_Timestamp.Get_Current_Timestamp() - Busy_Timestamp > Current_Auto_Polling_Timeout))
+    if (!Initialized || !Is_Busy())
     {
-        Busy_Flag = false;
-        Auto_Polling_Error_Count++;
+        return;
     }
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    bool pending = Auto_Polling_Pending;
+    Auto_Polling_Pending = false;
+    __DMB();
+    if (primask == 0) __enable_irq();
+    if (pending && !Suppress_AutoPolling)
+        Auto_Polling_With_Timeout();
 }
 
 /**

@@ -141,6 +141,7 @@ public:
     volatile uint32_t Auto_Polling_Error_Count = 0;
     // 抑制 Tx/Rx 回调中的自动轮询（Enable_Quad_Mode 手动轮询 WIP 时使用）
     volatile bool Suppress_AutoPolling = false;
+    volatile bool Auto_Polling_Pending = false;
 
     bool Is_Busy()
     {
@@ -150,6 +151,7 @@ public:
             {
                 SEGGER_RTT_printf(0, "TIMEOUT! Instr=%02X\n", Current_Instruction);
                 Busy_Flag = false;
+                Auto_Polling_Pending = false;
                 Auto_Polling_Error_Count++;
                 return false;
             }
@@ -165,6 +167,7 @@ public:
             return true;
         }
         Busy_Flag = false;
+        Auto_Polling_Pending = false;
         Write_Enable_Activated_Flag = false;
         Suppress_AutoPolling = false;
         Auto_Polling_Error_Count++;

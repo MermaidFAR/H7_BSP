@@ -14,9 +14,9 @@
 
 #include "bsp_ospi.h"
 
-#include <SEGGER_RTT.h>
-
 /* Private macros ------------------------------------------------------------*/
+
+#define OSPI_COMMAND_TIMEOUT 1
 
 /* Private types -------------------------------------------------------------*/
 
@@ -59,22 +59,17 @@ static Struct_OSPI_Manage_Object *OSPI_Get_Manage_Object(OSPI_HandleTypeDef *hos
  */
 void OSPI_Init(OSPI_HandleTypeDef *hospi, OSPI_Status_Match_Callback Auto_Polling_Callback_Function, OSPI_Rx_Callback Rx_Callback_Function, OSPI_Tx_Callback Tx_Callback_Function)
 {
-    if (hospi->Instance == OCTOSPI1)
+    Struct_OSPI_Manage_Object *manage = OSPI_Get_Manage_Object(hospi);
+    if (manage == nullptr)
     {
-        memset(&OSPI1_Manage_Object, 0, sizeof(Struct_OSPI_Manage_Object));
-        OSPI1_Manage_Object.OSPI_Handler = hospi;
-        OSPI1_Manage_Object.Status_Match_Callback_Function = Auto_Polling_Callback_Function;
-        OSPI1_Manage_Object.Rx_Callback_Function = Rx_Callback_Function;
-        OSPI1_Manage_Object.Tx_Callback_Function = Tx_Callback_Function;
+        return;
     }
-    else if (hospi->Instance == OCTOSPI2)
-    {
-        memset(&OSPI2_Manage_Object, 0, sizeof(Struct_OSPI_Manage_Object));
-        OSPI2_Manage_Object.OSPI_Handler = hospi;
-        OSPI2_Manage_Object.Status_Match_Callback_Function = Auto_Polling_Callback_Function;
-        OSPI2_Manage_Object.Rx_Callback_Function = Rx_Callback_Function;
-        OSPI2_Manage_Object.Tx_Callback_Function = Tx_Callback_Function;
-    }
+    memset(manage, 0, sizeof(*manage));
+    manage->OSPI_Handler = hospi;
+    manage->Status_Match_Callback_Function = Auto_Polling_Callback_Function;
+    manage->Rx_Callback_Function = Rx_Callback_Function;
+    manage->Tx_Callback_Function = Tx_Callback_Function;
+    HAL_OSPI_SetTimeout(hospi, OSPI_COMMAND_TIMEOUT);
 }
 
 /**
@@ -101,7 +96,7 @@ HAL_StatusTypeDef OSPI_Command(OSPI_HandleTypeDef *hospi, OSPI_RegularCmdTypeDef
     {
         return HAL_ERROR;
     }
-    return HAL_OSPI_Command(hospi, Command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
+    return HAL_OSPI_Command(hospi, Command, OSPI_COMMAND_TIMEOUT);
 }
 
 /**
@@ -166,8 +161,6 @@ HAL_StatusTypeDef OSPI_Command_Transmit_Receive_Data(OSPI_HandleTypeDef *hospi, 
  */
 extern "C" void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
 {
-    SEGGER_RTT_printf(0, "OSPI SM IRQ\n");
-
     if (hospi->Instance == OCTOSPI1)
     {
         OSPI1_Manage_Object.Auto_Polling_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
@@ -222,8 +215,6 @@ extern "C" void HAL_OSPI_RxCpltCallback(OSPI_HandleTypeDef *hospi)
  */
 extern "C" void HAL_OSPI_TxCpltCallback(OSPI_HandleTypeDef *hospi)
 {
-    SEGGER_RTT_printf(0, "OSPI TX IRQ\n");
-
     if (hospi->Instance == OCTOSPI1)
     {
         if (OSPI1_Manage_Object.Tx_Callback_Function != nullptr)
