@@ -217,8 +217,12 @@ CubeMX 用户修改放在 `USER CODE BEGIN/END` 区域，用户源码注册、�
 
 ## 许可与致谢
 
-项目级许可证待确定。仓库内 STM32 HAL、CMSIS、FreeRTOS、SEGGER 及其他第三方组件，
-按各自源码目录中的版权声明和许可使用。
+CAT_BSP 中由 MermaidFAR 持有版权的原创代码采用 [MIT 许可证](LICENSE)，允许在保留版权和许可声明的
+前提下使用、修改、分发及用于商业项目。
+
+STM32 HAL、CMSIS、FreeRTOS、SEGGER 及其他第三方组件保留各自的版权声明和许可，按对应目录及
+源码中的条款使用。其他作者的既有贡献和外部来源代码不因根目录 MIT 许可而自动改用 MIT；
+未明确许可的部分须另行向原权利人确认授权。
 
 感谢 Kylin-6 贡献达妙电机驱动、初版使用说明和 DJI 电机原始驱动。
 贡献记录见 [达妙驱动 PR #4](https://github.com/MermaidFAR/H7_BSP/pull/4) 和 [DJI 驱动 PR #5](https://github.com/MermaidFAR/H7_BSP/pull/5)。
