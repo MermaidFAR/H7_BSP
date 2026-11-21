@@ -22,18 +22,18 @@
 
 /* Exported types -------------------------------------------------------------*/
 
-enum class Enum_DJIMotor_Type : uint8_t
+enum Enum_DJIMotor_Type : uint8_t
 {
-    M2006,
-    M3508,
-    GM6020,
+    DJI_MOTOR_TYPE_M2006,
+    DJI_MOTOR_TYPE_M3508,
+    DJI_MOTOR_TYPE_GM6020,
 };
 
 /** @brief 电调协议控制方式；VOLTAGE 仅供 GM6020 使用，指令均为协议原始量。 */
-enum class Enum_DJIMotor_Control_Mode : uint8_t
+enum Enum_DJIMotor_Control_Mode : uint8_t
 {
-    CURRENT,
-    VOLTAGE,
+    DJI_MOTOR_CONTROL_CURRENT,
+    DJI_MOTOR_CONTROL_VOLTAGE,
 };
 
 /** @brief close_loop 按位组合启用的环，outer_loop 选择单个控制入口。 */
@@ -45,10 +45,10 @@ enum Enum_DJIMotor_Loop : uint8_t
     DJI_MOTOR_ANGLE_LOOP = 1 << 2,
 };
 
-enum class Enum_DJIMotor_Feedback : uint8_t
+enum Enum_DJIMotor_Feedback : uint8_t
 {
-    MOTOR,
-    EXTERNAL,
+    DJI_MOTOR_FEEDBACK_MOTOR,
+    DJI_MOTOR_FEEDBACK_EXTERNAL,
 };
 
 /**
@@ -65,12 +65,12 @@ struct Struct_DJIMotor_Init_Config
     PID_InitTypeDef current_pid; // 电流原始值闭环，各启用环的 D_T 须与 Control 周期一致
     PID_InitTypeDef speed_pid; // 速度闭环，内置反馈为输出侧 rad/s
     PID_InitTypeDef angle_pid; // 角度闭环，内置反馈为输出侧累计 rad
-    Enum_DJIMotor_Control_Mode control_mode = Enum_DJIMotor_Control_Mode::CURRENT;
+    Enum_DJIMotor_Control_Mode control_mode = DJI_MOTOR_CONTROL_CURRENT;
     float gear_ratio = 0.0f; // 转子/输出轴传动比；非正数或无效值使用型号默认值
     uint32_t feedback_timeout_ms = 20; // 反馈超时阈值，须大于 0；Control/Send 检查时清零超时指令
     bool reverse = false; // 同时反转内置运动反馈和输出指令，current_raw 保留报文符号
-    Enum_DJIMotor_Feedback angle_feedback = Enum_DJIMotor_Feedback::MOTOR;
-    Enum_DJIMotor_Feedback speed_feedback = Enum_DJIMotor_Feedback::MOTOR;
+    Enum_DJIMotor_Feedback angle_feedback = DJI_MOTOR_FEEDBACK_MOTOR;
+    Enum_DJIMotor_Feedback speed_feedback = DJI_MOTOR_FEEDBACK_MOTOR;
     const float *external_angle = nullptr; // 外部角度反馈，rad，调用者统一零点和正方向
     const float *external_speed = nullptr; // 外部速度反馈，rad/s，调用者统一正方向
     const float *current_feedforward = nullptr; // 电流环目标前馈；无电流环时为最终协议指令前馈
@@ -174,8 +174,8 @@ protected:
     uint8_t slot = 0;
     uint8_t close_loop = DJI_MOTOR_OPEN_LOOP;
     Enum_DJIMotor_Loop outer_loop = DJI_MOTOR_OPEN_LOOP;
-    Enum_DJIMotor_Feedback angle_feedback = Enum_DJIMotor_Feedback::MOTOR;
-    Enum_DJIMotor_Feedback speed_feedback = Enum_DJIMotor_Feedback::MOTOR;
+    Enum_DJIMotor_Feedback angle_feedback = DJI_MOTOR_FEEDBACK_MOTOR;
+    Enum_DJIMotor_Feedback speed_feedback = DJI_MOTOR_FEEDBACK_MOTOR;
     const float *external_angle = nullptr;
     const float *external_speed = nullptr;
     const float *current_feedforward = nullptr;

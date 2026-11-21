@@ -226,6 +226,9 @@ protected:
     bool Enqueue_Sample(const Class_Matrix_f32<3, 1> &__Gyro,
                         const uint64_t &__Timestamp_Us,
                         const bool &__Valid);
+
+private:
+    bool Check_Chip_Id(uint8_t Max_Attempts) const;
 };
 
 /* Exported variables --------------------------------------------------------*/
@@ -257,7 +260,7 @@ inline Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Get_Raw_Gyro() const
 
 inline uint16_t Class_BMI088_Gyro::Get_Queue_Depth() const
 {
-    return static_cast<uint16_t>((Sample_Queue_Head - Sample_Queue_Tail) &
+    return (uint16_t)((Sample_Queue_Head - Sample_Queue_Tail) &
                                  BMI088_GYRO_SAMPLE_QUEUE_MASK);
 }
 

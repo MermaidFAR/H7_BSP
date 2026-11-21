@@ -20,7 +20,6 @@
 #include "bsp_uart.h"
 #include "bsp_usb.h"
 #include "stm32_hal_legacy.h"
-#include <initializer_list>
 #include <stdarg.h>
 
 /* Exported macros -----------------------------------------------------------*/
@@ -101,7 +100,7 @@ public:
 
     inline float Get_Variable_Value() const;
 
-    inline void Set_Data(std::initializer_list<const volatile float *> Channels);
+    inline void Set_Data(const volatile float *const *Channels, uint8_t Count);
     inline void Set_Data(int Number, ...);
 
     void USB_RxCallback(const uint8_t *Rx_Data, const uint16_t &Length);
@@ -196,36 +195,35 @@ inline float Class_EricTool_USB::Get_Variable_Value() const
 }
 
 /**
- * @brief 设置需要发送的变量数据（可变参数，传指针）
+ * @brief 设置需要发送的变量数据
  *
- * @param Number 数据数量
- * @param ...    各变量的指针（float*）
+ * @param Channels 各变量的指针数组
+ * @param Count 数据数量
  */
-inline void Class_EricTool_USB::Set_Data(std::initializer_list<const volatile float *> Channels)
+inline void Class_EricTool_USB::Set_Data(const volatile float *const *Channels, uint8_t Count)
 {
-    if (Channels.size() > sizeof(Data) / sizeof(Data[0]))
+    if (Count > sizeof(Data) / sizeof(Data[0]) || (Count != 0 && Channels == nullptr))
     {
         return;
     }
-    uint8_t count = 0;
-    for (const volatile float *channel : Channels)
+    for (uint32_t i = 0; i < Count; i++)
     {
-        if (channel == nullptr)
+        if (Channels[i] == nullptr)
         {
             return;
         }
     }
-    for (const volatile float *channel : Channels)
+    for (uint32_t i = 0; i < Count; i++)
     {
-        Data[count++] = channel;
+        Data[i] = Channels[i];
     }
-    Data_Number = count;
+    Data_Number = Count;
 }
 
 // 兼容使用 STM32 32 位地址参数的旧调用。
 inline void Class_EricTool_USB::Set_Data(int Number, ...)
 {
-    if (Number < 0 || static_cast<unsigned>(Number) > sizeof(Data) / sizeof(Data[0]))
+    if (Number < 0 || (unsigned int)Number > sizeof(Data) / sizeof(Data[0]))
     {
         return;
     }
@@ -233,10 +231,10 @@ inline void Class_EricTool_USB::Set_Data(int Number, ...)
     va_start(data_ptr, Number);
     for (int i = 0; i < Number; i++)
     {
-        Data[i] = reinterpret_cast<const volatile float *>(static_cast<uintptr_t>(va_arg(data_ptr, int)));
+        Data[i] = (const volatile float *)(uintptr_t)va_arg(data_ptr, int);
     }
     va_end(data_ptr);
-    Data_Number = static_cast<uint8_t>(Number);
+    Data_Number = (uint8_t)Number;
 }
 
 extern Class_EricTool_USB EricTool_USB;

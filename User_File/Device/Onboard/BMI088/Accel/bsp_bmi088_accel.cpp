@@ -74,11 +74,24 @@ Struct_BMI088_Accel_Temperature_State Class_BMI088_Accel::Get_Temperature_State(
         const uint64_t age_us = state.Now_Timestamp_Us >= state.Last_Valid_Timestamp_Us
                                     ? state.Now_Timestamp_Us - state.Last_Valid_Timestamp_Us
                                     : UINT64_MAX;
-        state.Age_Us = age_us <= UINT32_MAX ? static_cast<uint32_t>(age_us)
+        state.Age_Us = age_us <= UINT32_MAX ? (uint32_t)age_us
                                             : UINT32_MAX;
         state.Data_Valid = age_us <= TEMPERATURE_STALE_TIMEOUT_US;
     }
     return state;
+}
+
+bool Class_BMI088_Accel::Check_Chip_Id(uint8_t Max_Attempts) const
+{
+    const uint8_t chip_id_address = offsetof(Struct_BMI088_Accel_Register, ACC_CHIP_ID_RO);
+    for (uint32_t attempt = 0; attempt < Max_Attempts; attempt++)
+    {
+        if (Read_Single_Register(chip_id_address) == HAL_OK && Register.ACC_CHIP_ID_RO == 0x1e)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -118,36 +131,24 @@ bool Class_BMI088_Accel::Init(const bool &__Heater_Enable)
         __HAL_TIM_SET_COMPARE(htim, TIM_Channel, 0);
     }
 
-    const uint8_t chip_id_address = offsetof(Struct_BMI088_Accel_Register, ACC_CHIP_ID_RO);
-    const auto check_chip_id = [&]()
-    {
-        for (uint8_t attempt = 0; attempt < max_attempts; attempt++)
-        {
-            if (Read_Single_Register(chip_id_address) == HAL_OK && Register.ACC_CHIP_ID_RO == 0x1e)
-            {
-                return true;
-            }
-        }
-        return false;
-    };
-
     // BMI088 手册 5.3.22 规定软复位后等待 1 ms。
     const uint8_t reset = 0xb6;
-    if (!check_chip_id() ||
+    if (!Check_Chip_Id(max_attempts) ||
         Write_Single_Register(offsetof(Struct_BMI088_Accel_Register, ACC_SOFTRESET_WO), &reset) != HAL_OK)
     {
         return false;
     }
     Namespace_SYS_Timestamp::Delay_Millisecond(1);
-    if (!check_chip_id())
+    if (!Check_Chip_Id(max_attempts))
     {
         return false;
     }
 
-    for (const auto &config : BMI088_ACCEL_REGISTER_CONFIG)
+    const uint8_t *register_bytes = (const uint8_t *)&Register;
+    for (uint32_t i = 0; i < BMI088_ACCEL_INIT_INSTRUCTION_NUM; i++)
     {
-        const uint8_t address = config[0];
-        const uint8_t value = config[1];
+        const uint8_t address = BMI088_ACCEL_REGISTER_CONFIG[i][0];
+        const uint8_t value = BMI088_ACCEL_REGISTER_CONFIG[i][1];
         // 挂起及上电切换期间需要 1 ms 同步，进入正常模式后只需 2 us。
         const bool power_config = address == offsetof(Struct_BMI088_Accel_Register, ACC_PWR_CTRL_RW) ||
                                   address == offsetof(Struct_BMI088_Accel_Register, ACC_PWR_CONF_RW);
@@ -159,7 +160,7 @@ bool Class_BMI088_Accel::Init(const bool &__Heater_Enable)
             {
                 Namespace_SYS_Timestamp::Delay_Microsecond(write_delay_us);
                 configured = Read_Single_Register(address) == HAL_OK &&
-                             reinterpret_cast<const uint8_t *>(&Register)[address] == value;
+                             register_bytes[address] == value;
             }
         }
         if (!configured)
@@ -204,12 +205,12 @@ void Class_BMI088_Accel::SPI_RxCpltCallback()
     else if (spi_init_address == offsetof(Struct_BMI088_Accel_Register, TEMP_MSB_RO))
     {
         // 读取温度计数据完成
-        int16_t raw_temperature = static_cast<int16_t>(Register.TEMP_MSB_RO << 3 | Register.TEMP_LSB_RO >> 5);
+        int16_t raw_temperature = (int16_t)(Register.TEMP_MSB_RO << 3 | Register.TEMP_LSB_RO >> 5);
         if ((raw_temperature & 0x0400) != 0)
         {
             raw_temperature -= 1 << 11;
         }
-        const float temperature = 23.0f + static_cast<float>(raw_temperature) * 0.125f;
+        const float temperature = 23.0f + (float)raw_temperature * 0.125f;
         const bool physical_outlier = temperature < BMI088_TEMPERATURE_MIN || temperature > BMI088_TEMPERATURE_MAX;
         const bool step_outlier = Temperature_Valid_Flag &&
                                   fabsf(temperature - Now_Temperature) > BMI088_TEMPERATURE_MAX_STEP;
@@ -258,7 +259,7 @@ void Class_BMI088_Accel::SPI_RxCpltCallback()
 uint8_t Class_BMI088_Accel::SPI_Request_Accel()
 {
     uint8_t tx_data[2] = {};
-    tx_data[0] = static_cast<uint8_t>(offsetof(Struct_BMI088_Accel_Register, ACC_X_RO) | BMI088_ACCEL_READ_MASK);
+    tx_data[0] = (uint8_t)(offsetof(Struct_BMI088_Accel_Register, ACC_X_RO) | BMI088_ACCEL_READ_MASK);
 
     return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
                                      Activate_Pin_State, tx_data, sizeof(tx_data), 6);
@@ -271,7 +272,7 @@ uint8_t Class_BMI088_Accel::SPI_Request_Accel()
 uint8_t Class_BMI088_Accel::SPI_Request_Temperature()
 {
     uint8_t tx_data[2] = {};
-    tx_data[0] = static_cast<uint8_t>(offsetof(Struct_BMI088_Accel_Register, TEMP_MSB_RO) | BMI088_ACCEL_READ_MASK);
+    tx_data[0] = (uint8_t)(offsetof(Struct_BMI088_Accel_Register, TEMP_MSB_RO) | BMI088_ACCEL_READ_MASK);
 
     return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
                                      Activate_Pin_State, tx_data, sizeof(tx_data), 2);
@@ -336,7 +337,7 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
         }
         float output = tmp / (voltage * voltage) * HEATER_NOMINAL_VOLTAGE * HEATER_NOMINAL_VOLTAGE;
         Basic_Math_Constrain(&output, 0.0f, 10000.0f);
-        Heater_PWM_Compare = static_cast<uint32_t>(output);
+        Heater_PWM_Compare = (uint32_t)output;
         __HAL_TIM_SET_COMPARE(htim, TIM_Channel, Heater_PWM_Compare);
     }
     else
@@ -354,7 +355,7 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
 uint8_t Class_BMI088_Accel::Read_Single_Register(const uint8_t &Register_Address) const
 {
     uint8_t tx_data[2] = {};
-    tx_data[0] = static_cast<uint8_t>(Register_Address | BMI088_ACCEL_READ_MASK);
+    tx_data[0] = (uint8_t)(Register_Address | BMI088_ACCEL_READ_MASK);
 
     return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
                               Activate_Pin_State, tx_data, sizeof(tx_data), 1, true);
@@ -373,10 +374,10 @@ uint8_t Class_BMI088_Accel::Read_Multi_Register(const uint8_t &Register_Address,
         return HAL_ERROR;
     }
     uint8_t tx_data[2] = {};
-    tx_data[0] = static_cast<uint8_t>(Register_Address | BMI088_ACCEL_READ_MASK);
+    tx_data[0] = (uint8_t)(Register_Address | BMI088_ACCEL_READ_MASK);
 
     return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                              Activate_Pin_State, tx_data, sizeof(tx_data), static_cast<uint16_t>(Rx_Length), true);
+                              Activate_Pin_State, tx_data, sizeof(tx_data), (uint16_t)Rx_Length, true);
 }
 
 /**
@@ -411,7 +412,7 @@ void Class_BMI088_Accel::Write_Multi_Register(const uint8_t &Register_Address, c
     memcpy(&tx_data[1], Tx_Data_Buffer, Tx_Length);
 
     SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin, Activate_Pin_State,
-                      tx_data, static_cast<uint16_t>(Tx_Length + 1U));
+                      tx_data, (uint16_t)(Tx_Length + 1U));
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

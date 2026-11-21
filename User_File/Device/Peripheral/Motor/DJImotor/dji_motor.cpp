@@ -71,11 +71,11 @@ static bool DJI_Motor_Check_PID_Config(const PID_InitTypeDef *config)
 /** @brief 返回未指定减速比时采用的转子侧 / 输出侧传动比。 */
 static float DJI_Motor_Get_Default_Gear_Ratio(Enum_DJIMotor_Type type)
 {
-    if (type == Enum_DJIMotor_Type::M2006)
+    if (type == DJI_MOTOR_TYPE_M2006)
     {
         return 36.0f;
     }
-    if (type == Enum_DJIMotor_Type::M3508)
+    if (type == DJI_MOTOR_TYPE_M3508)
     {
         return 19.0f;
     }
@@ -95,18 +95,18 @@ static bool DJI_Motor_Resolve_Protocol(Enum_DJIMotor_Type type,
                                        float *command_limit)
 {
     if (can_id < 1 || can_id > 8 ||
-        (type == Enum_DJIMotor_Type::GM6020 && can_id > 7) ||
-        (type != Enum_DJIMotor_Type::GM6020 && mode != Enum_DJIMotor_Control_Mode::CURRENT))
+        (type == DJI_MOTOR_TYPE_GM6020 && can_id > 7) ||
+        (type != DJI_MOTOR_TYPE_GM6020 && mode != DJI_MOTOR_CONTROL_CURRENT))
     {
         return false;
     }
 
     /** 每帧容纳四台电机，ID 1~4、5~8 分别映射到各自报文的槽位 0~3。 */
     *slot = (can_id - 1) % 4;
-    if (type == Enum_DJIMotor_Type::GM6020)
+    if (type == DJI_MOTOR_TYPE_GM6020)
     {
         *rx_id = 0x204 + can_id;
-        if (mode == Enum_DJIMotor_Control_Mode::VOLTAGE)
+        if (mode == DJI_MOTOR_CONTROL_VOLTAGE)
         {
             *tx_id = can_id <= 4 ? 0x1FF : 0x2FF;
             *command_limit = 25000.0f;
@@ -121,7 +121,7 @@ static bool DJI_Motor_Resolve_Protocol(Enum_DJIMotor_Type type,
     {
         *rx_id = 0x200 + can_id;
         *tx_id = can_id <= 4 ? 0x200 : 0x1FF;
-        *command_limit = type == Enum_DJIMotor_Type::M2006 ? 10000.0f : 16384.0f;
+        *command_limit = type == DJI_MOTOR_TYPE_M2006 ? 10000.0f : 16384.0f;
     }
     return true;
 }
@@ -202,8 +202,8 @@ bool Class_DJIMotor::Init(const Struct_DJIMotor_Init_Config &config)
         ((config.close_loop & DJI_MOTOR_ANGLE_LOOP) != 0 && !DJI_Motor_Check_PID_Config(&config.angle_pid)) ||
         (config.close_loop & ~(DJI_MOTOR_CURRENT_LOOP | DJI_MOTOR_SPEED_LOOP | DJI_MOTOR_ANGLE_LOOP)) != 0 ||
         (config.outer_loop != DJI_MOTOR_OPEN_LOOP && (config.close_loop & config.outer_loop) == 0) ||
-        (config.angle_feedback == Enum_DJIMotor_Feedback::EXTERNAL && config.external_angle == nullptr) ||
-        (config.speed_feedback == Enum_DJIMotor_Feedback::EXTERNAL && config.external_speed == nullptr))
+        (config.angle_feedback == DJI_MOTOR_FEEDBACK_EXTERNAL && config.external_angle == nullptr) ||
+        (config.speed_feedback == DJI_MOTOR_FEEDBACK_EXTERNAL && config.external_speed == nullptr))
     {
         return false;
     }
@@ -244,7 +244,7 @@ bool Class_DJIMotor::Init(const Struct_DJIMotor_Init_Config &config)
     gear_ratio = config.gear_ratio > 0.0f && !Basic_Math_Is_Invalid_Float(config.gear_ratio)
                      ? config.gear_ratio : DJI_Motor_Get_Default_Gear_Ratio(config.motor_type);
     feedback_timeout_us = (uint64_t)config.feedback_timeout_ms * 1000;
-    has_temperature = config.motor_type != Enum_DJIMotor_Type::M2006;
+    has_temperature = config.motor_type != DJI_MOTOR_TYPE_M2006;
     PID_Init(&current_pid, &config.current_pid);
     PID_Init(&speed_pid, &config.speed_pid);
     PID_Init(&angle_pid, &config.angle_pid);
@@ -540,7 +540,7 @@ void Class_DJIMotor::Control()
     if ((close_loop & DJI_MOTOR_ANGLE_LOOP) != 0 && outer_loop == DJI_MOTOR_ANGLE_LOOP)
     {
         angle_pid.Set_Target(output);
-        angle_pid.Set_Now(angle_feedback == Enum_DJIMotor_Feedback::EXTERNAL
+        angle_pid.Set_Now(angle_feedback == DJI_MOTOR_FEEDBACK_EXTERNAL
                               ? *external_angle : feedback.output_total_angle);
         angle_pid.TIM_Calculate_PeriodElapsedCallback();
         feedback.pid.angle.active = true;
@@ -555,7 +555,7 @@ void Class_DJIMotor::Control()
             output += *speed_feedforward;
         }
         speed_pid.Set_Target(output);
-        speed_pid.Set_Now(speed_feedback == Enum_DJIMotor_Feedback::EXTERNAL
+        speed_pid.Set_Now(speed_feedback == DJI_MOTOR_FEEDBACK_EXTERNAL
                               ? *external_speed : feedback.output_speed);
         speed_pid.TIM_Calculate_PeriodElapsedCallback();
         feedback.pid.speed.active = true;
@@ -618,7 +618,7 @@ bool Class_DJIMotor::Set_Feedback_Source(Enum_DJIMotor_Loop loop,
                                          Enum_DJIMotor_Feedback source,
                                          const float *feedback)
 {
-    if (source == Enum_DJIMotor_Feedback::EXTERNAL && feedback == nullptr)
+    if (source == DJI_MOTOR_FEEDBACK_EXTERNAL && feedback == nullptr)
     {
         return false;
     }

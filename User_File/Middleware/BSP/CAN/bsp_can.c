@@ -157,10 +157,13 @@ void BSP_CAN_ConfigInit(void)
         CAN_Bus_t *bus = &Can_Buses[i];
         bus->has_pending = false;
         bus->last_recovery = 0;
-        bus->tx_queue = osMessageQueueNew(CAN_TX_QUEUE_DEPTH, sizeof(Struct_CAN_Tx_Msg), NULL);
         if (bus->tx_queue == NULL)
         {
-            Error_Handler();
+            bus->tx_queue = osMessageQueueNew(CAN_TX_QUEUE_DEPTH, sizeof(Struct_CAN_Tx_Msg), NULL);
+            if (bus->tx_queue == NULL)
+            {
+                Error_Handler();
+            }
         }
         BSP_CAN_ConfigBus(bus->handle);
     }

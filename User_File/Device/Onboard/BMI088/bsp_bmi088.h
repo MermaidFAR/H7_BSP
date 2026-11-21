@@ -134,15 +134,28 @@ protected:
     uint32_t VQF_Reset_Counter = 0U;
     uint64_t VQF_Pre_Timestamp = 0U;
 
-    enum class Sensor : uint8_t { Accel, Gyro, Temperature, Count };
-    enum class Transfer_State : uint8_t { Idle, Starting, Completed_During_Start, In_Flight, Recovering };
-    static constexpr uint8_t SENSOR_COUNT = static_cast<uint8_t>(Sensor::Count);
+    enum Enum_BMI088_Sensor : uint8_t
+    {
+        BMI088_SENSOR_ACCEL,
+        BMI088_SENSOR_GYRO,
+        BMI088_SENSOR_TEMPERATURE,
+        BMI088_SENSOR_COUNT,
+    };
+
+    enum Enum_BMI088_SPI_State : uint8_t
+    {
+        BMI088_SPI_STATE_IDLE,
+        BMI088_SPI_STATE_STARTING,
+        BMI088_SPI_STATE_COMPLETED_DURING_START,
+        BMI088_SPI_STATE_IN_FLIGHT,
+        BMI088_SPI_STATE_RECOVERING,
+    };
 
     volatile bool Init_Finished_Flag = false;
-    Transfer_State SPI_State = Transfer_State::Idle;
-    Sensor Active_Sensor = Sensor::Accel;
+    Enum_BMI088_SPI_State SPI_State = BMI088_SPI_STATE_IDLE;
+    Enum_BMI088_Sensor Active_Sensor = BMI088_SENSOR_ACCEL;
     uint8_t Next_Sensor = 0U;
-    uint64_t Ready_Timestamps[SENSOR_COUNT] = {};
+    uint64_t Ready_Timestamps[BMI088_SENSOR_COUNT] = {};
     uint64_t Active_Ready_Timestamp = 0U;
     uint32_t Transfer_Start_Timestamp_Low32 = 0U;
     uint64_t Accel_Update_Timestamp = 0U;
@@ -185,7 +198,7 @@ protected:
     uint64_t Calculating_Time = 0U;
 
     void BMI088_Recover_SPI(uint8_t __Reason);
-    void Mark_Ready(Sensor sensor, uint64_t timestamp, bool replace = true);
+    void Mark_Ready(Enum_BMI088_Sensor sensor, uint64_t timestamp, bool replace = true);
     void Set_Accel_Update_Result(const bool &__Accepted,
                                  const uint8_t &__Reject_Reason);
 };

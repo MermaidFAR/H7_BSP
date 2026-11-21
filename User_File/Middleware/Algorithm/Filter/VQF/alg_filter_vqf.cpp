@@ -547,9 +547,9 @@ void Class_Filter_VQF::Calculate_Filter_Coefficient(const float &__Tau,
     }
 
     const double cutoff_frequency =
-        std::sqrt(2.0) / (2.0 * static_cast<double>(PI) * static_cast<double>(__Tau));
+        std::sqrt(2.0) / (2.0 * (double)PI * (double)__Tau);
     const double coefficient =
-        std::tan(static_cast<double>(PI) * cutoff_frequency * static_cast<double>(__D_T));
+        std::tan((double)PI * cutoff_frequency * (double)__D_T);
     const double denominator = coefficient * coefficient +
                                std::sqrt(2.0) * coefficient + 1.0;
     const double b0 = coefficient * coefficient / denominator;
@@ -601,18 +601,18 @@ void Class_Filter_VQF::Filter_Vector(const float __Input[],
         __State[1] += 1.0;
         for (uint32_t i = 0U; i < __Length; i++)
         {
-            __State[2U + i] += static_cast<double>(__Input[i]);
-            __Output[i] = static_cast<float>(__State[2U + i] / __State[1]);
+            __State[2U + i] += (double)__Input[i];
+            __Output[i] = (float)(__State[2U + i] / __State[1]);
         }
 
-        if (static_cast<float>(__State[1]) * __D_T >= __Tau)
+        if ((float)__State[1] * __D_T >= __Tau)
         {
             for (uint32_t i = 0U; i < __Length; i++)
             {
                 __State[2U * i] =
-                    static_cast<double>(__Output[i]) * (1.0 - __B[0]);
+                    (double)__Output[i] * (1.0 - __B[0]);
                 __State[2U * i + 1U] =
-                    static_cast<double>(__Output[i]) * (__B[2] - __A[1]);
+                    (double)__Output[i] * (__B[2] - __A[1]);
             }
         }
         return;
@@ -620,12 +620,12 @@ void Class_Filter_VQF::Filter_Vector(const float __Input[],
 
     for (uint32_t i = 0U; i < __Length; i++)
     {
-        const double input = static_cast<double>(__Input[i]);
+        const double input = (double)__Input[i];
         const double output = __B[0] * input + __State[2U * i];
         __State[2U * i] = __B[1] * input - __A[0] * output +
                           __State[2U * i + 1U];
         __State[2U * i + 1U] = __B[2] * input - __A[1] * output;
-        __Output[i] = static_cast<float>(output);
+        __Output[i] = (float)output;
     }
 }
 
@@ -665,14 +665,14 @@ bool Class_Filter_VQF::Inverse_Matrix_3x3(
     }
 
     const double inverse_determinant = 1.0 / determinant;
-    __Output[0][0] = static_cast<float>(cofactor_a * inverse_determinant);
-    __Output[0][1] = static_cast<float>(cofactor_b * inverse_determinant);
-    __Output[0][2] = static_cast<float>(cofactor_c * inverse_determinant);
-    __Output[1][0] = static_cast<float>(cofactor_d * inverse_determinant);
-    __Output[1][1] = static_cast<float>(cofactor_e * inverse_determinant);
-    __Output[1][2] = static_cast<float>(cofactor_f * inverse_determinant);
-    __Output[2][0] = static_cast<float>(cofactor_g * inverse_determinant);
-    __Output[2][1] = static_cast<float>(cofactor_h * inverse_determinant);
-    __Output[2][2] = static_cast<float>(cofactor_i * inverse_determinant);
+    __Output[0][0] = (float)(cofactor_a * inverse_determinant);
+    __Output[0][1] = (float)(cofactor_b * inverse_determinant);
+    __Output[0][2] = (float)(cofactor_c * inverse_determinant);
+    __Output[1][0] = (float)(cofactor_d * inverse_determinant);
+    __Output[1][1] = (float)(cofactor_e * inverse_determinant);
+    __Output[1][2] = (float)(cofactor_f * inverse_determinant);
+    __Output[2][0] = (float)(cofactor_g * inverse_determinant);
+    __Output[2][1] = (float)(cofactor_h * inverse_determinant);
+    __Output[2][2] = (float)(cofactor_i * inverse_determinant);
     return (true);
 }

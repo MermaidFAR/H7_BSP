@@ -187,6 +187,9 @@ protected:
     uint8_t Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
 
     void Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const;
+
+private:
+    bool Check_Chip_Id(uint8_t Max_Attempts) const;
 };
 
 /* Exported variables --------------------------------------------------------*/

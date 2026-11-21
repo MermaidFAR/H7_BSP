@@ -74,13 +74,13 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
             /** 只有未超时且值匹配的应答才更新本地模式；合法的旧应答不作为运动反馈解码。 */
             if (motor->mode_pending && returned_mode == motor->requested_mode)
             {
-                if (motor->mode_submission == Mode_Submission::New_Request)
+                if (motor->mode_submission == DM_MODE_SUB_NEW_REQUEST)
                 {
-                    motor->mode_submission = Mode_Submission::Confirmed;
+                    motor->mode_submission = DM_MODE_SUB_CONFIRMED;
                 }
                 else
                 {
-                    motor->mode = static_cast<Enum_DMMotor_Mode>(returned_mode);
+                    motor->mode = (Enum_DMMotor_Mode)returned_mode;
                 }
                 motor->mode_pending = false;
             }
@@ -195,13 +195,13 @@ uint32_t Class_DMMotor::ControlId() const
 {
     switch (mode)
     {
-    case Enum_DMMotor_Mode::POSITION_SPEED:
+    case DM_MODE_POSITION_SPEED:
         return DM_POSITION_SPEED_MODE_ID_OFFSET + can_id;
-    case Enum_DMMotor_Mode::SPEED:
+    case DM_MODE_SPEED:
         return DM_SPEED_MODE_ID_OFFSET + can_id;
-    case Enum_DMMotor_Mode::FORCE_POSITION:
+    case DM_MODE_FORCE_POSITION:
         return DM_FORCE_POSITION_MODE_ID_OFFSET + can_id;
-    case Enum_DMMotor_Mode::MIT:
+    case DM_MODE_MIT:
     default:
         return can_id;
     }
@@ -265,7 +265,7 @@ bool Class_DMMotor::SetMode(Enum_DMMotor_Mode new_mode)
     memcpy(&message.data[4], &mode_value, sizeof(mode_value));
     // 先登记，再入队。发送任务可能在 CAN_Tx_Submit 返回前就发出命令。
     uint32_t primask = SYS_Enter_Critical();
-    if (mode_submission != Mode_Submission::Idle)
+    if (mode_submission != DM_MODE_SUB_IDLE)
     {
         SYS_Exit_Critical(primask);
         return false;
@@ -288,7 +288,7 @@ bool Class_DMMotor::SetMode(Enum_DMMotor_Mode new_mode)
         requested_mode = mode_value;
         mode_pending = true;
     }
-    mode_submission = new_request ? Mode_Submission::New_Request : Mode_Submission::Retry;
+    mode_submission = new_request ? DM_MODE_SUB_NEW_REQUEST : DM_MODE_SUB_RETRY;
     SYS_Exit_Critical(primask);
 
     const bool submitted = CAN_Tx_Submit(&message);
@@ -299,11 +299,11 @@ bool Class_DMMotor::SetMode(Enum_DMMotor_Mode new_mode)
         mode_pending = false;
         requested_mode = previous_request;
     }
-    else if (mode_submission == Mode_Submission::Confirmed)
+    else if (mode_submission == DM_MODE_SUB_CONFIRMED)
     {
         mode = new_mode;
     }
-    mode_submission = Mode_Submission::Idle;
+    mode_submission = DM_MODE_SUB_IDLE;
     SYS_Exit_Critical(primask);
     return submitted;
 }

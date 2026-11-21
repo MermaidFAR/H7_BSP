@@ -67,7 +67,7 @@ uint8_t USB_Transmit_Data(uint8_t *Data, uint16_t Length)
     }
 
     uint32_t primask = SYS_Enter_Critical();
-    const auto *hcdc = static_cast<const USBD_CDC_HandleTypeDef *>(hUsbDeviceHS.pClassData);
+    const USBD_CDC_HandleTypeDef *hcdc = (const USBD_CDC_HandleTypeDef *)hUsbDeviceHS.pClassData;
     if (hcdc == nullptr || hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED)
     {
         SYS_Exit_Critical(primask);

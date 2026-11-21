@@ -37,7 +37,7 @@ static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8]);
  */
 static void QDrive_Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *data, uint32_t len, void *context)
 {
-    auto *motor = static_cast<QD4310_t *>(context);
+    QD4310_t *motor = (QD4310_t *)context;
     if (len >= 8 && motor->hfdcan == hfdcan && id == 0x500U + motor->id)
     {
         QD4310_DecodeFeedback(motor, data);
@@ -53,7 +53,7 @@ static void QDrive_Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *d
  */
 bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan)
 {
-    if (motor == nullptr || id > 7)
+    if (motor == NULL || id > 7)
     {
         return false;
     }
@@ -63,7 +63,7 @@ bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan)
     const bool registered = BSP_CAN_RegisterCallback(id + 0x500, hfdcan, QDrive_Callback, motor);
     if (registered)
     {
-        *motor = {};
+        memset(motor, 0, sizeof(*motor));
         motor->id = id;
         motor->hfdcan = hfdcan;
     }
@@ -92,19 +92,19 @@ static float QD4310_Clamp(float value, float min, float max) {
  * @note   电流、速度、角度和低速命令更新周期槽, 其余动作命令进入插入队列
  */
 bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
-    if (motor == nullptr || motor->id > 7)
+    if (motor == NULL || motor->id > 7)
     {
         return false;
     }
-    Struct_CAN_Tx_Msg message{};
+    Struct_CAN_Tx_Msg message = {0};
 
     message.hfdcan = motor->hfdcan;
     message.id = motor->id + 0x400;
     message.len = 3;
     message.data[0] = (uint8_t)cmd;
-    const uint16_t bits = static_cast<uint16_t>(value);
-    message.data[1] = static_cast<uint8_t>(bits);
-    message.data[2] = static_cast<uint8_t>(bits >> 8);
+    const uint16_t bits = (uint16_t)value;
+    message.data[1] = (uint8_t)bits;
+    message.data[2] = (uint8_t)(bits >> 8);
 
     if (cmd == QD4310_CMD_CURRENT ||
         cmd == QD4310_CMD_SPEED ||
@@ -129,7 +129,7 @@ bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
  */
 void QD4310_Update(QD4310_t *motor, const uint8_t feedback[8])
 {
-    if (motor != nullptr && feedback != nullptr)
+    if (motor != NULL && feedback != NULL)
     {
         QD4310_DecodeFeedback(motor, feedback);
     }
@@ -176,7 +176,7 @@ bool QD4310_SetAngle(QD4310_t *motor, float angle) {
         return false;
     }
     angle = QD4310_Clamp(angle, 0.0f, QD4310_TWO_PI);
-    const uint16_t angle_bits = static_cast<uint16_t>(angle / QD4310_TWO_PI * UINT16_MAX);
+    const uint16_t angle_bits = (uint16_t)(angle / QD4310_TWO_PI * UINT16_MAX);
     int16_t angle_value;
     memcpy(&angle_value, &angle_bits, sizeof(angle_value));
     return QD4310_SendCommand(motor, QD4310_CMD_ANGLE, angle_value);

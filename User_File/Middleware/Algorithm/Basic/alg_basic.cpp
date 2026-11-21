@@ -214,7 +214,7 @@ float Basic_Math_Sinc(float x)
 int32_t Basic_Math_Float_To_Int(float x, float Float_1, float Float_2, int32_t Int_1, int32_t Int_2)
 {
     float tmp = (x - Float_1) / (Float_2 - Float_1);
-    auto out = (int32_t)(tmp * (float) (Int_2 - Int_1) + (float) (Int_1));
+    int32_t out = (int32_t)(tmp * (float) (Int_2 - Int_1) + (float) (Int_1));
     return (out);
 }
 

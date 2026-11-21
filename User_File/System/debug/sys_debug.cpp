@@ -173,15 +173,15 @@ extern "C" void Sys_Debug_IMU_Update(void)
         BSP_BMI088.BMI088_Gyro.Get_FIFO_Sample_Period_Us();
 
     Debug_IMU_Data.VQF_Rest_Detected =
-        static_cast<uint8_t>(BSP_BMI088.Get_VQF_Rest_Detected());
+        (uint8_t)BSP_BMI088.Get_VQF_Rest_Detected();
     Debug_IMU_Data.Temperature_Data_Valid =
-        static_cast<uint8_t>(temperature.Data_Valid);
+        (uint8_t)temperature.Data_Valid;
     Debug_IMU_Data.BMI088_SPI_Recovery_Last_Reason =
         BSP_BMI088.Get_SPI_Recovery_Last_Reason();
     Debug_IMU_Data.SPI2_Last_Start_Failure_Status =
         SPI2_Manage_Object.Last_Start_Failure_Status;
     Debug_IMU_Data.SPI2_Transaction_Active =
-        static_cast<uint8_t>(SPI2_Manage_Object.Transaction_Active);
+        (uint8_t)SPI2_Manage_Object.Transaction_Active;
 
     const uint32_t stable_sequence = write_sequence + 1U;
     __DMB();

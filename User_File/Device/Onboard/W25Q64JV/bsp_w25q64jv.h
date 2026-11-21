@@ -439,14 +439,14 @@ inline bool Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const
         return false;
     }
 
-    uint8_t *dst = static_cast<uint8_t *>(Dest);
+    uint8_t *dst = (uint8_t *)Dest;
     uint32_t addr = Address;
     uint32_t remaining = Length;
     const uint32_t error_count = Get_Auto_Polling_Error_Count();
 
     while (remaining > 0)
     {
-        const uint16_t chunk = static_cast<uint16_t>((remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining);
+        const uint16_t chunk = (uint16_t)((remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining);
 
         if (!Get_Buffer(addr, chunk))
         {
@@ -483,7 +483,7 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address,
         return false;
     }
 
-    const uint8_t *src = static_cast<const uint8_t *>(Src);
+    const uint8_t *src = (const uint8_t *)Src;
     uint32_t addr = Address;
     uint32_t remaining = Length;
     const uint32_t error_count = Get_Auto_Polling_Error_Count();
@@ -491,7 +491,7 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address,
     while (remaining > 0)
     {
         const uint32_t page_remain = W25Q64JV_PAGE_SIZE - (addr % W25Q64JV_PAGE_SIZE);
-        const uint16_t chunk = static_cast<uint16_t>((remaining > page_remain) ? page_remain : remaining);
+        const uint16_t chunk = (uint16_t)((remaining > page_remain) ? page_remain : remaining);
 
         if (!Set_Write_Enable())
         {

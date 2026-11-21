@@ -25,10 +25,14 @@
 
 extern "C" void Transport_Task(void *argument)
 {
+    static const volatile float *const imu_channels[] = {
+        &Debug_IMU_Data.Euler_Yaw_rad,
+        &Debug_IMU_Data.Euler_Pitch_rad,
+        &Debug_IMU_Data.Euler_Roll_rad,
+    };
+
     MX_USB_DEVICE_Init();
-    EricTool_USB.Set_Data({&Debug_IMU_Data.Euler_Yaw_rad,
-                           &Debug_IMU_Data.Euler_Pitch_rad,
-                           &Debug_IMU_Data.Euler_Roll_rad});
+    EricTool_USB.Set_Data(imu_channels, sizeof(imu_channels) / sizeof(imu_channels[0]));
     for (;;)
     {
         EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback();

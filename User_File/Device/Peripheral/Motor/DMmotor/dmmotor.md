@@ -24,7 +24,7 @@ Class_DMMotor motor;
 motor.Init(&hfdcan1,
            0x01,
            0x00,
-           Enum_DMMotor_Mode::SPEED); // FDCAN、CAN ID、Master ID、模式
+           DM_MODE_SPEED); // FDCAN、CAN ID、Master ID、模式
 motor.Enable();
 motor.Disable();
 motor.ClearError();
@@ -37,7 +37,7 @@ motor.SetZeroPosition();
 
 ```c
 motor.Init(&hfdcan1, 0x01, 0x00,
-           Enum_DMMotor_Mode::MIT, true, 12.5f, 30.0f, 10.0f);
+           DM_MODE_MIT, true, 12.5f, 30.0f, 10.0f);
 ```
 
 ## 同时使用 J4310 和 H6215
@@ -49,11 +49,11 @@ static Class_DMMotor motor4310;
 static Class_DMMotor motor6215;
 
 bool ok4310 = motor4310.Init(
-    &hfdcan1, 0x01, 0x11, Enum_DMMotor_Mode::MIT, false,
+    &hfdcan1, 0x01, 0x11, DM_MODE_MIT, false,
     pmax4310, vmax4310, tmax4310);
 
 bool ok6215 = motor6215.Init(
-    &hfdcan1, 0x02, 0x12, Enum_DMMotor_Mode::MIT, false,
+    &hfdcan1, 0x02, 0x12, DM_MODE_MIT, false,
     pmax6215, vmax6215, tmax6215);
 ```
 
@@ -118,7 +118,7 @@ motor.SetForcePosition(1.0f, 5.0f, 0.2f);
 通过异步队列向 `0x7FF` 发送控制模式寄存器 `0x0A` 的写请求，电机参数修改不会自动保存到 Flash：
 
 ```c
-motor.SetMode(Enum_DMMotor_Mode::POSITION_SPEED);
+motor.SetMode(DM_MODE_POSITION_SPEED);
 ```
 
 - `SetMode()` 非阻塞，返回命令入队结果：`true` 表示已入队；参数非法、其他模式仍待应答或入队失败时返回 `false`。返回值不代表电机已经切换成功。
@@ -169,7 +169,7 @@ MIT 的 `kp`、`kd` 是发给电机内部控制器的控制参数，不属于反
 static Class_DMMotor dm_motor;
 
 bool motor_ready = dm_motor.Init(
-    &hfdcan1, 0x01, 0x00, Enum_DMMotor_Mode::SPEED);
+    &hfdcan1, 0x01, 0x00, DM_MODE_SPEED);
 if (motor_ready)
 {
     osDelay(2000);

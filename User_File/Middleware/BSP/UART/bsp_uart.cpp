@@ -217,8 +217,9 @@ void UART_TIM_1ms_Recover_PeriodElapsedCallback(void)
         &USART10_Manage_Object,
     };
 
-    for (Struct_UART_Manage_Object *manage : Manage_List)
+    for (uint32_t i = 0; i < sizeof(Manage_List) / sizeof(Manage_List[0]); i++)
     {
+        Struct_UART_Manage_Object *manage = Manage_List[i];
         if (manage->Rx_Restart_Pending)
         {
             UART_Restart_Receive(manage);

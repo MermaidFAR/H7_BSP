@@ -48,10 +48,23 @@ bool Class_BMI088_Gyro::Pop_Sample(Struct_BMI088_Gyro_Sample &__Sample)
 
     __Sample = Sample_Queue[tail];
     __DMB();
-    Sample_Queue_Tail = static_cast<uint16_t>((tail + 1U) &
+    Sample_Queue_Tail = (uint16_t)((tail + 1U) &
                                                BMI088_GYRO_SAMPLE_QUEUE_MASK);
     Sample_Queue_Consume_Count++;
     return true;
+}
+
+bool Class_BMI088_Gyro::Check_Chip_Id(uint8_t Max_Attempts) const
+{
+    const uint8_t chip_id_address = offsetof(Struct_BMI088_Gyro_Register, GYRO_CHIP_ID_RO);
+    for (uint32_t attempt = 0; attempt < Max_Attempts; attempt++)
+    {
+        if (Read_Single_Register(chip_id_address) == HAL_OK && Register.GYRO_CHIP_ID_RO == 0x0f)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -98,36 +111,24 @@ bool Class_BMI088_Gyro::Init()
     Sample_Queue_Consume_Count = 0U;
     Sample_Queue_Drop_Count = 0U;
 
-    const uint8_t chip_id_address = offsetof(Struct_BMI088_Gyro_Register, GYRO_CHIP_ID_RO);
-    const auto check_chip_id = [&]()
-    {
-        for (uint8_t attempt = 0; attempt < max_attempts; attempt++)
-        {
-            if (Read_Single_Register(chip_id_address) == HAL_OK && Register.GYRO_CHIP_ID_RO == 0x0f)
-            {
-                return true;
-            }
-        }
-        return false;
-    };
-
     // BMI088 手册 5.5.8 规定软复位后等待 30 ms。
     const uint8_t reset = 0xb6;
-    if (!check_chip_id() ||
+    if (!Check_Chip_Id(max_attempts) ||
         Write_Single_Register(offsetof(Struct_BMI088_Gyro_Register, GYRO_SOFTRESET_WO), &reset) != HAL_OK)
     {
         return false;
     }
     Namespace_SYS_Timestamp::Delay_Millisecond(30);
-    if (!check_chip_id())
+    if (!Check_Chip_Id(max_attempts))
     {
         return false;
     }
 
-    for (const auto &config : BMI088_GYRO_REGISTER_CONFIG)
+    const uint8_t *register_bytes = (const uint8_t *)&Register;
+    for (uint32_t i = 0; i < BMI088_GYRO_INIT_INSTRUCTION_NUM; i++)
     {
-        const uint8_t address = config[0];
-        const uint8_t value = config[1];
+        const uint8_t address = BMI088_GYRO_REGISTER_CONFIG[i][0];
+        const uint8_t value = BMI088_GYRO_REGISTER_CONFIG[i][1];
         const uint32_t write_delay_us = 2U;
         bool configured = false;
         for (uint8_t attempt = 0; attempt < max_attempts && !configured; attempt++)
@@ -136,7 +137,7 @@ bool Class_BMI088_Gyro::Init()
             {
                 Namespace_SYS_Timestamp::Delay_Microsecond(write_delay_us);
                 configured = Read_Single_Register(address) == HAL_OK &&
-                             reinterpret_cast<const uint8_t *>(&Register)[address] == value;
+                             register_bytes[address] == value;
             }
         }
         if (!configured)
@@ -218,9 +219,9 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
             __Ready_Timestamp_Us > FIFO_Previous_Anchor_Timestamp_Us)
         {
             const float estimated_period_us =
-                static_cast<float>(__Ready_Timestamp_Us -
+                (float)(__Ready_Timestamp_Us -
                                    FIFO_Previous_Anchor_Timestamp_Us) /
-                static_cast<float>(FIFO_Previous_Batch_Frame_Count);
+                (float)FIFO_Previous_Batch_Frame_Count;
             if (estimated_period_us >= BMI088_GYRO_MIN_SAMPLE_PERIOD_US &&
                 estimated_period_us <= BMI088_GYRO_MAX_SAMPLE_PERIOD_US)
             {
@@ -238,9 +239,9 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
             __Ready_Timestamp_Us > FIFO_Last_Enqueued_Timestamp_Us)
         {
             const float batch_period_us =
-                static_cast<float>(__Ready_Timestamp_Us -
+                (float)(__Ready_Timestamp_Us -
                                    FIFO_Last_Enqueued_Timestamp_Us) /
-                static_cast<float>(frame_count);
+                (float)frame_count;
             if (batch_period_us >= 250.0f && batch_period_us <= 750.0f)
             {
                 FIFO_Batch_Sample_Period_Us = batch_period_us;
@@ -258,7 +259,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
     if (spi_init_address == offsetof(Struct_BMI088_Gyro_Register, FIFO_DATA_RO))
     {
         const uint16_t expected_length =
-            static_cast<uint16_t>(FIFO_Requested_Frame_Count) *
+            (uint16_t)FIFO_Requested_Frame_Count *
             BMI088_GYRO_FIFO_FRAME_SIZE;
         if (FIFO_Requested_Frame_Count == 0U ||
             SPI_Manage_Object->Rx_Buffer_Length != expected_length)
@@ -272,7 +273,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
         {
             const uint8_t *frame =
                 &SPI_Manage_Object->Rx_Buffer[1U +
-                                              static_cast<uint16_t>(i) *
+                                              (uint16_t)i *
                                                   BMI088_GYRO_FIFO_FRAME_SIZE];
             const Class_Matrix_f32<3, 1> gyro = Decode_Gyro_Frame(frame);
             const bool outlier =
@@ -292,21 +293,20 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
             const uint8_t anchor_frame_index =
                 FIFO_Batch_Total_Frame_Count - 1U;
             const int32_t frame_offset =
-                static_cast<int32_t>(FIFO_Batch_Processed_Frame_Count) + i -
-                static_cast<int32_t>(anchor_frame_index);
+                (int32_t)FIFO_Batch_Processed_Frame_Count + i -
+                (int32_t)anchor_frame_index;
             const float timestamp_offset_f =
-                static_cast<float>(frame_offset) *
+                (float)frame_offset *
                 FIFO_Batch_Sample_Period_Us;
-            const int64_t timestamp_offset_us = static_cast<int64_t>(
-                timestamp_offset_f + (timestamp_offset_f >= 0.0f ? 0.5f : -0.5f));
+            const int64_t timestamp_offset_us = (int64_t)(timestamp_offset_f + (timestamp_offset_f >= 0.0f ? 0.5f : -0.5f));
             uint64_t sample_timestamp_us = FIFO_Batch_Anchor_Timestamp_Us;
             if (timestamp_offset_us >= 0)
             {
-                sample_timestamp_us += static_cast<uint64_t>(timestamp_offset_us);
+                sample_timestamp_us += (uint64_t)timestamp_offset_us;
             }
             else
             {
-                const uint64_t offset = static_cast<uint64_t>(-timestamp_offset_us);
+                const uint64_t offset = (uint64_t)-timestamp_offset_us;
                 sample_timestamp_us = sample_timestamp_us > offset
                                           ? sample_timestamp_us - offset
                                           : 1U;
@@ -360,7 +360,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
         // 读取陀螺仪数据完成
 
         Vector_Raw_Gyro = Decode_Gyro_Frame(
-            reinterpret_cast<const uint8_t *>(&Register.RATE_X_RO));
+            (const uint8_t *)&Register.RATE_X_RO);
 
         const bool outlier = fabsf(Vector_Raw_Gyro[0][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD ||
                              fabsf(Vector_Raw_Gyro[1][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD ||
@@ -387,11 +387,11 @@ uint8_t Class_BMI088_Gyro::SPI_Request_Gyro()
     {
         register_address = offsetof(Struct_BMI088_Gyro_Register, FIFO_DATA_RO);
         FIFO_Requested_Frame_Count = FIFO_Pending_Frame_Count;
-        rx_length = static_cast<uint16_t>(FIFO_Requested_Frame_Count) *
+        rx_length = (uint16_t)FIFO_Requested_Frame_Count *
                     BMI088_GYRO_FIFO_FRAME_SIZE;
     }
     const uint8_t tx_data[1] = {
-        static_cast<uint8_t>(register_address | BMI088_GYRO_READ_MASK)};
+        (uint8_t)(register_address | BMI088_GYRO_READ_MASK)};
 
     const uint8_t status = SPI_Transmit_Receive_Data(
         SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
@@ -407,20 +407,17 @@ Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Decode_Gyro_Frame(
     const uint8_t *__Frame) const
 {
     Class_Matrix_f32<3, 1> gyro;
-    const int16_t raw_x = static_cast<int16_t>(
-        static_cast<uint16_t>(__Frame[0]) |
-        (static_cast<uint16_t>(__Frame[1]) << 8U));
-    const int16_t raw_y = static_cast<int16_t>(
-        static_cast<uint16_t>(__Frame[2]) |
-        (static_cast<uint16_t>(__Frame[3]) << 8U));
-    const int16_t raw_z = static_cast<int16_t>(
-        static_cast<uint16_t>(__Frame[4]) |
-        (static_cast<uint16_t>(__Frame[5]) << 8U));
-    const float scale = static_cast<float>(1U << (4U - BMI088_GYRO_RANGE)) *
+    const int16_t raw_x = (int16_t)((uint16_t)__Frame[0] |
+        ((uint16_t)__Frame[1] << 8U));
+    const int16_t raw_y = (int16_t)((uint16_t)__Frame[2] |
+        ((uint16_t)__Frame[3] << 8U));
+    const int16_t raw_z = (int16_t)((uint16_t)__Frame[4] |
+        ((uint16_t)__Frame[5] << 8U));
+    const float scale = (float)(1U << (4U - BMI088_GYRO_RANGE)) *
                         125.0f * BASIC_MATH_DEG_TO_RAD / 32768.0f;
-    gyro[0][0] = static_cast<float>(raw_x) * scale;
-    gyro[1][0] = static_cast<float>(raw_y) * scale;
-    gyro[2][0] = static_cast<float>(raw_z) * scale;
+    gyro[0][0] = (float)raw_x * scale;
+    gyro[1][0] = (float)raw_y * scale;
+    gyro[2][0] = (float)raw_z * scale;
     return gyro;
 }
 
@@ -431,8 +428,7 @@ bool Class_BMI088_Gyro::Enqueue_Sample(
 {
     const uint32_t sequence = ++FIFO_Sample_Sequence;
     const uint16_t head = Sample_Queue_Head;
-    const uint16_t next_head = static_cast<uint16_t>(
-        (head + 1U) & BMI088_GYRO_SAMPLE_QUEUE_MASK);
+    const uint16_t next_head = (uint16_t)((head + 1U) & BMI088_GYRO_SAMPLE_QUEUE_MASK);
     if (next_head == Sample_Queue_Tail)
     {
         Sample_Queue_Drop_Count++;
@@ -468,7 +464,7 @@ bool Class_BMI088_Gyro::Enqueue_Sample(
  */
 uint8_t Class_BMI088_Gyro::Read_Single_Register(const uint8_t &Register_Address) const
 {
-    const uint8_t tx_data[1] = {static_cast<uint8_t>(Register_Address | BMI088_GYRO_READ_MASK)};
+    const uint8_t tx_data[1] = {(uint8_t)(Register_Address | BMI088_GYRO_READ_MASK)};
 
     return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
                               Activate_Pin_State, tx_data, 1, 1, true);
@@ -485,10 +481,10 @@ void Class_BMI088_Gyro::Read_Multi_Register(const uint8_t &Register_Address, con
     {
         return;
     }
-    const uint8_t tx_data[1] = {static_cast<uint8_t>(Register_Address | BMI088_GYRO_READ_MASK)};
+    const uint8_t tx_data[1] = {(uint8_t)(Register_Address | BMI088_GYRO_READ_MASK)};
 
     SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                              Activate_Pin_State, tx_data, 1, static_cast<uint16_t>(Rx_Length));
+                              Activate_Pin_State, tx_data, 1, (uint16_t)Rx_Length);
 }
 
 /**
@@ -523,7 +519,7 @@ void Class_BMI088_Gyro::Write_Multi_Register(const uint8_t &Register_Address, co
     memcpy(&tx_data[1], Tx_Data_Buffer, Tx_Length);
 
     SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin, Activate_Pin_State,
-                      tx_data, static_cast<uint16_t>(Tx_Length + 1U));
+                      tx_data, (uint16_t)(Tx_Length + 1U));
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

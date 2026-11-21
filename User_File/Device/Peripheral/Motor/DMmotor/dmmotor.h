@@ -12,12 +12,12 @@
 
 #include <stdint.h>
 
-enum class Enum_DMMotor_Mode : uint8_t
+enum Enum_DMMotor_Mode : uint8_t
 {
-    MIT = 1U,
-    POSITION_SPEED = 2U,
-    SPEED = 3U,
-    FORCE_POSITION = 4U,
+    DM_MODE_MIT = 1U,
+    DM_MODE_POSITION_SPEED = 2U,
+    DM_MODE_SPEED = 3U,
+    DM_MODE_FORCE_POSITION = 4U,
 };
 
 struct Struct_DMMotor_Feedback
@@ -64,7 +64,13 @@ public:
     Struct_DMMotor_Feedback feedback;
 
 private:
-    enum class Mode_Submission : uint8_t { Idle, Retry, New_Request, Confirmed };
+    enum Enum_DM_Mode_Submission : uint8_t
+    {
+        DM_MODE_SUB_IDLE,
+        DM_MODE_SUB_RETRY,
+        DM_MODE_SUB_NEW_REQUEST,
+        DM_MODE_SUB_CONFIRMED,
+    };
 
     static void FeedbackCallback(FDCAN_HandleTypeDef *hfdcan,
                                  uint32_t id,
@@ -78,10 +84,10 @@ private:
     FDCAN_HandleTypeDef *hfdcan = nullptr;
     uint8_t can_id = 0U;
     uint16_t master_id = 0U;
-    volatile Enum_DMMotor_Mode mode = Enum_DMMotor_Mode::MIT;
+    volatile Enum_DMMotor_Mode mode = DM_MODE_MIT;
     volatile uint32_t requested_mode = 0;
     volatile bool mode_pending = false;
-    volatile Mode_Submission mode_submission = Mode_Submission::Idle;
+    volatile Enum_DM_Mode_Submission mode_submission = DM_MODE_SUB_IDLE;
     volatile uint64_t mode_request_timestamp_us = 0;
     bool reverse = false;
     float position_max = 12.5f;
