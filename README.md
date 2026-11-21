@@ -1,251 +1,197 @@
-# CAT_BSP
+# CAT_BSP (`H7_BSP`)
 
-**面向 RoboMaster 与机器人控制开发的 STM32H7 嵌入式框架。**
+简体中文 · [English](README.en.md)
 
-CAT_BSP 原名 H7_BSP，围绕板级支持、设备驱动、控制算法和系统服务提供可复用组件。
-开发者可以按机器人需求组合通信、传感、执行和控制模块，在应用层组织自己的控制逻辑。
-当前参考硬件为 **达妙 DM-MC02 / STM32H723VGT6**，工程采用 **STM32 HAL + FreeRTOS +
-CMSIS-RTOS V2**，使用 **GNU Arm + CMake + Ninja** 构建。
+**面向 RoboMaster 与机器人控制的 STM32H7 实时嵌入式框架。**
 
-[模块能力](#模块能力) · [快速开始](#快速开始) · [框架结构](#框架结构) · [扩展与移植](#扩展与移植) · [开发约定](#开发约定) · [文档入口](#文档入口) · [更新日志](CHANGELOG.md)
+CAT_BSP（仓库名 `H7_BSP`）围绕板级外设、设备驱动、控制/估计算法与系统安全服务提供可复用的工程底座。参考硬件为 **达妙 DM-MC02（STM32H723VGT6 / Cortex-M7 @ 480 MHz）**，基于 **STM32 HAL + FreeRTOS (CMSIS-RTOS V2)**，使用 **GNU Arm + CMake + Ninja** 构建，代码统一遵循 **C with Classes** 风格。
 
-## 框架特点
+> [!WARNING]
+> **CubeMX 维护须知**：请使用 **STM32CubeMX 6.15.0 + STM32Cube FW_H7 V1.12.1** 打开 [H7_BSP.ioc](H7_BSP.ioc)，遇到版本提示时务必选择 **Continue**，**严禁选择 Migrate**。升级固件包可能覆盖 `Middlewares/` 中的 FreeRTOS（V10.3.1），导致 SystemView 跟踪宏与 `User_Config/FreeRTOS_Patch/` 补丁不兼容。
 
-- **分层组合**。BSP 管理外设资源，Device 封装设备协议，Algorithm 提供计算组件，
-  System 提供公共服务，Application 与 Task 组织业务和调度。
-- **面向机器人常用硬件**。集成 DJI、达妙和 QDrive 电机驱动，以及 BMI088、外部 Flash、
-  电源、指示灯、蜂鸣器和调试通信组件。
-- **独立的控制与估计算法**。提供 PID、滑模控制、扰动观测、S 曲线轨迹、状态估计和滤波等模块，
-  通过输入、参数和周期计算接口组合使用。
-- **可追踪的实时运行**。统一时间戳、初始化状态与健康快照，接入 SystemView、RTT 和遥测输出，
-  便于观察任务周期、传感反馈和控制过程。
-- **直接的工程组织**。用户模块采用 C 风格运算及简洁的结构体、函数与 `Class_` 封装，
-  源码、头文件路径、链接布局和 RTOS 补丁在工程中显式维护。
+## 核心亮点
 
-## 模块能力
-
-| 类别 | 已提供的组件 | 源码入口 |
-| --- | --- | --- |
-| 通信与外设 | CAN / FDCAN、UART DMA + IDLE、SPI、USB CDC、OSPI、ADC | [BSP](User_File/BSP) |
-| 电机驱动 | DJI M2006 / M3508 / GM6020、达妙电机、QDrive QD4310 | [Motor](User_File/Device/Peripheral/Motor) |
-| 惯性传感 | BMI088 FIFO / SPI DMA 采集、温控、VQF 姿态与零偏估计 | [BMI088](User_File/Device/Onboard/BMI088)、[IMU](User_File/System/IMU) |
-| 板载设备 | W25Q64JV Flash、电源控制与采样、WS2812、蜂鸣器、按键 | [Onboard](User_File/Device/Onboard) |
-| 控制与轨迹 | PID、SMC、DOB、三阶 S 曲线、Sugeno 模糊推理 | [Algorithm](User_File/Middleware/Algorithm) |
-| 估计与滤波 | Kalman、EKF、VQF、FIR / IIR、One Euro、多项式平滑与微分 | [Filter](User_File/Middleware/Algorithm/Filter) |
-| 数学与辅助 | 基础运算、复数、定长矩阵、四元数、斜坡、状态机、队列、周期分频 | [Algorithm](User_File/Middleware/Algorithm) |
-| 应用组件 | SpinMode 云台与底盘协调计算，支持跟随、锁定及小陀螺速度前馈 | [SpinMode](User_File/Application/SpinMode) |
-| 系统与调试 | 初始化、HAL 回调分发、时间戳、健康状态、SystemView / RTT、EricTool | [System](User_File/System)、[EricTool](User_File/Device/Peripheral/EricTool) |
-
-达妙电机的可用模式由型号与固件决定。设备 ID、方向、控制周期、反馈源和控制参数由具体应用配置。
-当前 `Control_Task.cpp` 保留云台与平衡应用的接入位置，业务初始化和循环由使用方接入。
+- **STM32H7 内存域与 DMA 治理**：通过自有链接脚本与 MPU 配置划分 `RAM_DMA`（64 KiB 不可缓存区），DMA1/DMA2 收发缓冲统一放入 `.dma_buffer`，规避 D-Cache 一致性与 DTCM 不可达陷阱。
+- **低抖动 CAN 底座**：三总线独立异步命令队列（消除跨总线队头阻塞）、周期最新值覆盖槽、同一 `(FDCAN, ID)` 一对多回调分发（原生兼容多台达妙电机共享 `master_id`），以及事件驱动 + 1 ms 超时兜底的 `Can_Tx_Task`。
+- **NVIC 抢占优先级分层**：基准定时、IMU SPI/DMA/EXTI、FDCAN、辅助定时、UART DMA、OSPI/MDMA 与 USB 分层配置，并与 `H7_BSP.ioc` 同步。
+- **整车健康联动与实时观测**：20 Hz `SYS_Health` 汇总初始化错误、IMU、Flash、电源电压与 DJI / DM / QD4310 三类电机。控制层通过 `Sys_Health_Is_Safe()` 判定是否进入安全分支，WS2812 与蜂鸣器显示健康状态，Ozone / GDB 可通过 Seqlock 读取一致的快照。
+- **C with Classes 风格**：C++ 构建关闭异常与 RTTI，控制和驱动热路径使用定长数据结构。启动时 FreeRTOS 从 `heap_5` 分配任务与消息队列。
 
 ## 快速开始
 
-### 硬件与软件基础
+### 1. 工具链与构建
 
-| 项目 | 当前工程配置 |
-| --- | --- |
-| 控制板 | 达妙 DM-MC02 |
-| MCU | STM32H723VGT6，Cortex-M7，工程主频 480 MHz |
-| 实时系统 | FreeRTOS V10.3.1，CMSIS-RTOS V2 接口 |
-| 构建工具 | CMake ≥ 3.22、Ninja、GNU Arm Embedded 工具链 |
-| CubeMX 工程 | STM32CubeMX 6.15.0，STM32Cube FW_H7 V1.12.1 |
-| 调试方式 | OpenOCD / GDB、SEGGER Ozone、SystemView / RTT |
-
-准备好工具链后，确认以下命令能在终端中执行。GNU Arm 工具链须包含 C/C++ 编译器及配套运行库。
-
-```bash
-arm-none-eabi-gcc --version
-arm-none-eabi-g++ --version
-cmake --version
-ninja --version
-```
-
-### 获取与编译
-
-当前仓库地址为 `MermaidFAR/H7_BSP`，克隆时可将本地目录命名为 `CAT_BSP`。
-已有代码时直接进入现有仓库根目录，执行构建命令。
+准备 **CMake ≥ 3.22**、**Ninja** 与 **GNU Arm Embedded 工具链**（确保 `arm-none-eabi-gcc` / `arm-none-eabi-g++` 可用）：
 
 ```bash
 git clone https://github.com/MermaidFAR/H7_BSP.git CAT_BSP
 cd CAT_BSP
 
+# Debug 构建 (-Og -g3) -> build/Debug/H7_BSP.elf
 cmake --preset Debug
 cmake --build --preset Debug --parallel
-```
 
-Release 构建使用对应配置
-
-```bash
+# Release 构建 (-Os -g0) -> build/Release/H7_BSP.elf
 cmake --preset Release
 cmake --build --preset Release --parallel
 ```
 
-| 配置 | 固件 | 链接映射 |
-| --- | --- | --- |
-| Debug | `build/Debug/H7_BSP.elf` | `build/Debug/H7_BSP.map` |
-| Release | `build/Release/H7_BSP.elf` | `build/Release/H7_BSP.map` |
+构建配置见 [CMakePresets.json](CMakePresets.json)，链接映射输出为同目录下的 `H7_BSP.map`。
 
-框架公开名称为 **CAT_BSP**。当前 CubeMX 工程入口为 `H7_BSP.ioc`，CMake 目标和固件基名为
-`H7_BSP`，工程文件与产物路径按上表使用。构建配置见 [CMakePresets.json](CMakePresets.json)。
+### 2. 烧录与调试
 
-### 烧录与调试
+- **烧录与探针**：OpenOCD 探针配置及脚本位于 [User\_Config/](User_Config)，支持 DAPLink / ST-Link。
+- **源码调试**：使用 SEGGER Ozone 打开 [H7_BSP.jdebug](H7_BSP.jdebug)（按本机固件路径调整），在 Watch 窗口直接展开 `SYS_Health` 与 `Debug_IMU_Data` 观察整车实时状态。
+- **调度分析**：使用 SEGGER SystemView 打开 [H7_BSP.SVPrj](H7_BSP.SVPrj) 查看任务抢占、中断耗时与栈水位。
+- **曲线遥测**：`EricTool_USB` / `EricTool_UART` 支持 JustFloat 绘图与 `variable:value#` 调参指令，示例见 [Transport\_Task.cpp](User_File/Task/Transport_Task.cpp)。
 
-选择适配 STM32H723 的探针与工具，将生成的 ELF 固件用于烧录或源码调试。
-OpenOCD 的探针配置位于 `User_Config/`，Ozone 工程为 `H7_BSP.jdebug`，使用时按本机工具路径、
-探针和固件位置调整。SystemView 工程为 `H7_BSP.SVPrj`。
+### 3. 最小接入示例
 
-- 使用 Ozone / GDB 观察电机反馈、算法状态、初始化结果与任务栈水位。
-- 使用 SystemView / RTT 观察任务调度、中断和运行时信息。
-- 使用 EricTool 通过 USB / UART 输出数据，[Transport_Task.cpp](User_File/Task/Transport_Task.cpp) 提供周期输出示例。
+[Control_Task.cpp](User_File/Task/Control_Task.cpp) 由 `TIM4` 以 1 kHz 节拍唤醒。应用可组合健康判定、IMU 姿态和电机接口，并在安全分支接入设备适用的失能或零力矩指令。
 
-在 Ozone / GDB 展开 `SYS_Health` 可查看初始化错误、IMU、Flash、电源电压、整车状态及三类电机的在线统计。
-ABI 版本为 3。读取快照时核对 `ABI_Size`，并确认 `Sequence` 与 `Sequence_End` 相等且为偶数。
-未初始化的设备显示 `HEALTH_UNINIT`，初始化失败显示 `HEALTH_FAULT` 和 `HEALTH_REASON_INIT_FAILED`。
-IMU 和电机从未收到数据时标记 `HEALTH_REASON_NO_DATA`，收到数据后的反馈超时标记 `HEALTH_REASON_STALE`。
-调试时将 `SYS_Health_Buzzer_Mute` 置 1 可静音，置 0 恢复。两种 EricTool 均可通过
-`Set_Data(channels, count)` 接收浮点指针数组，例如将 `&SYS_Health.Power_Voltage_V` 加入通道。
+```cpp
+extern "C" void Control_Task(void *argument)
+{
+    (void)argument;
+    osThreadSetPriority(osThreadGetId(), osPriorityHigh1);
 
-`Status_Task` 每 50 ms 更新判定。未初始化、等待首帧、离线、故障、初始化错误和欠压时，
-`Sys_Health_Is_Safe()` 返回 false。欠压默认阈值为 18 V，可通过 `SYS_HEALTH_MIN_POWER_V` 调整。
-`Control_Task` 提供应用接入零力矩或失能指令的位置。
+    // 在此处完成业务模块与电机 Init()
 
-## 框架结构
+    for (;;)
+    {
+        osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
+
+        if (!Sys_Health_Is_Safe())
+        {
+            // 在此发送应用专用的失能或零力矩指令。
+            continue;
+        }
+
+        const Class_Matrix_f32<3, 1> euler = BSP_BMI088.Get_Euler_Angle();
+        const float yaw_rad = euler[0][0];
+        // 计算控制量并更新电机目标 -> CAN_Tx_Perform() 自动唤醒 Can_Tx_Task 发送
+    }
+}
+```
+
+## 系统架构
+
+> 可下载 [Assets/Architecture/H7\_BSP.html](Assets/Architecture/H7_BSP.html) 在本地浏览器中查看交互式依赖图。
 
 ```mermaid
 graph TD
-    App[Application / Task] --> Device[Device]
-    App --> Algorithm[Middleware / Algorithm]
-    App --> System[System]
-    Device --> BSP[BSP]
-    System --> BSP
+    App[Application / Task] --> Device["Device: 电机与板载器件"]
+    App --> Algo[Middleware / Algorithm]
+    App --> Sys["System: Init / Health / Debug / Timestamp"]
+    Device --> BSP["BSP: CAN / UART / SPI / USB / OSPI / ADC"]
+    Sys --> BSP
     BSP --> HAL[STM32 HAL / CMSIS]
     App --> RTOS[FreeRTOS / CMSIS-RTOS V2]
 ```
 
+### 工程目录
+
 ```text
 User_File/
-├── BSP/                    外设管理、收发与回调注册
+├── BSP/                    外设总线驱动（CAN、UART、SPI、USB、OSPI、ADC）
 ├── Device/
-│   ├── Onboard/            板载传感器、Flash、电源与指示组件
-│   └── Peripheral/         电机及外接调试工具
+│   ├── Onboard/            板载器件（BMI088、W25Q64JV、Power、WS2812、Buzzer、Key）
+│   └── Peripheral/         外接器件（DJI / DM / QD4310 电机、EricTool 调试工具）
 ├── Middleware/
-│   └── Algorithm/          控制、观测、滤波与数学组件
+│   └── Algorithm/          控制、轨迹、观测、滤波、辨识与数学库
 ├── System/
-│   ├── Callback/           HAL 回调分发
-│   ├── Critical/           临界区原语
-│   ├── Debug/              调试与观测变量
-│   ├── Health/             健康状态与安全判定
-│   ├── IMU/                惯性传感配置
-│   ├── Init/               系统初始化
-│   ├── Storage/            存储布局
-│   └── Timestamp/          系统时间戳
-├── Task/                   CMSIS-RTOS V2 任务入口
-└── Application/            应用组件与控制逻辑
-Core/                       CubeMX 生成的启动、外设和 RTOS 配置
-Drivers/                    STM32 HAL / CMSIS
+│   ├── Callback/           HAL 弱回调统一路由（TIM / EXTI / SPI / OSPI）
+│   ├── Critical/           统一临界区原语（sys_critical.h）
+│   ├── Debug/              固定 ABI 的 IMU 调试快照（Debug_IMU_Data）
+│   ├── Health/             20 Hz 整车健康监控与安全判定（SYS_Health）
+│   ├── IMU/                VQF 姿态与零偏估计参数配置
+│   ├── Init/               外设与器件统一初始化及错误掩码
+│   ├── Storage/            W25Q64 外部 Flash 分区布局定义
+│   └── Timestamp/          1 MHz 硬件微秒时间戳基准
+├── Task/                   CMSIS-RTOS V2 任务入口（1 kHz 控制、CAN 发送、IMU 解算、健康等）
+└── Application/            应用级控制策略（SpinMode、PowerControl、Communication）
+Core/                       CubeMX 生成的启动、外设与 FreeRTOS 配置
+Drivers/                    STM32H7 HAL / CMSIS 驱动
 Middlewares/                FreeRTOS、USB Device、CMSIS-DSP
-USB_DEVICE/                 USB CDC 配置
-User_Config/                链接脚本、FreeRTOS 补丁与探针配置
-SystemView/                 SystemView / RTT
-cmake/                      工具链与 CubeMX 构建接入
+USB_DEVICE/                 USB CDC 接口实现
+User_Config/                自有链接脚本、FreeRTOS heap_5 补丁与探针烧录配置
+SystemView/                 SEGGER SystemView 与 RTT
+cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 ```
 
-启动时，`main.c` 完成 MPU、HAL 和外设初始化，调用 `System_Init()` 绑定资源并初始化设备，
-随后初始化内核、创建任务并启动调度。运行期间，硬件事件经 HAL 回调和 BSP 分发到设备，
-任务按各自周期组织采样、计算与发送。具体入口见 [main.c](Core/Src/main.c)、[Init.cpp](User_File/System/Init/Init.cpp) 和 [Task](User_File/Task)。
+### 模块能力总览
 
-## 扩展与移植
+| 类别 | 已提供组件 | 源码与文档入口 |
+| :--- | :--- | :--- |
+| **外设总线 (BSP)** | FDCAN 队列发送、周期发送与接收分发、UART DMA+IDLE 双缓冲与错误恢复、SPI DMA/同步、USB CDC、OSPI、ADC | [User\_File/BSP](User_File/BSP) |
+| **电机驱动** | DJI（M2006 / M3508 / GM6020）、达妙（MIT / 位置速度 / 速度 / 力位）、QDrive QD4310 | [DJI 文档](User_File/Device/Peripheral/Motor/DJImotor/dji_motor.md) · [达妙文档](User_File/Device/Peripheral/Motor/DMmotor/dm_motor.md) · [QD4310](User_File/Device/Peripheral/Motor/QDrive) |
+| **惯性传感** | BMI088 FIFO / SPI DMA 采集、恒温加热 PWM 电压补偿、VQF 姿态与零偏估计 | [BMI088](User_File/Device/Onboard/BMI088) · [sys\_imu](User_File/System/IMU) |
+| **板载器件** | W25Q64JV 外部 Flash、24 V/5 V 电源输出与电压采样、WS2812、蜂鸣器、按键 | [Onboard](User_File/Device/Onboard) |
+| **控制与轨迹** | PID（微分先行 / D 支路 IIR / 变速分离积分）、SMC 滑模、DOB 扰动观测、三阶 S 曲线、Sugeno 模糊推理 | [Algorithm](User_File/Middleware/Algorithm) |
+| **估计与滤波** | Kalman、EKF、VQF、RLS 递推最小二乘、FIR / IIR、One Euro、多项式拟合微分 | [Filter](User_File/Middleware/Algorithm/Filter) · [RLS](User_File/Middleware/Algorithm/RLS) |
+| **数学与辅助** | Basic、Complex、定长 Matrix、Quaternion、Slope、FSM、Queue、Pulse 周期分频 | [Algorithm](User_File/Middleware/Algorithm) |
+| **应用策略** | SpinMode（云台/底盘坐标变换与小陀螺速度前馈）、PowerControl（底盘功率限制与 RLS 辨识） | [SpinMode](User_File/Application/SpinMode) · [PowerControl](User_File/Application/PowerControl) |
+| **系统与调试** | 统一初始化、临界区、回调分发、微秒时间戳、整车健康快照、EricTool（USB/UART） | [System](User_File/System) · [EricTool](User_File/Device/Peripheral/EricTool) |
 
-### 添加设备或协议
+## 硬件与实时性设计
 
-- 在 `Device/Onboard/` 或 `Device/Peripheral/` 中添加设备头文件与实现，参照同层模块组织配置、状态和接口。
-- 复用 BSP 外设管理对象及回调注册，设备层负责协议编解码，应用层负责业务目标。
-- 在显式 `Init()` 中绑定外设资源，按依赖顺序接入系统初始化，RTOS 对象在内核初始化后建立。
-- 在任务或周期回调中接入计算与发送，明确中断上下文、缓冲区所有权和数据有效期。
-- 在根 `CMakeLists.txt` 注册源码与头文件路径，完成构建并核对设备的实际收发行为。
+### 1. STM32H7 内存与 DMA 布局
 
-### 组合控制与算法
+工程通过 [h7\_memory.ld](User_Config/Linker/h7_memory.ld) 与 MPU 配置管理内存，FreeRTOS 采用 `heap_5`（默认总量 64 KiB = 48 KiB DTCMRAM + 16 KiB RAM_D1，DTCMRAM 份额可通过 `H7_FREERTOS_DTCM_HEAP_SIZE` 调整）：
 
-在应用层提供目标与反馈，按模块约定初始化状态、量纲和采样周期，再调用周期计算接口。
-例如，电机控制可以组合 PID 与轨迹规划，姿态处理可以组合 BMI088 与 VQF，
-云台和底盘协调可复用 SpinMode 的坐标变换与角速度前馈。
-各组件的输入、状态和参数定义见对应头文件。
+| 内存区域 | 起始地址 | 大小 | 用途与约束 |
+| :--- | :--- | :--- | :--- |
+| `DTCMRAM` | `0x20000000` | 128 KiB | 普通数据、栈、部分 FreeRTOS heap；DMA1/DMA2 不可直接访问 |
+| `RAM_DMA` | `0x24000000` | 64 KiB | `.dma_buffer`（32 字节对齐）；MPU 配为共享、不可缓存，无需手工 D-Cache 维护 |
+| `RAM_D1` | `0x24010000` | 256 KiB | `.ram_d1_data` 与部分 FreeRTOS heap |
+| `RAM_D2` / `RAM_D3` | `0x30000000` / `0x38000000` | 32 / 16 KiB | 其余 SRAM，使用时需核对对应 DMA 控制器可达性 |
 
-### 适配其他硬件
+### 2. NVIC 抢占优先级分层
 
-以当前 MC02 配置为参考，调整 CubeMX 外设、引脚、时钟、DMA 和中断设置，
-同步修改 BSP 管理入口、设备资源绑定、链接脚本及 MPU 配置，再接入上层控制与调度。
+下表列出主要应用外设的抢占优先级。数值越小优先级越高，各项子优先级为 `0`，配置见 [H7_BSP.ioc](H7_BSP.ioc)。
+
+| 抢占优先级 | 中断源 | 职责 |
+| :--- | :--- | :--- |
+| **5** | `TIM4`、`TIM5` | 1 kHz 控制节拍唤醒、1 MHz 硬件微秒时间戳基准 |
+| **6** | `SPI2`、`DMA1_Stream0/1`、`EXTI15_10` | BMI088 陀螺仪/加速度计中断与高频 SPI DMA 采集 |
+| **7** | `FDCAN1/2/3`（IT0 / IT1） | 电机与外设 CAN 实时收发 |
+| **8** | `TIM7`、`TIM8_UP_TIM13` | 辅助定时与外设控制 |
+| **9** | `USART1/2/3/6/10`、`UART5/7`、其余 `DMA1/2` | 串口 DMA 通信与遥测 |
+| **10** | `OCTOSPI2`、`MDMA`、`DMA2_Stream5` | 外部 Flash 与 ADC 采样 |
+| **11** | `OTG_HS` | USB CDC 通信 |
+
+### 3. 整车健康监控与声光联动
+
+[Status\_Task.cpp](User_File/Task/Status_Task.cpp) 以 **20 Hz（50 ms）** 汇总初始化错误、IMU、Flash、电源电压（默认欠压阈值 `SYS_HEALTH_MIN_POWER_V = 18.0f`）及三类已注册电机，写入全局快照 `SYS_Health`（`ABI_Version = 3`）。读取时核对 `ABI_Size`，并确认 `Sequence` 与 `Sequence_End` 相等且为偶数。读取期间 `Sequence` 应保持不变。
+
+| 整车状态 (`Overall_State`) | WS2812 指示灯 | 蜂鸣器提示 | 常见原因 (`Reason`) |
+| :--- | :--- | :--- | :--- |
+| `HEALTH_OK` | 绿灯常亮 | 静音 | 全部已注册设备在线且电源正常 |
+| `HEALTH_STARTING` / `HEALTH_UNINIT` | 青灯闪烁 | 静音 | 启动等待首帧（1 s 窗口）或外设未初始化 |
+| `HEALTH_WARN` | 蓝灯闪烁 | 静音 | IMU 存在可恢复异常（SPI 重试 / 离群帧 / 滤波复位） |
+| `HEALTH_OFFLINE` | 黄灯慢闪 | 切入时 800 Hz 短鸣 | 电机或传感器从未连上（`NO_DATA`）或中途超时（`STALE`） |
+| `HEALTH_FAULT` | 红灯快闪 | 每秒 2400 Hz 短鸣 50 ms | 硬件初始化失败（`INIT_FAILED`）、欠压、电机故障或时间戳异常 |
+
+- **调试静音**：在 Ozone / GDB Watch 中将 `SYS_Health_Buzzer_Mute` 置 `1`（或调用 `Sys_Health_Set_Buzzer_Mute(true)`）即可静音，不影响灯效与 `Sys_Health_Is_Safe()` 安全判定。
+- **遥测绑定**：`EricTool_USB` 与 `EricTool_UART` 均支持 `Set_Data(channels, count)` 浮点指针数组接口，可直接绑定 `&SYS_Health.Power_Voltage_V` 或 `&Debug_IMU_Data.Euler_Yaw_rad`。
 
 ## 开发约定
 
-### 总线与回调
+- **C with Classes 风格**：允许使用 `class`、成员函数与已有定长数学模板；**禁用** `auto`、`lambda`、`std::initializer_list`、范围 `for`、`enum class`、`static_cast` / `reinterpret_cast`。新代码不引入以 `__` 开头的保留标识符，标量按值传递，单精度路径使用 `fabsf()` / `sqrtf()`。
+- **并发与临界区**：统一调用 [sys\_critical.h](User_File/System/Critical/sys_critical.h) 的 `SYS_Enter_Critical()` / `SYS_Exit_Critical(primask)`，临界区应保持简短，**严禁调用 RTOS API 或执行耗时协议处理**。
+- **防御边界（外严内松）**：公开 API 入口与执行器最终输出严格校验；内部 `static` 函数与 1~2 kHz 热路径避免重复校验；禁止除零静默返回原值等掩盖错误的写法。
+- **CAN 使用说明**：`CAN_Tx_Perform()` 更新周期槽并唤醒 `Can_Tx_Task`，`CAN_Tx_Submit()` 进入对应总线独立 FIFO 队列；同一 `(FDCAN, ID)` 支持多回调注册，默认容量 `MAX_CAN_CALLBACKS = 32` 可通过编译宏覆盖。
+- **新增模块流程**：在对应层目录添加源码 → 在 `Init()` 中绑定资源 → 在根 [CMakeLists.txt](CMakeLists.txt) 注册源码与头文件路径（用户代码已启用 `-Wextra -Wdouble-promotion -Wshadow`）→ 核对 DMA 内存段与 NVIC 优先级。
 
-- CAN 周期目标通过 `CAN_Tx_Perform()` 更新，同一总线与 ID 保留最新数据。
-  使能、复位和模式设置等顺序命令通过 `CAN_Tx_Submit()` 进入对应总线的独立队列。
-  提交后唤醒 `CanTxTask`，发送失败由对应总线保留并通过 1 ms 超时兜底重试。
-- 同一 FDCAN 实例和 ID 可注册多个接收回调，默认容量为 32，可通过编译宏 `MAX_CAN_CALLBACKS` 调整。
-  回调在中断中运行，接收缓冲仅在本次调用期间有效，供只读解析使用。
-  软件提交结果、硬件发送状态和设备执行反馈分别由对应接口与协议处理。
-- UART 使用 DMA + IDLE 接收。带 TX DMA 的端口将发送数据复制到专用缓冲，调用后原始数据可复用。
-  UART 或 DMA 忙时返回 `HAL_BUSY`，应用据返回状态安排后续发送。
+## 文档与参考
 
-### DMA 与内存布局
-
-工程通过 `User_Config/Linker/h7_memory.ld` 和 MPU 配置管理内存。
-
-| 区域 | 地址 | 大小 | 用途 |
-| --- | --- | --- | --- |
-| `DTCMRAM` | `0x20000000` | 128 KiB | 普通数据、栈和部分 FreeRTOS heap |
-| `RAM_DMA` | `0x24000000` | 64 KiB | `.dma_buffer`，共享且不可缓存 |
-| `RAM_D1` | `0x24010000` | 256 KiB | `.ram_d1_data` 和部分 FreeRTOS heap |
-| `RAM_D2` / `RAM_D3` | `0x30000000` / `0x38000000` | 32 / 16 KiB | 按具体外设和 DMA 控制器配置使用 |
-
-DMA1 / DMA2 的共享缓冲放入 `.dma_buffer`，同时核对对齐、生命周期与传输长度。
-DTCMRAM 的可达性限于 CPU 和 MDMA。调整 DMA、内存区域或缓存属性时，同步核对链接脚本与 MPU。
-FreeRTOS 使用 `heap_5`，默认总量 64 KiB，分配为 48 KiB DTCMRAM 与 16 KiB RAM_D1，
-DTCM 分区由 `H7_FREERTOS_DTCM_HEAP_SIZE` 配置。
-
-### 初始化与代码组织
-
-`System_Get_Init_Errors()` 返回 BMI088、Flash 和 ADC1 的初始化错误位，`init_finished` 记录初始化流程结束。
-设备接入时结合错误位与设备状态安排后续使用。
-
-用户模块沿用 `Struct_`、`Enum_`、`Class_` 命名及同层文件组织，内部优先采用直接的 C 风格运算。
-硬件访问集中在 `Init()`，C 调用入口通过 `extern "C"` 暴露，任务与同步使用 CMSIS-RTOS V2。
-
-### CubeMX 工程维护
-
-使用 **STM32CubeMX 6.15.0 + STM32Cube FW_H7 V1.12.1** 打开 `H7_BSP.ioc`。
-遇到版本提示时选择 **Continue**，保留当前固件包配置。
-
-`Migrate` 会更新工程的数据库与固件版本，重新生成可能替换 FreeRTOS，影响 SystemView 跟踪宏和
-`User_Config/FreeRTOS_Patch/` 中的适配。固件升级需要配套验证 RTOS、跟踪组件与补丁。
-CubeMX 用户修改放在 `USER CODE BEGIN/END` 区域，用户源码注册、链接脚本和补丁维护在工程配置中。
-重新生成后执行 configure / build 并核对这些集成入口。
-
-## 文档入口
-
-- 电机反馈、配置与控制接口见 [DJI 电机驱动](User_File/Device/Peripheral/Motor/DJImotor/dji_motor.md) 和 [达妙电机驱动](User_File/Device/Peripheral/Motor/DMmotor/dm_motor.md)。
-- 框架现有模块的详细关系见 [模块全景图](Assets/Architecture/H7_BSP.svg) 和 [交互图](Assets/Architecture/H7_BSP.html)。
-- 版本变更见 [CHANGELOG](CHANGELOG.md)。
-
-## 反馈与贡献
-
-反馈问题时附上代码版本、控制板、工具链版本、复现步骤及相关日志。
-新增驱动或算法沿用对应层的接口和文件组织，并说明参数单位、计算周期和验证结果。
+- 电机驱动说明：[DJI 电机驱动](User_File/Device/Peripheral/Motor/DJImotor/dji_motor.md) · [达妙电机驱动](User_File/Device/Peripheral/Motor/DMmotor/dm_motor.md)
+- 版本变更记录：[CHANGELOG.md](CHANGELOG.md)
+- 官方硬件参考：ST AN4891（STM32H7 系统架构与性能）、ST AN4839（STM32F7/H7 一级缓存）
 
 ## 许可与致谢
 
-CAT_BSP 中由 MermaidFAR 持有版权的原创代码采用 [MIT 许可证](LICENSE)，允许在保留版权和许可声明的
-前提下使用、修改、分发及用于商业项目。
+CAT_BSP 中由 MermaidFAR 持有版权的原创代码采用 [MIT 许可证](LICENSE)，允许在保留版权和许可声明的前提下使用、修改、分发及用于商业项目。STM32 HAL、CMSIS、FreeRTOS、SEGGER 及其他第三方组件保留各自原有版权与许可条款。
 
-STM32 HAL、CMSIS、FreeRTOS、SEGGER 及其他第三方组件保留各自的版权声明和许可，按对应目录及
-源码中的条款使用。其他作者的既有贡献和外部来源代码不因根目录 MIT 许可而自动改用 MIT；
-未明确许可的部分须另行向原权利人确认授权。
-
-感谢 Kylin-6 贡献达妙电机驱动、初版使用说明和 DJI 电机原始驱动。
-贡献记录见 [达妙驱动 PR #4](https://github.com/MermaidFAR/H7_BSP/pull/4) 和 [DJI 驱动 PR #5](https://github.com/MermaidFAR/H7_BSP/pull/5)。
-
-部分驱动参考达妙 MC02 BSP，UART 实现参考 SCUT-Robotlab / 达妙 `drv_uart` 的组织方式。
-感谢相关开源项目与原作者，来源见 [达妙 MC02 BSP](https://github.com/yssickjgd/damiao_mc02_bsp)。
+- 感谢 **Kylin-6** 贡献达妙电机驱动、初版使用说明和 DJI 电机原始驱动（[PR #4](https://github.com/MermaidFAR/H7_BSP/pull/4)、[PR #5](https://github.com/MermaidFAR/H7_BSP/pull/5)）。
+- 部分驱动参考 [达妙 MC02 BSP](https://github.com/yssickjgd/damiao_mc02_bsp)，UART 实现参考 SCUT-Robotlab / 达妙 `drv_uart` 的组织方式，感谢相关开源项目与原作者。
