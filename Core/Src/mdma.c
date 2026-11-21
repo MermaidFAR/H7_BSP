@@ -45,7 +45,7 @@ void MX_MDMA_Init(void)
 
   /* MDMA interrupt initialization */
   /* MDMA_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(MDMA_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(MDMA_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(MDMA_IRQn);
 
 }

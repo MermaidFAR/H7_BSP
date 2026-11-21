@@ -82,6 +82,9 @@ extern struct Struct_UART_Manage_Object USART10_Manage_Object;
 
 /* Exported function declarations --------------------------------------------*/
 
+// 返回接管该外设实例的管理对象；空句柄或未接管实例返回 nullptr。
+Struct_UART_Manage_Object *UART_Get_Manage_Object(const UART_HandleTypeDef *huart);
+
 void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function);
 
 void UART_Reinit(UART_HandleTypeDef *huart);

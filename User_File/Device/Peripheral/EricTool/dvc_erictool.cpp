@@ -128,34 +128,10 @@ static void EricTool_ParseCommand(const uint8_t *data, uint16_t length,
  */
 void Class_EricTool_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num, const char **__Rx_Variable_Assignment_List, const uint32_t &__Frame_Tail)
 {
-    // H7_BSP bsp_uart 接管 7 路：USART1/2/3, UART5, USART6, UART7, USART10
-    if (huart->Instance == USART1)
+    UART_Manage_Object = UART_Get_Manage_Object(huart);
+    if (UART_Manage_Object == nullptr)
     {
-        UART_Manage_Object = &USART1_Manage_Object;
-    }
-    else if (huart->Instance == USART2)
-    {
-        UART_Manage_Object = &USART2_Manage_Object;
-    }
-    else if (huart->Instance == USART3)
-    {
-        UART_Manage_Object = &USART3_Manage_Object;
-    }
-    else if (huart->Instance == UART5)
-    {
-        UART_Manage_Object = &UART5_Manage_Object;
-    }
-    else if (huart->Instance == USART6)
-    {
-        UART_Manage_Object = &USART6_Manage_Object;
-    }
-    else if (huart->Instance == UART7)
-    {
-        UART_Manage_Object = &UART7_Manage_Object;
-    }
-    else if (huart->Instance == USART10)
-    {
-        UART_Manage_Object = &USART10_Manage_Object;
+        return;
     }
 
     Rx_Variable_Num = __Rx_Variable_Assignment_Num;
@@ -253,7 +229,8 @@ void Class_EricTool_USB::Output()
 
     for (int i = 0; i < Data_Number; i++)
     {
-        memcpy(tmp_buffer + i * sizeof(uint32_t), Data[i], sizeof(uint32_t));
+        const float value = *Data[i];
+        memcpy(tmp_buffer + i * sizeof(value), &value, sizeof(value));
     }
 
     memcpy(tmp_buffer + Data_Number * sizeof(uint32_t), &Frame_Tail, sizeof(uint32_t));

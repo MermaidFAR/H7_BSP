@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_adc.h"
+#include "sys_critical.h"
 #include "sys_timestamp.h"
 #include "gpio.h"
 #include "stm32h7xx_hal.h"
@@ -75,8 +76,7 @@ extern Class_Power BSP_Power;
 inline float Class_Power::Get_Power_Voltage() const
 {
     uint32_t adc_value = 0;
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    uint32_t primask = SYS_Enter_Critical();
     if (ADC_Manage_Object != nullptr && ADC_Manage_Object->ADC_Handler != nullptr &&
         ADC_Manage_Object->Sample_Valid &&
         HAL_ADC_GetError(ADC_Manage_Object->ADC_Handler) == HAL_ADC_ERROR_NONE &&
@@ -85,8 +85,7 @@ inline float Class_Power::Get_Power_Voltage() const
     {
         adc_value = ADC_Manage_Object->ADC_Data[ADC_Buffer_Offset];
     }
-    __DMB();
-    if (primask == 0) __enable_irq();
+    SYS_Exit_Critical(primask);
     // 计算电压, 假设ADC分辨率为16位,
     float voltage = ((float) (adc_value) / (float) (1 << 16)) * 3.3f * 11.0f;
     // 返回电压值

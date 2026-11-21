@@ -13,8 +13,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_w25q64jv.h"
-
-#include <SEGGER_RTT.h>
+#include "sys_critical.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -42,24 +41,23 @@ bool Class_W25Q64JV::Init(const Enum_W25Q64JV_Mode &__Flash_Mode)
     OSPI_Manage_Object = &OSPI2_Manage_Object;
     Flash_Mode = __Flash_Mode;
 
-    // 重置 OSPI 状态机（避免之前操作残留的错误状态）
-    OSPI_Manage_Object->OSPI_Handler->State = HAL_OSPI_STATE_READY;
-    __HAL_OSPI_CLEAR_FLAG(OSPI_Manage_Object->OSPI_Handler, HAL_OSPI_FLAG_SM | HAL_OSPI_FLAG_TC | HAL_OSPI_FLAG_TE);
+    OSPI_HandleTypeDef *hospi = OSPI_Manage_Object->OSPI_Handler;
+    if (hospi == nullptr)
+    {
+        return false;
+    }
 
-    // 读取 JEDEC ID（EF 40 17），确认芯片存活
+    // JEDEC ID 只有 3 字节，用阻塞收包等待实际完成，启动阶段无需 DMA 回调。
     Command = COMMAND_DEFAULT_CONFIG;
     Command.DataMode = HAL_OSPI_DATA_1_LINE;
     Command.NbData = 3;
     bool id_valid = false;
     for (uint8_t attempt = 0; attempt < 5 && !id_valid; attempt++)
     {
-        // JEDEC ID 只有 3 字节；清除旧值，不能用上一次接收结果判定成功。
-        memset(OSPI_Manage_Object->Rx_Buffer, 0, 3);
-        HAL_StatusTypeDef status = OSPI_Command_Receive_Data(OSPI_Manage_Object->OSPI_Handler, &Command);
-        Namespace_SYS_Timestamp::Delay_Millisecond(100);
-        id_valid = status == HAL_OK && OSPI_Manage_Object->Rx_Buffer[0] == 0xef &&
-                   OSPI_Manage_Object->Rx_Buffer[1] == 0x40 &&
-                   OSPI_Manage_Object->Rx_Buffer[2] == 0x17;
+        uint8_t id[3];
+        id_valid = OSPI_Command(hospi, &Command) == HAL_OK &&
+                   HAL_OSPI_Receive(hospi, id, hospi->Timeout) == HAL_OK &&
+                   id[0] == 0xef && id[1] == 0x40 && id[2] == 0x17;
     }
     if (!id_valid)
     {
@@ -78,7 +76,6 @@ bool Class_W25Q64JV::Init(const Enum_W25Q64JV_Mode &__Flash_Mode)
         {
             return false;
         }
-        Namespace_SYS_Timestamp::Delay_Millisecond(100);
 
         OSPI_MemoryMappedTypeDef tmp_config = {0};
         if (HAL_OSPI_MemoryMapped(OSPI_Manage_Object->OSPI_Handler, &tmp_config) != HAL_OK)
@@ -101,23 +98,21 @@ void Class_W25Q64JV::Enable_Quad_Mode()
     {
         return;
     }
-    SEGGER_RTT_printf(0, "QE start\n");
 
-    // 硬件复位 Flash（确保干净状态）
+    // 发送 66h / 99h 软件复位序列。
     Command = COMMAND_DEFAULT_CONFIG;
     Command.Instruction = W25Q64JV_Command_ENABLE_RESET;
     if (!Check_Transfer_Status(OSPI_Command(OSPI_Manage_Object->OSPI_Handler, &Command)))
     {
         return;
     }
-    osDelay(1);
     Command.Instruction = W25Q64JV_Command_RESET_DEVICE;
     if (!Check_Transfer_Status(OSPI_Command(OSPI_Manage_Object->OSPI_Handler, &Command)))
     {
         return;
     }
-    osDelay(50);
-    SEGGER_RTT_printf(0, "Reset done\n");
+    // W25Q64JV 软件复位 tRST 约 30 us。
+    Namespace_SYS_Timestamp::Delay_Microsecond(50);
 
     // 发送 Write Enable
     Busy_Flag = true;
@@ -141,22 +136,6 @@ void Class_W25Q64JV::Enable_Quad_Mode()
         osDelay(1);
     }
 
-    SEGGER_RTT_printf(0, "QE WE done\n");
-
-    // 验证 WEL 是否真的置位
-    Suppress_AutoPolling = true;
-    Command = COMMAND_DEFAULT_CONFIG;
-    Command.Instruction = W25Q64JV_Command_READ_STATUS_REGISTER_1;
-    Command.DataMode = HAL_OSPI_DATA_1_LINE;
-    Command.NbData = 1;
-    if (!Check_Transfer_Status(OSPI_Command_Receive_Data(OSPI_Manage_Object->OSPI_Handler, &Command)))
-    {
-        return;
-    }
-    osDelay(5);
-    uint8_t wel_check = OSPI_Manage_Object->Rx_Buffer[0];
-    SEGGER_RTT_printf(0, "WEL check: SR1=%02X (WEL=%d WIP=%d)\n",
-                      wel_check, (wel_check >> 1) & 1, wel_check & 1);
 
     // 写 SR2 = 0x02（QE = 1），抑制回调中的 AutoPolling，手动轮询 WIP
     OSPI_Manage_Object->Tx_Buffer[0] = 0x02;
@@ -199,46 +178,13 @@ void Class_W25Q64JV::Enable_Quad_Mode()
         if (SYS_Timestamp.Get_Current_Timestamp() - Busy_Timestamp > Current_Auto_Polling_Timeout)
         {
             Auto_Polling_Error_Count++;
-            SEGGER_RTT_printf(0, "QE WIP timeout\n");
             break;
         }
     }
 
-    // 回读 SR1/SR2 确认芯片状态
-    Suppress_AutoPolling = true;
-
-    uint8_t sr1, sr2;
-
-    Command = COMMAND_DEFAULT_CONFIG;
-    Command.Instruction = W25Q64JV_Command_READ_STATUS_REGISTER_1;
-    Command.DataMode = HAL_OSPI_DATA_1_LINE;
-    Command.NbData = 1;
-    if (!Check_Transfer_Status(OSPI_Command_Receive_Data(OSPI_Manage_Object->OSPI_Handler, &Command)))
-    {
-        return;
-    }
-    osDelay(5);
-    sr1 = OSPI_Manage_Object->Rx_Buffer[0];
-
-    Command = COMMAND_DEFAULT_CONFIG;
-    Command.Instruction = W25Q64JV_Command_READ_STATUS_REGISTER_2;
-    Command.DataMode = HAL_OSPI_DATA_1_LINE;
-    Command.NbData = 1;
-    if (!Check_Transfer_Status(OSPI_Command_Receive_Data(OSPI_Manage_Object->OSPI_Handler, &Command)))
-    {
-        return;
-    }
-    osDelay(5);
-    sr2 = OSPI_Manage_Object->Rx_Buffer[0];
-
-    SEGGER_RTT_printf(0, "SR1=%02X SR2=%02X (WEL=%d BP=%d QE=%d)\n",
-                      sr1, sr2,
-                      sr1 & 1, (sr1 >> 2) & 0x1F, (sr2 >> 1) & 1);
-
     Suppress_AutoPolling = false;
     Busy_Flag = false;
 
-    SEGGER_RTT_printf(0, "QE done err=%d\n", Auto_Polling_Error_Count);
 }
 
 /**
@@ -291,12 +237,10 @@ void Class_W25Q64JV::TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback()
     {
         return;
     }
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    uint32_t primask = SYS_Enter_Critical();
     bool pending = Auto_Polling_Pending;
     Auto_Polling_Pending = false;
-    __DMB();
-    if (primask == 0) __enable_irq();
+    SYS_Exit_Critical(primask);
     if (pending && !Suppress_AutoPolling)
         Auto_Polling_With_Timeout();
 }
@@ -307,7 +251,6 @@ void Class_W25Q64JV::TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback()
  */
 bool Class_W25Q64JV::Auto_Polling_With_Timeout()
 {
-    SEGGER_RTT_printf(0, "AP start\n");
     OSPI_Manage_Object->Auto_Polling_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 

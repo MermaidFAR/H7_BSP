@@ -13,7 +13,6 @@
 
 #include "bsp_bmi088.h"
 
-
 extern "C" { extern osThreadId_t BMI088TaskHandle; }
 
 /* Private macros ------------------------------------------------------------*/
@@ -25,174 +24,6 @@ extern "C" { extern osThreadId_t BMI088TaskHandle; }
 Class_BMI088 BSP_BMI088;
 
 /* Private function declarations ---------------------------------------------*/
-
-static bool BMI088_Status_Update_Matches(const Struct_BMI088_Status &Status, const Struct_BMI088_Status &Shadow_Status)
-{
-    return Status.Update_Flag &&
-           Shadow_Status.Update_Flag &&
-           (Status.Update_Timestamp == Shadow_Status.Update_Timestamp) &&
-           (Status.Update_Ready_Timestamp == Shadow_Status.Update_Ready_Timestamp);
-}
-
-static uint64_t BMI088_Status_Get_Update_Ready_Timestamp(const Struct_BMI088_Status &Status)
-{
-    if (Status.Update_Ready_Timestamp != 0)
-    {
-        return Status.Update_Ready_Timestamp;
-    }
-    return Status.Ready_Timestamp;
-}
-
-static void BMI088_Status_Clear_Update_If_Matches(Struct_BMI088_Status &Status, const Struct_BMI088_Status &Shadow_Status)
-{
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    if (BMI088_Status_Update_Matches(Status, Shadow_Status))
-    {
-        Status.Update_Flag = false;
-    }
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-}
-
-static bool BMI088_Status_Begin_Transfer(Struct_BMI088_Status &Status,
-                                         uint64_t &Transfer_Ready_Timestamp)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    if (!Status.Ready_Flag || Status.Transfering_Flag)
-    {
-        if (primask == 0U)
-        {
-            __enable_irq();
-        }
-        return false;
-    }
-
-    Transfer_Ready_Timestamp = Status.Ready_Timestamp;
-    Status.Transfer_Ready_Timestamp = Transfer_Ready_Timestamp;
-    Status.Transfer_Start_Timestamp_Low32 = 0U;
-    Status.Transfer_Timeout_Armed = false;
-    Status.Transfering_Flag = true;
-    Status.Ready_Flag = false;
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-    return true;
-}
-
-static void BMI088_Status_Arm_Transfer_Timeout(
-    Struct_BMI088_Status &Status, const uint64_t &Transfer_Ready_Timestamp,
-    const uint64_t &Transfer_Start_Timestamp)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    if (Status.Transfering_Flag &&
-        Status.Transfer_Ready_Timestamp == Transfer_Ready_Timestamp)
-    {
-        Status.Transfer_Start_Timestamp_Low32 =
-            static_cast<uint32_t>(Transfer_Start_Timestamp);
-        __DMB();
-        Status.Transfer_Timeout_Armed = true;
-        __DMB();
-    }
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-}
-
-static void BMI088_Status_Mark_Ready_If_Clear(
-    Struct_BMI088_Status &Status, const uint64_t &Ready_Timestamp);
-
-static void BMI088_Status_Mark_Ready(Struct_BMI088_Status &Status,
-                                     const uint64_t &Ready_Timestamp)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    Status.Ready_Timestamp = Ready_Timestamp;
-    __DMB();
-    Status.Ready_Flag = true;
-    __DMB();
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-}
-
-static void BMI088_Status_Restore_Ready_After_Start_Failure(
-    Struct_BMI088_Status &Status, const uint64_t &Transfer_Ready_Timestamp)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    Status.Transfering_Flag = false;
-    Status.Transfer_Start_Timestamp_Low32 = 0U;
-    Status.Transfer_Timeout_Armed = false;
-    Status.Transfer_Ready_Timestamp = 0U;
-    if (!Status.Ready_Flag)
-    {
-        Status.Ready_Timestamp = Transfer_Ready_Timestamp;
-        Status.Ready_Flag = true;
-    }
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-}
-
-static bool BMI088_Status_Restore_Ready_On_Timeout(Struct_BMI088_Status &Status,
-                                                   const uint32_t &Now_Timestamp_Low32,
-                                                   const uint32_t &Timeout,
-                                                   SPI_HandleTypeDef *SPI_Handler)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    const uint32_t elapsed_us = static_cast<uint32_t>(
-        Now_Timestamp_Low32 - Status.Transfer_Start_Timestamp_Low32);
-    const bool timed_out = Status.Transfering_Flag && Status.Transfer_Timeout_Armed &&
-                           elapsed_us >= Timeout;
-    if (timed_out)
-    {
-        SPI_Capture_Timeout_Snapshot(SPI_Handler, elapsed_us);
-        const uint64_t transfer_ready_timestamp = Status.Transfer_Ready_Timestamp;
-        Status.Transfering_Flag = false;
-        Status.Transfer_Start_Timestamp_Low32 = 0U;
-        Status.Transfer_Timeout_Armed = false;
-        Status.Transfer_Ready_Timestamp = 0U;
-        if (!Status.Ready_Flag)
-        {
-            Status.Ready_Timestamp = transfer_ready_timestamp;
-            Status.Ready_Flag = true;
-        }
-    }
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-    return timed_out;
-}
-
-static void BMI088_Status_Restore_Ready_On_Recovery(Struct_BMI088_Status &Status)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    if (Status.Transfering_Flag && !Status.Ready_Flag)
-    {
-        Status.Ready_Timestamp = Status.Transfer_Ready_Timestamp;
-        Status.Ready_Flag = true;
-    }
-    Status.Transfering_Flag = false;
-    Status.Transfer_Start_Timestamp_Low32 = 0U;
-    Status.Transfer_Timeout_Armed = false;
-    Status.Transfer_Ready_Timestamp = 0U;
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-}
 
 static void BMI088_Reset_DMA_Handle(DMA_HandleTypeDef *DMA_Handler)
 {
@@ -217,11 +48,14 @@ static void BMI088_Reset_DMA_Handle(DMA_HandleTypeDef *DMA_Handler)
  */
 void Class_BMI088::Set_VQF_Config(const Struct_BMI088_VQF_Config &__Config)
 {
-    if (Init_Finished_Flag)
+    const float accel_interval_us = __Config.Accel_D_T * 1000000.0f;
+    if (Init_Finished_Flag || !isfinite(__Config.Gyro_D_T) || __Config.Gyro_D_T <= 0.0f ||
+        !(accel_interval_us >= 1.0f && accel_interval_us < 0x1p64f))
     {
         return;
     }
     VQF_Config = __Config;
+    Accel_Interval_Us = static_cast<uint64_t>(accel_interval_us);
 }
 
 /**
@@ -252,88 +86,65 @@ bool Class_BMI088::Init()
 
 void Class_BMI088::SPI_RxCpltCallback()
 {
-    if (SPI_Manage_Object->Activate_GPIOx == BMI088_ACCEL__SPI_CS_GPIO_Port && SPI_Manage_Object->Activate_GPIO_Pin == BMI088_ACCEL__SPI_CS_Pin)
+    const bool accel_chip = SPI_Manage_Object->Activate_GPIOx == BMI088_ACCEL__SPI_CS_GPIO_Port &&
+                            SPI_Manage_Object->Activate_GPIO_Pin == BMI088_ACCEL__SPI_CS_Pin;
+    if (!Init_Finished_Flag)
     {
-        if (Init_Finished_Flag)
+        if (accel_chip)
         {
-            Struct_BMI088_Status *completed_status = nullptr;
-            if (SPI_Manage_Object->Rx_Buffer_Length == 6U)
-            {
-                completed_status = &Accel_Status;
-            }
-            else if (SPI_Manage_Object->Rx_Buffer_Length == 2U)
-            {
-                completed_status = &Temperature_Status;
-            }
-            if (completed_status == nullptr || !completed_status->Transfering_Flag ||
-                completed_status->Transfer_Ready_Timestamp == 0U)
-            {
-                SPI_Manage_Object->Callback_Anomaly_Count++;
-                return;
-            }
+            BMI088_Accel.SPI_RxCpltCallback();
         }
+        else
+        {
+            BMI088_Gyro.SPI_RxCallback(0U);
+        }
+        return;
+    }
 
+    // EXTI、SPI2 和 SPI2 DMA 同优先级，回调处理期间不会互相抢占。
+    const Sensor sensor = Active_Sensor;
+    const bool valid_transfer = SPI_State == Transfer_State::Starting ||
+                                SPI_State == Transfer_State::In_Flight;
+    const bool valid_frame = sensor == Sensor::Gyro
+        ? !accel_chip
+        : accel_chip && SPI_Manage_Object->Rx_Buffer_Length ==
+                            (sensor == Sensor::Accel ? 6U : 2U);
+    if (!valid_transfer || !valid_frame)
+    {
+        SPI_Manage_Object->Callback_Anomaly_Count++;
+        return;
+    }
+
+    uint32_t flags = 0U;
+    if (sensor == Sensor::Gyro)
+    {
+        const uint8_t result = BMI088_Gyro.SPI_RxCallback(Active_Ready_Timestamp);
+        if ((result & BMI088_GYRO_SPI_RESULT_FOLLOWUP_REQUIRED) != 0U)
+        {
+            Mark_Ready(Sensor::Gyro, SYS_Timestamp.Get_Now_Microsecond(), false);
+            flags |= 0x0002;
+        }
+        if ((result & BMI088_GYRO_SPI_RESULT_SAMPLES_QUEUED) != 0U)
+        {
+            flags |= 0x0001;
+        }
+    }
+    else
+    {
         BMI088_Accel.SPI_RxCpltCallback();
-
-        if (Init_Finished_Flag)
+        if (sensor == Sensor::Accel)
         {
-            if (SPI_Manage_Object->Rx_Buffer_Length == 6)
-            {
-                Accel_Status.Transfering_Flag = false;
-                Accel_Status.Update_Flag = true;
-                Accel_Status.Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
-                Accel_Status.Update_Ready_Timestamp = Accel_Status.Transfer_Ready_Timestamp;
-                Accel_Status.Transfer_Ready_Timestamp = 0U;
-                Accel_Status.Transfer_Start_Timestamp_Low32 = 0U;
-                Accel_Status.Transfer_Timeout_Armed = false;
-            }
-            else if (SPI_Manage_Object->Rx_Buffer_Length == 2)
-            {
-                Temperature_Status.Transfering_Flag = false;
-                Temperature_Status.Transfer_Ready_Timestamp = 0U;
-                Temperature_Status.Transfer_Start_Timestamp_Low32 = 0U;
-                Temperature_Status.Transfer_Timeout_Armed = false;
-            }
+            Accel_Update_Timestamp = SYS_Timestamp.Get_Now_Microsecond();
+            Accel_Update_Ready_Timestamp = Active_Ready_Timestamp;
         }
     }
-    else if (SPI_Manage_Object->Activate_GPIOx == BMI088_GYRO__SPI_CS_GPIO_Port && SPI_Manage_Object->Activate_GPIO_Pin == BMI088_GYRO__SPI_CS_Pin)
+
+    SPI_State = SPI_State == Transfer_State::Starting ? Transfer_State::Completed_During_Start
+                                                       : Transfer_State::Idle;
+    if (flags != 0U)
     {
-        if (Init_Finished_Flag &&
-            (!Gyro_Status.Transfering_Flag ||
-             Gyro_Status.Transfer_Ready_Timestamp == 0U))
-        {
-            SPI_Manage_Object->Callback_Anomaly_Count++;
-            return;
-        }
-
-        const uint64_t gyro_ready_timestamp =
-            Gyro_Status.Transfer_Ready_Timestamp;
-        const uint8_t gyro_result =
-            BMI088_Gyro.SPI_RxCallback(gyro_ready_timestamp);
-
-        if (Init_Finished_Flag)
-        {
-            Gyro_Status.Transfering_Flag = false;
-            Gyro_Status.Transfer_Ready_Timestamp = 0U;
-            Gyro_Status.Transfer_Start_Timestamp_Low32 = 0U;
-            Gyro_Status.Transfer_Timeout_Armed = false;
-
-            if ((gyro_result &
-                 BMI088_GYRO_SPI_RESULT_FOLLOWUP_REQUIRED) != 0U)
-            {
-                BMI088_Status_Mark_Ready_If_Clear(
-                    Gyro_Status, SYS_Timestamp.Get_Now_Microsecond());
-                osThreadFlagsSet(BMI088TaskHandle, 0x0002);
-            }
-            if ((gyro_result &
-                 BMI088_GYRO_SPI_RESULT_SAMPLES_QUEUED) != 0U)
-            {
-                osThreadFlagsSet(BMI088TaskHandle, 0x0001);
-            }
-        }
+        osThreadFlagsSet(BMI088TaskHandle, flags);
     }
-
-    // 不再从 SPI 回调中发起新传输（DMA-in-DMA 竞态），由 EXTI/慢周期统一发起
 }
 
 /**
@@ -350,12 +161,12 @@ void Class_BMI088::EXTI_Flag_Callback(uint16_t GPIO_Pin)
     // 记录当前传感器数据就绪
     if (GPIO_Pin == BMI088_ACCEL__INTERRUPT_Pin)
     {
-        BMI088_Status_Mark_Ready(Accel_Status, now_timestamp);
+        Mark_Ready(Sensor::Accel, now_timestamp);
     }
     else if (GPIO_Pin == BMI088_GYRO__INTERRUPT_Pin)
     {
         BMI088_Gyro.Notify_FIFO_Interrupt(now_timestamp);
-        BMI088_Status_Mark_Ready(Gyro_Status, now_timestamp);
+        Mark_Ready(Sensor::Gyro, now_timestamp);
     }
 
     BMI088_Service_Transfer();
@@ -373,7 +184,7 @@ void Class_BMI088::TIM_128ms_Calculate_PeriodElapsedCallback()
     }
     uint64_t now_timestamp = SYS_Timestamp.Get_Now_Microsecond();
 
-    BMI088_Status_Mark_Ready(Temperature_Status, now_timestamp);
+    Mark_Ready(Sensor::Temperature, now_timestamp);
     BMI088_Service_Transfer(true);
     BMI088_Accel.TIM_128ms_Heater_PID_PeriodElapsedCallback();
 }
@@ -389,7 +200,7 @@ void Class_BMI088::TIM_1ms_Service_PeriodElapsedCallback()
         (now_timestamp - Gyro_FIFO_Last_Fallback_Poll_Timestamp) >= 1000U)
     {
         Gyro_FIFO_Last_Fallback_Poll_Timestamp = now_timestamp;
-        BMI088_Status_Mark_Ready_If_Clear(Gyro_Status, now_timestamp);
+        Mark_Ready(Sensor::Gyro, now_timestamp, false);
     }
     BMI088_Service_Transfer(true);
 }
@@ -416,17 +227,6 @@ void Class_BMI088::BMI088_Recover_SPI(uint8_t __Reason)
     {
         SPI_Temperature_Timeout_Counter++;
     }
-    SPI_Recovery_Pending_Reason = BMI088_SPI_RECOVERY_NONE;
-
-    BMI088_Status_Restore_Ready_On_Recovery(Accel_Status);
-    BMI088_Status_Restore_Ready_On_Recovery(Gyro_Status);
-    BMI088_Status_Restore_Ready_On_Recovery(Temperature_Status);
-
-    if (SPI_Manage_Object == nullptr || SPI_Manage_Object->SPI_Handler == nullptr)
-    {
-        return;
-    }
-
     SPI_HandleTypeDef *spi_handler = SPI_Manage_Object->SPI_Handler;
 
     if (SPI_Manage_Object->Activate_GPIOx != nullptr)
@@ -446,187 +246,146 @@ void Class_BMI088::BMI088_Recover_SPI(uint8_t __Reason)
     SPI_Manage_Object->Activate_GPIOx = nullptr;
     SPI_Manage_Object->Tx_Buffer_Length = 0;
     SPI_Manage_Object->Rx_Buffer_Length = 0;
-    __DMB();
+    const uint32_t primask = SYS_Enter_Critical();
     SPI_Manage_Object->Transaction_Active = false;
-    __DMB();
-
+    SPI_State = Transfer_State::Idle;
+    SYS_Exit_Critical(primask);
 }
 
 void Class_BMI088::BMI088_Service_Transfer(const bool &Allow_Recovery)
-{
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    if (Transfer_Service_Active)
-    {
-        if (primask == 0U)
-        {
-            __enable_irq();
-        }
-        return;
-    }
-    Transfer_Service_Active = true;
-    __DMB();
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
-
-    BMI088_Service_Transfer_Locked(Allow_Recovery);
-
-    const uint32_t unlock_primask = __get_PRIMASK();
-    __disable_irq();
-    __DMB();
-    Transfer_Service_Active = false;
-    __DMB();
-    if (unlock_primask == 0U)
-    {
-        __enable_irq();
-    }
-}
-
-void Class_BMI088::BMI088_Service_Transfer_Locked(const bool &Allow_Recovery)
 {
     if (!Init_Finished_Flag)
     {
         return;
     }
 
+    static constexpr uint8_t timeout_reasons[SENSOR_COUNT] = {
+        BMI088_SPI_RECOVERY_ACCEL_TIMEOUT, BMI088_SPI_RECOVERY_GYRO_TIMEOUT,
+        BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT
+    };
+    static constexpr uint8_t start_failure_reasons[SENSOR_COUNT] = {
+        BMI088_SPI_RECOVERY_ACCEL_START_FAILURE, BMI088_SPI_RECOVERY_GYRO_START_FAILURE,
+        BMI088_SPI_RECOVERY_TEMPERATURE_START_FAILURE
+    };
+
+    uint32_t primask = SYS_Enter_Critical();
+    if (SPI_State == Transfer_State::Starting ||
+        SPI_State == Transfer_State::Completed_During_Start ||
+        SPI_State == Transfer_State::Recovering)
+    {
+        SYS_Exit_Critical(primask);
+        return;
+    }
+
+    uint8_t recovery = SPI_Recovery_Pending_Reason;
     if (Allow_Recovery)
     {
-        uint8_t recovery_reason = SPI_Recovery_Pending_Reason;
-        const uint32_t now_timestamp_low32 =
-            static_cast<uint32_t>(SYS_Timestamp.Get_Now_Microsecond());
-        SPI_HandleTypeDef *spi_handler = SPI_Manage_Object != nullptr
-                                             ? SPI_Manage_Object->SPI_Handler
-                                             : nullptr;
-        if (BMI088_Status_Restore_Ready_On_Timeout(Accel_Status, now_timestamp_low32,
-                                                   TRANSFERING_TIMEOUT,
-                                                   spi_handler))
+        SPI_HandleTypeDef *spi_handler = SPI_Manage_Object->SPI_Handler;
+        if (SPI_State == Transfer_State::In_Flight)
         {
-            recovery_reason |= BMI088_SPI_RECOVERY_ACCEL_TIMEOUT;
+            const uint32_t now = static_cast<uint32_t>(SYS_Timestamp.Get_Now_Microsecond());
+            const uint32_t elapsed = now - Transfer_Start_Timestamp_Low32;
+            if (elapsed >= TRANSFERING_TIMEOUT)
+            {
+                SPI_Capture_Timeout_Snapshot(spi_handler, elapsed);
+                recovery |= timeout_reasons[static_cast<uint8_t>(Active_Sensor)];
+            }
         }
-        if (BMI088_Status_Restore_Ready_On_Timeout(Gyro_Status, now_timestamp_low32,
-                                                   TRANSFERING_TIMEOUT,
-                                                   spi_handler))
+        if (spi_handler->ErrorCode != HAL_SPI_ERROR_NONE)
         {
-            recovery_reason |= BMI088_SPI_RECOVERY_GYRO_TIMEOUT;
+            recovery |= BMI088_SPI_RECOVERY_HAL_ERROR;
         }
-        if (BMI088_Status_Restore_Ready_On_Timeout(Temperature_Status, now_timestamp_low32,
-                                                   TRANSFERING_TIMEOUT,
-                                                   spi_handler))
+        if (recovery != BMI088_SPI_RECOVERY_NONE)
         {
-            recovery_reason |= BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT;
-        }
+            if (SPI_State == Transfer_State::In_Flight)
+            {
+                uint64_t &ready = Ready_Timestamps[static_cast<uint8_t>(Active_Sensor)];
+                if (ready == 0U)
+                {
+                    ready = Active_Ready_Timestamp;
+                }
+            }
+            SPI_Recovery_Pending_Reason = BMI088_SPI_RECOVERY_NONE;
+            SPI_State = Transfer_State::Recovering;
+            SYS_Exit_Critical(primask);
 
-        const bool spi_error = (SPI_Manage_Object != nullptr) &&
-                               (SPI_Manage_Object->SPI_Handler != nullptr) &&
-                               (SPI_Manage_Object->SPI_Handler->ErrorCode != HAL_SPI_ERROR_NONE);
-        if (spi_error)
-        {
-            recovery_reason |= BMI088_SPI_RECOVERY_HAL_ERROR;
-        }
-        if (recovery_reason != BMI088_SPI_RECOVERY_NONE)
-        {
-            BMI088_Recover_SPI(recovery_reason);
+            BMI088_Recover_SPI(recovery);
             return;
         }
     }
-    else if (SPI_Recovery_Pending_Reason != BMI088_SPI_RECOVERY_NONE)
+
+    if (SPI_State != Transfer_State::Idle || recovery != BMI088_SPI_RECOVERY_NONE)
     {
+        SYS_Exit_Critical(primask);
         return;
     }
 
-    if (Accel_Status.Transfering_Flag || Gyro_Status.Transfering_Flag || Temperature_Status.Transfering_Flag)
+    uint8_t index = Next_Sensor;
+    for (uint8_t scanned = 0; scanned < SENSOR_COUNT; scanned++, index = (index + 1) % SENSOR_COUNT)
     {
+        if (Ready_Timestamps[index] == 0U)
+        {
+            continue;
+        }
+
+        const Sensor sensor = static_cast<Sensor>(index);
+        Active_Sensor = sensor;
+        Active_Ready_Timestamp = Ready_Timestamps[index];
+        Ready_Timestamps[index] = 0U;
+        SPI_State = Transfer_State::Starting;
+        SYS_Exit_Critical(primask);
+
+        uint8_t status;
+        switch (sensor)
+        {
+        case Sensor::Accel:
+            status = BMI088_Accel.SPI_Request_Accel();
+            break;
+        case Sensor::Gyro:
+            status = BMI088_Gyro.SPI_Request_Gyro();
+            break;
+        default:
+            status = BMI088_Accel.SPI_Request_Temperature();
+            break;
+        }
+
+        primask = SYS_Enter_Critical();
+        if (status == HAL_OK)
+        {
+            Next_Sensor = (index + 1) % SENSOR_COUNT;
+            if (SPI_State == Transfer_State::Completed_During_Start)
+            {
+                SPI_State = Transfer_State::Idle;
+            }
+            else
+            {
+                Transfer_Start_Timestamp_Low32 = static_cast<uint32_t>(SYS_Timestamp.Get_Now_Microsecond());
+                SPI_State = Transfer_State::In_Flight;
+            }
+        }
+        else
+        {
+            if (Ready_Timestamps[index] == 0U)
+            {
+                Ready_Timestamps[index] = Active_Ready_Timestamp;
+            }
+            const uint8_t reason = start_failure_reasons[index];
+            SPI_State = Allow_Recovery ? Transfer_State::Recovering : Transfer_State::Idle;
+            if (Allow_Recovery)
+            {
+                SYS_Exit_Critical(primask);
+                BMI088_Recover_SPI(reason);
+                return;
+            }
+            else
+            {
+                SPI_Recovery_Pending_Reason = reason;
+            }
+        }
+        SYS_Exit_Critical(primask);
         return;
     }
-
-    for (uint8_t i = 0; i < 3; i++)
-    {
-        uint8_t index = (Transfer_Priority_Index + i) % 3;
-
-        if (index == 0 && Accel_Status.Ready_Flag)
-        {
-            uint64_t transfer_ready_timestamp = 0U;
-            if (!BMI088_Status_Begin_Transfer(Accel_Status, transfer_ready_timestamp))
-            {
-                continue;
-            }
-            uint8_t status = BMI088_Accel.SPI_Request_Accel();
-            if (status == HAL_OK)
-            {
-                BMI088_Status_Arm_Transfer_Timeout(
-                    Accel_Status, transfer_ready_timestamp,
-                    SYS_Timestamp.Get_Now_Microsecond());
-                Transfer_Priority_Index = 1;
-            }
-            else
-            {
-                BMI088_Status_Restore_Ready_After_Start_Failure(
-                    Accel_Status, transfer_ready_timestamp);
-                SPI_Recovery_Pending_Reason |= BMI088_SPI_RECOVERY_ACCEL_START_FAILURE;
-                if (Allow_Recovery)
-                {
-                    BMI088_Recover_SPI(SPI_Recovery_Pending_Reason);
-                }
-            }
-            return;
-        }
-        else if (index == 1 && Gyro_Status.Ready_Flag)
-        {
-            uint64_t transfer_ready_timestamp = 0U;
-            if (!BMI088_Status_Begin_Transfer(Gyro_Status, transfer_ready_timestamp))
-            {
-                continue;
-            }
-            uint8_t status = BMI088_Gyro.SPI_Request_Gyro();
-            if (status == HAL_OK)
-            {
-                BMI088_Status_Arm_Transfer_Timeout(
-                    Gyro_Status, transfer_ready_timestamp,
-                    SYS_Timestamp.Get_Now_Microsecond());
-                Transfer_Priority_Index = 2;
-            }
-            else
-            {
-                BMI088_Status_Restore_Ready_After_Start_Failure(
-                    Gyro_Status, transfer_ready_timestamp);
-                SPI_Recovery_Pending_Reason |= BMI088_SPI_RECOVERY_GYRO_START_FAILURE;
-                if (Allow_Recovery)
-                {
-                    BMI088_Recover_SPI(SPI_Recovery_Pending_Reason);
-                }
-            }
-            return;
-        }
-        else if (index == 2 && Temperature_Status.Ready_Flag)
-        {
-            uint64_t transfer_ready_timestamp = 0U;
-            if (!BMI088_Status_Begin_Transfer(Temperature_Status, transfer_ready_timestamp))
-            {
-                continue;
-            }
-            uint8_t status = BMI088_Accel.SPI_Request_Temperature();
-            if (status == HAL_OK)
-            {
-                BMI088_Status_Arm_Transfer_Timeout(
-                    Temperature_Status, transfer_ready_timestamp,
-                    SYS_Timestamp.Get_Now_Microsecond());
-                Transfer_Priority_Index = 0;
-            }
-            else
-            {
-                BMI088_Status_Restore_Ready_After_Start_Failure(
-                    Temperature_Status, transfer_ready_timestamp);
-                SPI_Recovery_Pending_Reason |= BMI088_SPI_RECOVERY_TEMPERATURE_START_FAILURE;
-                if (Allow_Recovery)
-                {
-                    BMI088_Recover_SPI(SPI_Recovery_Pending_Reason);
-                }
-            }
-            return;
-        }
-    }
+    SYS_Exit_Critical(primask);
 }
 
 /**
@@ -647,32 +406,30 @@ void Class_BMI088::Calculate()
 
     if (!Accel_Observation_Pending)
     {
-        const uint32_t primask = __get_PRIMASK();
-        __disable_irq();
-        const Struct_BMI088_Status accel_status_snapshot = Accel_Status;
+        const uint32_t primask = SYS_Enter_Critical();
+        const uint64_t accel_update = Accel_Update_Timestamp;
+        const uint64_t accel_timestamp = Accel_Update_Ready_Timestamp;
         const Class_Matrix_f32<3, 1> accel_snapshot = BMI088_Accel.Get_Raw_Accel();
         const bool accel_valid_snapshot = BMI088_Accel.Get_Valid_Flag();
-        if (primask == 0U)
-        {
-            __enable_irq();
-        }
+        SYS_Exit_Critical(primask);
 
-        if (accel_status_snapshot.Update_Flag)
+        if (accel_update != 0U)
         {
-            const uint64_t accel_timestamp =
-                BMI088_Status_Get_Update_Ready_Timestamp(accel_status_snapshot);
-            const uint64_t accel_interval =
-                static_cast<uint64_t>(VQF_Config.Accel_D_T * 1000000.0f);
             if (Pending_Accel_Timestamp == 0U ||
-                accel_timestamp / accel_interval !=
-                    Pending_Accel_Timestamp / accel_interval)
+                accel_timestamp / Accel_Interval_Us !=
+                    Pending_Accel_Timestamp / Accel_Interval_Us)
             {
                 Vector_Pending_Accel = accel_snapshot;
                 Pending_Accel_Timestamp = accel_timestamp;
                 Pending_Accel_Valid = accel_valid_snapshot;
                 Accel_Observation_Pending = true;
             }
-            BMI088_Status_Clear_Update_If_Matches(Accel_Status, accel_status_snapshot);
+            const uint32_t clear_primask = SYS_Enter_Critical();
+            if (Accel_Update_Timestamp == accel_update && Accel_Update_Ready_Timestamp == accel_timestamp)
+            {
+                Accel_Update_Timestamp = 0U;
+            }
+            SYS_Exit_Critical(clear_primask);
         }
     }
 
@@ -762,26 +519,15 @@ void Class_BMI088::Calculate()
                        calculate_start_timestamp;
 }
 
-/**
- * @brief 定时器周期中断回调函数
- *
- */
-static void BMI088_Status_Mark_Ready_If_Clear(
-    Struct_BMI088_Status &Status, const uint64_t &Ready_Timestamp)
+void Class_BMI088::Mark_Ready(Sensor sensor, uint64_t timestamp, bool replace)
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    if (!Status.Ready_Flag)
+    const uint32_t primask = SYS_Enter_Critical();
+    uint64_t &ready = Ready_Timestamps[static_cast<uint8_t>(sensor)];
+    if (replace || ready == 0U)
     {
-        Status.Ready_Timestamp = Ready_Timestamp;
-        __DMB();
-        Status.Ready_Flag = true;
-        __DMB();
+        ready = timestamp;
     }
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
 }
 
 void Class_BMI088::Set_Accel_Update_Result(const bool &__Accepted, const uint8_t &__Reject_Reason)

@@ -16,6 +16,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_uart.h"
+#include "sys_critical.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -37,7 +38,6 @@ __attribute__((section(".dma_buffer"), aligned(32))) Struct_UART_Manage_Object U
 
 /* Private function declarations ---------------------------------------------*/
 
-static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *huart);
 static HAL_StatusTypeDef UART_Start_Receive_ToIdle(Struct_UART_Manage_Object *manage);
 static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage);
 
@@ -49,8 +49,13 @@ static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage);
  * @param huart UART 句柄
  * @return Struct_UART_Manage_Object* 对应管理对象，未接管的实例返回 nullptr
  */
-static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *huart)
+Struct_UART_Manage_Object *UART_Get_Manage_Object(const UART_HandleTypeDef *huart)
 {
+    if (huart == nullptr)
+    {
+        return nullptr;
+    }
+
     if (huart->Instance == USART1)
     {
         return (&USART1_Manage_Object);
@@ -91,12 +96,6 @@ static Struct_UART_Manage_Object *UART_Get_Manage_Object(UART_HandleTypeDef *hua
  */
 static HAL_StatusTypeDef UART_Start_Receive_ToIdle(Struct_UART_Manage_Object *manage)
 {
-    if (manage == nullptr || manage->UART_Handler == nullptr ||
-        manage->UART_Handler->hdmarx == nullptr || manage->Rx_Buffer_Active == nullptr)
-    {
-        return HAL_ERROR;
-    }
-
     HAL_StatusTypeDef Status = HAL_UARTEx_ReceiveToIdle_DMA(
         manage->UART_Handler,
         manage->Rx_Buffer_Active,
@@ -114,19 +113,11 @@ static HAL_StatusTypeDef UART_Start_Receive_ToIdle(Struct_UART_Manage_Object *ma
  */
 static bool UART_Restart_Receive(Struct_UART_Manage_Object *manage)
 {
-    if (manage == nullptr || manage->UART_Handler == nullptr ||
-        manage->UART_Handler->hdmarx == nullptr)
-    {
-        return false;
-    }
-
     UART_HandleTypeDef *huart = manage->UART_Handler;
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    uint32_t primask = SYS_Enter_Critical();
     manage->Rx_Restart_Pending = false;
     manage->Rx_Buffer_Active = nullptr;
-    __DMB();
-    __set_PRIMASK(primask);
+    SYS_Exit_Critical(primask);
 
     if (HAL_UART_AbortReceive(huart) != HAL_OK)
     {
@@ -193,7 +184,7 @@ void UART_Init(UART_HandleTypeDef *huart, UART_Callback Callback_Function)
 void UART_Reinit(UART_HandleTypeDef *huart)
 {
     Struct_UART_Manage_Object *manage = UART_Get_Manage_Object(huart);
-    if (manage == nullptr || huart->hdmarx == nullptr)
+    if (manage == nullptr || manage->UART_Handler != huart || huart->hdmarx == nullptr)
     {
         return;
     }
@@ -262,16 +253,15 @@ uint8_t UART_Transmit_Data(UART_HandleTypeDef *huart, uint8_t *Data, uint16_t Le
         return HAL_ERROR;
     }
 
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    uint32_t primask = SYS_Enter_Critical();
     if (manage->Tx_Submitting || huart->gState != HAL_UART_STATE_READY ||
         huart->hdmatx->State != HAL_DMA_STATE_READY)
     {
-        __set_PRIMASK(primask);
+        SYS_Exit_Critical(primask);
         return HAL_BUSY;
     }
     manage->Tx_Submitting = true;
-    __set_PRIMASK(primask);
+    SYS_Exit_Critical(primask);
 
     // 提交锁保护复制及启动；UART 和 DMA 均空闲后才允许复用缓冲区。
     memcpy(manage->Tx_Buffer, Data, Length);
@@ -291,7 +281,7 @@ uint8_t UART_Transmit_Data(UART_HandleTypeDef *huart, uint8_t *Data, uint16_t Le
 extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
     Struct_UART_Manage_Object *manage = UART_Get_Manage_Object(huart);
-    if (manage == nullptr || huart->hdmarx == nullptr || manage->Rx_Buffer_Active == nullptr)
+    if (manage == nullptr || manage->UART_Handler != huart || huart->hdmarx == nullptr || manage->Rx_Buffer_Active == nullptr)
     {
         return;
     }
@@ -342,7 +332,7 @@ extern "C" void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t S
 extern "C" void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
     Struct_UART_Manage_Object *manage = UART_Get_Manage_Object(huart);
-    if (manage == nullptr || huart->hdmarx == nullptr)
+    if (manage == nullptr || manage->UART_Handler != huart || huart->hdmarx == nullptr)
     {
         return;
     }

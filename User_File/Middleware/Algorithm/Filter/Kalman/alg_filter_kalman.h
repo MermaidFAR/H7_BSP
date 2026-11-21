@@ -180,28 +180,7 @@ bool Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension
     Class_Matrix_f32<State_Dimension, State_Dimension> matrix_p =
         matrix_tmp * Matrix_P_Prior * matrix_tmp.Get_Transpose() + matrix_k * Matrix_R * matrix_k.Get_Transpose();
 
-    for (uint32_t i = 0; i < State_Dimension * Measurement_Dimension; i++)
-    {
-        if (!isfinite(matrix_k.Data[i]))
-        {
-            success = false;
-        }
-    }
-    for (uint32_t i = 0; i < State_Dimension; i++)
-    {
-        if (!isfinite(vector_x.Data[i]))
-        {
-            success = false;
-        }
-    }
-    for (uint32_t i = 0; i < State_Dimension * State_Dimension; i++)
-    {
-        if (!isfinite(matrix_p.Data[i]))
-        {
-            success = false;
-        }
-    }
-    if (!success)
+    if (!vector_x.Is_Finite() || !matrix_p.Is_Finite())
     {
         Matrix_K = Namespace_ALG_Matrix::Zero<State_Dimension, Measurement_Dimension>();
         return false;

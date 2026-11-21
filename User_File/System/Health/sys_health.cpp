@@ -1,5 +1,6 @@
 /** @file sys_health.cpp @author zzm @brief 低频设备健康采集与状态发布 */
 #include "sys_health.h"
+#include "sys_critical.h"
 #include "bsp_bmi088.h"
 #include "sys_debug.h"
 #include "sys_timestamp.h"
@@ -16,20 +17,6 @@ static uint64_t First_Seen_us[DJI_MOTOR_MAX_MOTORS + 1];
 static uint32_t Previous_IMU_Counters[9];
 static bool Previous_IMU_Valid;
 
-static uint32_t Health_Enter_Critical()
-{
-    uint32_t state = __get_PRIMASK();
-    __disable_irq();
-    __DMB();
-    return state;
-}
-
-static void Health_Exit_Critical(uint32_t state)
-{
-    __DMB();
-    __set_PRIMASK(state);
-}
-
 static uint32_t Health_Age_ms(uint64_t now, uint64_t timestamp)
 {
     uint64_t age = now >= timestamp ? (now - timestamp) / 1000 : 0;
@@ -39,7 +26,7 @@ static uint32_t Health_Age_ms(uint64_t now, uint64_t timestamp)
 static void Health_Publish()
 {
     Health_Next.Updated_At_us = SYS_Timestamp.Get_Now_Microsecond();
-    uint32_t interrupt_state = Health_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     uint32_t sequence = (SYS_Health.Sequence + 1) | 1;
     SYS_Health.Sequence = sequence;
     SYS_Health.Sequence_End = sequence;
@@ -51,7 +38,7 @@ static void Health_Publish()
     SYS_Health.Sequence_End = sequence + 1;
     __DMB();
     SYS_Health.Sequence = sequence + 1;
-    Health_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
 }
 
 void Sys_Health_Init(void)
@@ -62,9 +49,9 @@ void Sys_Health_Init(void)
     Previous_IMU_Valid = false;
     memset(Recovery_Count, 0, sizeof(Recovery_Count));
     memset(First_Seen_us, 0, sizeof(First_Seen_us));
-    uint32_t interrupt_state = Health_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     memcpy((void *)&SYS_Health, &Health_Next, sizeof(Health_Next));
-    Health_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
 }
 
 static void Health_Set_State(uint32_t index, Struct_Sys_Health_Item *item,
@@ -139,10 +126,10 @@ void Sys_Health_Update(void)
     Health_Next.Update_Count++;
     Health_Next.Motor_Count = 0;
     Sys_Debug_IMU_Data_t imu;
-    uint32_t interrupt_state = Health_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     memcpy(&imu, (const void *)&Debug_IMU_Data, sizeof(imu));
     uint64_t sample_us = BSP_BMI088.Get_Last_Sample_Timestamp_Us();
-    Health_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
     uint64_t now = SYS_Timestamp.Get_Now_Microsecond();
     bool received = sample_us != 0 && imu.Debug_ABI_Size == sizeof(imu) &&
                     imu.sequence == imu.sequence_end && (imu.sequence & 1) == 0;
@@ -181,8 +168,8 @@ bool Sys_Health_GetSnapshot(Struct_Sys_Health *snapshot)
 {
     if (snapshot == nullptr)
         return false;
-    uint32_t interrupt_state = Health_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     memcpy(snapshot, (const void *)&SYS_Health, sizeof(*snapshot));
-    Health_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
     return snapshot->ABI_Version == 2 && snapshot->Sequence == snapshot->Sequence_End && (snapshot->Sequence & 1) == 0;
 }

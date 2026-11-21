@@ -112,7 +112,7 @@ HAL_StatusTypeDef OSPI_Command_Transmit_Data(OSPI_HandleTypeDef *hospi, OSPI_Reg
     {
         return HAL_ERROR;
     }
-    HAL_StatusTypeDef status = OSPI_Command(hospi, Command);
+    HAL_StatusTypeDef status = HAL_OSPI_Command(hospi, Command, OSPI_COMMAND_TIMEOUT);
     if (status != HAL_OK)
     {
         return status;
@@ -133,26 +133,12 @@ HAL_StatusTypeDef OSPI_Command_Receive_Data(OSPI_HandleTypeDef *hospi, OSPI_Regu
     {
         return HAL_ERROR;
     }
-    HAL_StatusTypeDef status = OSPI_Command(hospi, Command);
+    HAL_StatusTypeDef status = HAL_OSPI_Command(hospi, Command, OSPI_COMMAND_TIMEOUT);
     if (status != HAL_OK)
     {
         return status;
     }
     return HAL_OSPI_Receive_DMA(hospi, manage->Rx_Buffer);
-}
-
-/**
- * @brief 交互数据
- *
- * @param hospi OSPI编号
- */
-HAL_StatusTypeDef OSPI_Command_Transmit_Receive_Data(OSPI_HandleTypeDef *hospi, OSPI_RegularCmdTypeDef *Command)
-{
-    // 不能在同一指令上紧接着启动 TX DMA 和 RX DMA；后者会遇到 BUSY_TX。
-    // 调用者必须分别提交写/读指令，并在完成回调后切换方向。
-    (void)hospi;
-    (void)Command;
-    return HAL_ERROR;
 }
 
 /**

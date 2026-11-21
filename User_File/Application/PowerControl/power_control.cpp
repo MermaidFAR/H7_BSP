@@ -96,13 +96,6 @@ bool PowerControl::TIM_Calculate_PeriodElapsedCallback()
     const double b = motoring_power;
     const double baseline = Config.static_power_w + Friction_Coefficient * speed_sum;
     const double available = fmax(0.0, (double)Input.power_limit_w - Config.reserve_power_w);
-    if (!isfinite(a) || !isfinite(b) || !isfinite(baseline) ||
-        !isfinite(available) || a + b + baseline > FLT_MAX)
-    {
-        Output = {};
-        return false;
-    }
-
     double scale = 1.0;
     if (a + b + baseline > available)
     {
@@ -128,7 +121,7 @@ bool PowerControl::TIM_Calculate_PeriodElapsedCallback()
     next.scale = (float)scale;
     next.limited = scale < 1.0;
     next.budget_below_baseline = baseline > available;
-    next.estimated_power_w = (float)(baseline + b * scale + a * scale * scale);
+    next.estimated_power_w = (float)fmin(FLT_MAX, baseline + b * scale + a * scale * scale);
     for (uint8_t i = 0; i < Config.motor_count; i++)
     {
         next.torque_nm[i] = (float)(Input.desired_torque_nm[i] * scale);

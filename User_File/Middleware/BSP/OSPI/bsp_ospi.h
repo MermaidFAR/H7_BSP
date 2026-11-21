@@ -75,8 +75,6 @@ HAL_StatusTypeDef OSPI_Command_Transmit_Data(OSPI_HandleTypeDef * hospi, OSPI_Re
 HAL_StatusTypeDef OSPI_Command_Receive_Data(OSPI_HandleTypeDef * hospi, OSPI_RegularCmdTypeDef * Command);
 
 // OSPI 一条指令只有一个数据方向；此旧接口拒绝提交，返回 HAL_ERROR。
-HAL_StatusTypeDef OSPI_Command_Transmit_Receive_Data(OSPI_HandleTypeDef * hospi, OSPI_RegularCmdTypeDef * Command);
-
 #endif
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

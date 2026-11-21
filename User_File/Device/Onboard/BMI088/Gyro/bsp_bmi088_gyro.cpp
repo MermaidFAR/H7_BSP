@@ -98,52 +98,48 @@ bool Class_BMI088_Gyro::Init()
     Sample_Queue_Consume_Count = 0U;
     Sample_Queue_Drop_Count = 0U;
 
-    uint8_t res;
-
-    // 检测通信是否正常
-    Register.GYRO_CHIP_ID_RO = 0x00;
-    for (uint8_t attempt = 0; attempt < max_attempts && Register.GYRO_CHIP_ID_RO != 0x0f; attempt++)
+    const uint8_t chip_id_address = offsetof(Struct_BMI088_Gyro_Register, GYRO_CHIP_ID_RO);
+    const auto check_chip_id = [&]()
     {
-        Read_Single_Register(offsetof(Struct_BMI088_Gyro_Register, GYRO_CHIP_ID_RO));
-        Namespace_SYS_Timestamp::Delay_Millisecond(100);
-    }
-    if (Register.GYRO_CHIP_ID_RO != 0x0f)
-    {
-        return false;
-    }
-
-    // 软重启
-    res = 0xb6;
-    Write_Single_Register(offsetof(Struct_BMI088_Gyro_Register, GYRO_SOFTRESET_WO), &res);
-    Namespace_SYS_Timestamp::Delay_Millisecond(100);
-
-    // 检测通信是否正常
-    Register.GYRO_CHIP_ID_RO = 0x00;
-    for (uint8_t attempt = 0; attempt < max_attempts && Register.GYRO_CHIP_ID_RO != 0x0f; attempt++)
-    {
-        Read_Single_Register(offsetof(Struct_BMI088_Gyro_Register, GYRO_CHIP_ID_RO));
-        Namespace_SYS_Timestamp::Delay_Millisecond(100);
-    }
-    if (Register.GYRO_CHIP_ID_RO != 0x0f)
-    {
-        return false;
-    }
-
-    for (uint8_t i = 0; i < BMI088_GYRO_INIT_INSTRUCTION_NUM; i++)
-    {
-        uint8_t *readback = ((uint8_t *) (&Register)) + BMI088_GYRO_REGISTER_CONFIG[i][0];
-        *readback = ~BMI088_GYRO_REGISTER_CONFIG[i][1];
-        for (uint8_t attempt = 0; attempt < max_attempts && *readback != BMI088_GYRO_REGISTER_CONFIG[i][1]; attempt++)
+        for (uint8_t attempt = 0; attempt < max_attempts; attempt++)
         {
-            // 写入寄存器
-            Write_Single_Register(BMI088_GYRO_REGISTER_CONFIG[i][0], &BMI088_GYRO_REGISTER_CONFIG[i][1]);
-            Namespace_SYS_Timestamp::Delay_Millisecond(100);
-
-            // 读取寄存器
-            Read_Single_Register(BMI088_GYRO_REGISTER_CONFIG[i][0]);
-            Namespace_SYS_Timestamp::Delay_Millisecond(100);
+            if (Read_Single_Register(chip_id_address) == HAL_OK && Register.GYRO_CHIP_ID_RO == 0x0f)
+            {
+                return true;
+            }
         }
-        if (*readback != BMI088_GYRO_REGISTER_CONFIG[i][1])
+        return false;
+    };
+
+    // BMI088 手册 5.5.8 规定软复位后等待 30 ms。
+    const uint8_t reset = 0xb6;
+    if (!check_chip_id() ||
+        Write_Single_Register(offsetof(Struct_BMI088_Gyro_Register, GYRO_SOFTRESET_WO), &reset) != HAL_OK)
+    {
+        return false;
+    }
+    Namespace_SYS_Timestamp::Delay_Millisecond(30);
+    if (!check_chip_id())
+    {
+        return false;
+    }
+
+    for (const auto &config : BMI088_GYRO_REGISTER_CONFIG)
+    {
+        const uint8_t address = config[0];
+        const uint8_t value = config[1];
+        const uint32_t write_delay_us = 2U;
+        bool configured = false;
+        for (uint8_t attempt = 0; attempt < max_attempts && !configured; attempt++)
+        {
+            if (Write_Single_Register(address, &value) == HAL_OK)
+            {
+                Namespace_SYS_Timestamp::Delay_Microsecond(write_delay_us);
+                configured = Read_Single_Register(address) == HAL_OK &&
+                             reinterpret_cast<const uint8_t *>(&Register)[address] == value;
+            }
+        }
+        if (!configured)
         {
             return false;
         }
@@ -164,7 +160,7 @@ void Class_BMI088_Gyro::Start_FIFO_Acquisition()
     Write_Single_Register(
         offsetof(Struct_BMI088_Gyro_Register, FIFO_CONFIG_1_RW),
         &fifo_stream_mode);
-    Namespace_SYS_Timestamp::Delay_Millisecond(1);
+    Namespace_SYS_Timestamp::Delay_Microsecond(2);
 }
 
 /**
@@ -279,15 +275,11 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
                                               static_cast<uint16_t>(i) *
                                                   BMI088_GYRO_FIFO_FRAME_SIZE];
             const Class_Matrix_f32<3, 1> gyro = Decode_Gyro_Frame(frame);
-            const bool invalid_float =
-                Basic_Math_Is_Invalid_Float(gyro[0][0]) ||
-                Basic_Math_Is_Invalid_Float(gyro[1][0]) ||
-                Basic_Math_Is_Invalid_Float(gyro[2][0]);
             const bool outlier =
                 fabsf(gyro[0][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD ||
                 fabsf(gyro[1][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD ||
                 fabsf(gyro[2][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD;
-            const bool valid = !invalid_float && !outlier;
+            const bool valid = !outlier;
             if (outlier)
             {
                 BMI088_Gyro_Outlier_Counter++;
@@ -370,23 +362,13 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
         Vector_Raw_Gyro = Decode_Gyro_Frame(
             reinterpret_cast<const uint8_t *>(&Register.RATE_X_RO));
 
-        const bool invalid_float = Basic_Math_Is_Invalid_Float(Vector_Raw_Gyro[0][0]) ||
-                                   Basic_Math_Is_Invalid_Float(Vector_Raw_Gyro[1][0]) ||
-                                   Basic_Math_Is_Invalid_Float(Vector_Raw_Gyro[2][0]);
         const bool outlier = fabsf(Vector_Raw_Gyro[0][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD ||
                              fabsf(Vector_Raw_Gyro[1][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD ||
                              fabsf(Vector_Raw_Gyro[2][0]) >= BMI088_GYRO_OUTLIER_ABSOLUTE_THRESHOLD;
-        if (invalid_float || outlier)
+        Valid_Flag = !outlier;
+        if (outlier)
         {
-            Valid_Flag = false;
-            if (outlier)
-            {
-                BMI088_Gyro_Outlier_Counter++;
-            }
-        }
-        else
-        {
-            Valid_Flag = true;
+            BMI088_Gyro_Outlier_Counter++;
         }
     }
     return BMI088_GYRO_SPI_RESULT_NONE;
@@ -425,11 +407,6 @@ Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Decode_Gyro_Frame(
     const uint8_t *__Frame) const
 {
     Class_Matrix_f32<3, 1> gyro;
-    if (__Frame == nullptr)
-    {
-        return gyro;
-    }
-
     const int16_t raw_x = static_cast<int16_t>(
         static_cast<uint16_t>(__Frame[0]) |
         (static_cast<uint16_t>(__Frame[1]) << 8U));
@@ -485,16 +462,16 @@ bool Class_BMI088_Gyro::Enqueue_Sample(
 }
 
 /**
- * @brief 读取单个寄存器, 数据不会立即返回, 而是在SPI接收回调函数中处理
+ * @brief 阻塞读取单个寄存器，由 SPI 接收回调填充寄存器缓存
  *
  * @param Register_Address 寄存器地址
  */
-void Class_BMI088_Gyro::Read_Single_Register(const uint8_t &Register_Address) const
+uint8_t Class_BMI088_Gyro::Read_Single_Register(const uint8_t &Register_Address) const
 {
     const uint8_t tx_data[1] = {static_cast<uint8_t>(Register_Address | BMI088_GYRO_READ_MASK)};
 
-    SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                              Activate_Pin_State, tx_data, 1, 1);
+    return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
+                              Activate_Pin_State, tx_data, 1, 1, true);
 }
 
 /** * @brief 读取多个寄存器, 数据不会立即返回, 而是在SPI接收回调函数中处理
@@ -520,12 +497,12 @@ void Class_BMI088_Gyro::Read_Multi_Register(const uint8_t &Register_Address, con
  * @param Register_Address 寄存器地址
  * @param Tx_Data_Buffer 发送数据缓冲区
  */
-void Class_BMI088_Gyro::Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const
+uint8_t Class_BMI088_Gyro::Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const
 {
     const uint8_t tx_data[2] = {Register_Address, Tx_Data_Buffer[0]};
 
-    SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                      Activate_Pin_State, tx_data, sizeof(tx_data));
+    return SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
+                      Activate_Pin_State, tx_data, sizeof(tx_data), true);
 }
 
 /**

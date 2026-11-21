@@ -17,6 +17,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "sys_timestamp.h"
+#include "sys_critical.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -56,8 +57,7 @@ void Class_Timestamp::TIM_3600s_PeriodElapsedCallback()
  */
 uint64_t Class_Timestamp::Calculate_Timestamp() const
 {
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    uint32_t primask = SYS_Enter_Critical();
     uint32_t overflow = TIM_Overflow_Count;
     uint32_t counter = TIM_Handler->Instance->CNT;
     if (__HAL_TIM_GET_FLAG(TIM_Handler, TIM_FLAG_UPDATE) != RESET)
@@ -65,8 +65,7 @@ uint64_t Class_Timestamp::Calculate_Timestamp() const
         counter = TIM_Handler->Instance->CNT;
         overflow++;
     }
-    __DMB();
-    __set_PRIMASK(primask);
+    SYS_Exit_Critical(primask);
     return (uint64_t)overflow * TIM_PERIOD_US + counter;
 }
 

@@ -24,12 +24,12 @@
 
 extern "C" void Can_Tx_Task(void *argument)
 {
-  uint32_t xLastWakeTime = osKernelGetTickCount();
-  for (;;) {
-    xLastWakeTime += 1;
-    osDelayUntil(xLastWakeTime);
-    BSP_CAN_Recover();
-    BSP_CAN_SendAsync();
-    BSP_CAN_SendPer();
-  }
+    for (;;)
+    {
+        BSP_CAN_Recover();
+        BSP_CAN_SendAsync();
+        BSP_CAN_SendPer();
+        // 提交时立即唤醒；1 kHz 内核节拍提供 FIFO 满与总线故障的重试兜底。
+        osThreadFlagsWait(BSP_CAN_TX_READY_FLAG, osFlagsWaitAny, 1U);
+    }
 }

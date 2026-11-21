@@ -18,7 +18,6 @@
 #include "bsp_w25q64jv_register.h"
 #include "bsp_ospi.h"
 #include "cmsis_os2.h"
-#include <SEGGER_RTT.h>
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -149,7 +148,6 @@ public:
         {
             if (SYS_Timestamp.Get_Current_Timestamp() - Busy_Timestamp > Current_Auto_Polling_Timeout)
             {
-                SEGGER_RTT_printf(0, "TIMEOUT! Instr=%02X\n", Current_Instruction);
                 Busy_Flag = false;
                 Auto_Polling_Pending = false;
                 Auto_Polling_Error_Count++;

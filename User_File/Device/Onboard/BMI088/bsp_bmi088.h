@@ -10,6 +10,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "Accel/bsp_bmi088_accel.h"
+#include "sys_critical.h"
 #include "Gyro/bsp_bmi088_gyro.h"
 #include "alg_filter_vqf.h"
 #include "alg_quaternion.h"
@@ -21,19 +22,6 @@ extern "C" {
 /* Exported macros -----------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
-
-struct Struct_BMI088_Status
-{
-    bool Ready_Flag = false;
-    bool Transfering_Flag = false;
-    bool Update_Flag = false;
-    uint64_t Ready_Timestamp = 0U;
-    uint64_t Transfer_Ready_Timestamp = 0U;
-    uint32_t Transfer_Start_Timestamp_Low32 = 0U;
-    bool Transfer_Timeout_Armed = false;
-    uint64_t Update_Timestamp = 0U;
-    uint64_t Update_Ready_Timestamp = 0U;
-};
 
 enum Enum_BMI088_Accel_Reject_Reason : uint8_t
 {
@@ -141,16 +129,24 @@ protected:
         -0.009049477102f, 0.000886600098f, 0.001653004116f};
 
     Struct_BMI088_VQF_Config VQF_Config;
+    uint64_t Accel_Interval_Us = 4000U;
     Class_Filter_VQF Filter_VQF;
     uint32_t VQF_Reset_Counter = 0U;
     uint64_t VQF_Pre_Timestamp = 0U;
 
-    bool Init_Finished_Flag = false;
-    Struct_BMI088_Status Accel_Status;
-    Struct_BMI088_Status Gyro_Status;
-    Struct_BMI088_Status Temperature_Status;
-    uint8_t Transfer_Priority_Index = 0U;
-    volatile bool Transfer_Service_Active = false;
+    enum class Sensor : uint8_t { Accel, Gyro, Temperature, Count };
+    enum class Transfer_State : uint8_t { Idle, Starting, Completed_During_Start, In_Flight, Recovering };
+    static constexpr uint8_t SENSOR_COUNT = static_cast<uint8_t>(Sensor::Count);
+
+    volatile bool Init_Finished_Flag = false;
+    Transfer_State SPI_State = Transfer_State::Idle;
+    Sensor Active_Sensor = Sensor::Accel;
+    uint8_t Next_Sensor = 0U;
+    uint64_t Ready_Timestamps[SENSOR_COUNT] = {};
+    uint64_t Active_Ready_Timestamp = 0U;
+    uint32_t Transfer_Start_Timestamp_Low32 = 0U;
+    uint64_t Accel_Update_Timestamp = 0U;
+    uint64_t Accel_Update_Ready_Timestamp = 0U;
     uint64_t Gyro_FIFO_Last_Fallback_Poll_Timestamp = 0U;
 
     Class_Matrix_f32<3, 1> Vector_Pending_Accel;
@@ -181,7 +177,7 @@ protected:
     uint32_t SPI_Accel_Timeout_Counter = 0U;
     uint32_t SPI_Gyro_Timeout_Counter = 0U;
     uint32_t SPI_Temperature_Timeout_Counter = 0U;
-    volatile uint8_t SPI_Recovery_Pending_Reason =
+    uint8_t SPI_Recovery_Pending_Reason =
         BMI088_SPI_RECOVERY_NONE;
     uint8_t SPI_Recovery_Last_Reason = BMI088_SPI_RECOVERY_NONE;
     uint32_t Sensor_Ready_Gap_Counter = 0U;
@@ -189,7 +185,7 @@ protected:
     uint64_t Calculating_Time = 0U;
 
     void BMI088_Recover_SPI(uint8_t __Reason);
-    void BMI088_Service_Transfer_Locked(const bool &__Allow_Recovery);
+    void Mark_Ready(Sensor sensor, uint64_t timestamp, bool replace = true);
     void Set_Accel_Update_Result(const bool &__Accepted,
                                  const uint8_t &__Reject_Reason);
 };
@@ -201,13 +197,9 @@ extern Class_BMI088 BSP_BMI088;
 template<typename Data_Type>
 inline Data_Type Class_BMI088::Get_Atomic_Copy(const Data_Type &__Data) const
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const Data_Type data = __Data;
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return data;
 }
 
@@ -353,13 +345,9 @@ inline uint32_t Class_BMI088::Get_VQF_Reset_Counter() const
 
 inline Class_Matrix_f32<3, 1> Class_BMI088::Get_VQF_Gyro_Bias() const
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const Class_Matrix_f32<3, 1> bias = Filter_VQF.Get_Bias_Estimate();
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return bias;
 }
 
@@ -375,14 +363,10 @@ inline bool Class_BMI088::Get_VQF_Rest_Detected() const
 
 inline Class_Matrix_f32<2, 1> Class_BMI088::Get_VQF_Relative_Rest_Deviation() const
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const Class_Matrix_f32<2, 1> deviation =
         Filter_VQF.Get_Relative_Rest_Deviation();
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return deviation;
 }
 

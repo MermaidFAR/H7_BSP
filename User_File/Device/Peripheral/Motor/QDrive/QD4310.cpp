@@ -19,6 +19,12 @@
  */
 
 #include "QD4310.h"
+#include "sys_critical.h"
+
+#include <math.h>
+#include <string.h>
+
+static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8]);
 
 /**
  * @brief  QD4310 CAN 反馈帧统一回调入口
@@ -29,20 +35,13 @@
  * @note   通过 BSP_CAN_RegisterCallback 为每个电机 ID (0x500 + motor_id) 注册,
  *         context 直接指向对应电机实例
  */
-static void QDrive_Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* data, uint32_t len, void* context)
+static void QDrive_Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *data, uint32_t len, void *context)
 {
-    QD4310_t* motor = (QD4310_t*) context;
-
-    if (motor == NULL ||
-        data == NULL ||
-        len < 8 ||
-        motor->hfdcan != hfdcan ||
-        id != (uint32_t)motor->id + 0x500)
+    auto *motor = static_cast<QD4310_t *>(context);
+    if (len >= 8 && motor->hfdcan == hfdcan && id == 0x500U + motor->id)
     {
-        return;
+        QD4310_DecodeFeedback(motor, data);
     }
-
-    QD4310_Update(motor, data);
 }
 
 /**
@@ -50,16 +49,26 @@ static void QDrive_Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t id, uint8_t* d
  * @param  motor  电机结构体指针
  * @param  id     电机 ID (0~7), 决定 CAN 命令 ID (0x400+id) 和反馈 ID (0x500+id)
  * @param  hfdcan FDCAN 句柄指针
- * @note   调用后自动注册 CAN 反馈回调
+ * @return true 已初始化并注册反馈回调；false 参数无效或注册失败
  */
-void QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef* hfdcan) {
-    motor->enabled = false;
-    motor->id = id;
-    motor->speed = 0.0f;
-    motor->angle = 0.0f;
-    motor->current = 0.0f;
-    motor->hfdcan = hfdcan;
-    BSP_CAN_RegisterCallback(motor->id + 0x500, hfdcan, QDrive_Callback, motor);
+bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan)
+{
+    if (motor == nullptr || id > 7)
+    {
+        return false;
+    }
+
+    // 注册成功后再设置实例，并在完整初始化前阻止接收中断访问。
+    const uint32_t primask = SYS_Enter_Critical();
+    const bool registered = BSP_CAN_RegisterCallback(id + 0x500, hfdcan, QDrive_Callback, motor);
+    if (registered)
+    {
+        *motor = {};
+        motor->id = id;
+        motor->hfdcan = hfdcan;
+    }
+    SYS_Exit_Critical(primask);
+    return registered;
 }
 
 /**
@@ -83,14 +92,19 @@ static float QD4310_Clamp(float value, float min, float max) {
  * @note   电流、速度、角度和低速命令更新周期槽, 其余动作命令进入插入队列
  */
 bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
-    Struct_CAN_Tx_Msg message = {0};
+    if (motor == nullptr || motor->id > 7)
+    {
+        return false;
+    }
+    Struct_CAN_Tx_Msg message{};
 
     message.hfdcan = motor->hfdcan;
     message.id = motor->id + 0x400;
     message.len = 3;
     message.data[0] = (uint8_t)cmd;
-    message.data[1] = (uint8_t)(value & 0xFF);
-    message.data[2] = (uint8_t)((value >> 8) & 0xFF);
+    const uint16_t bits = static_cast<uint16_t>(value);
+    message.data[1] = static_cast<uint8_t>(bits);
+    message.data[2] = static_cast<uint8_t>(bits >> 8);
 
     if (cmd == QD4310_CMD_CURRENT ||
         cmd == QD4310_CMD_SPEED ||
@@ -113,7 +127,16 @@ bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
  *         - [4-5]: 转速原始值 (int16_t, little-endian), 缩放因子 1000rpm / INT16_MAX
  *         - [6-7]: 角度原始值 (uint16_t, little-endian), 缩放因子 2π / UINT16_MAX
  */
-void QD4310_Update(QD4310_t *motor, const uint8_t feedback[8]) {
+void QD4310_Update(QD4310_t *motor, const uint8_t feedback[8])
+{
+    if (motor != nullptr && feedback != nullptr)
+    {
+        QD4310_DecodeFeedback(motor, feedback);
+    }
+}
+
+static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8])
+{
     motor->enabled = feedback[0] & 0x01;
 
     int16_t current_raw = (int16_t)((feedback[3] << 8) | feedback[2]);
@@ -148,8 +171,14 @@ bool QD4310_Disable(QD4310_t *motor) {
  * @param  angle 目标角度, 范围 [0, 2π] rad
  */
 bool QD4310_SetAngle(QD4310_t *motor, float angle) {
+    if (!isfinite(angle))
+    {
+        return false;
+    }
     angle = QD4310_Clamp(angle, 0.0f, QD4310_TWO_PI);
-    int16_t angle_value = (int16_t)(angle / QD4310_TWO_PI * UINT16_MAX);
+    const uint16_t angle_bits = static_cast<uint16_t>(angle / QD4310_TWO_PI * UINT16_MAX);
+    int16_t angle_value;
+    memcpy(&angle_value, &angle_bits, sizeof(angle_value));
     return QD4310_SendCommand(motor, QD4310_CMD_ANGLE, angle_value);
 }
 
@@ -159,6 +188,10 @@ bool QD4310_SetAngle(QD4310_t *motor, float angle) {
  * @param  step_angle 步进角度, 范围 [-2π, 2π] rad
  */
 bool QD4310_SetStepAngle(QD4310_t *motor, float step_angle) {
+    if (!isfinite(step_angle))
+    {
+        return false;
+    }
     step_angle = QD4310_Clamp(step_angle, QD4310_MIN_STEPANGLE, QD4310_MAX_STEPANGLE);
     int16_t step_angle_value = (int16_t)(step_angle / QD4310_MAX_STEPANGLE * INT16_MAX);
     return QD4310_SendCommand(motor, QD4310_CMD_STEP_ANGLE, step_angle_value);
@@ -170,6 +203,10 @@ bool QD4310_SetStepAngle(QD4310_t *motor, float step_angle) {
  * @param  speed 目标转速, 范围 [-1000, 1000] rpm
  */
 bool QD4310_SetSpeed(QD4310_t *motor, float speed) {
+    if (!isfinite(speed))
+    {
+        return false;
+    }
     speed = QD4310_Clamp(speed, QD4310_MIN_SPEED, QD4310_MAX_SPEED);
     int16_t speed_value = (int16_t)(speed / QD4310_MAX_SPEED * INT16_MAX);
     return QD4310_SendCommand(motor, QD4310_CMD_SPEED, speed_value);
@@ -181,6 +218,10 @@ bool QD4310_SetSpeed(QD4310_t *motor, float speed) {
  * @param  speed 目标转速, 范围 [-1000, 1000] rpm
  */
 bool QD4310_SetLowSpeed(QD4310_t *motor, float speed) {
+    if (!isfinite(speed))
+    {
+        return false;
+    }
     speed = QD4310_Clamp(speed, QD4310_MIN_SPEED, QD4310_MAX_SPEED);
     int16_t speed_value = (int16_t)(speed / QD4310_MAX_SPEED * INT16_MAX);
     return QD4310_SendCommand(motor, QD4310_CMD_LOW_SPEED, speed_value);
@@ -192,6 +233,10 @@ bool QD4310_SetLowSpeed(QD4310_t *motor, float speed) {
  * @param  current 目标电流, 范围 [-10, 10] A
  */
 bool QD4310_SetCurrent(QD4310_t *motor, float current) {
+    if (!isfinite(current))
+    {
+        return false;
+    }
     current = QD4310_Clamp(current, QD4310_MIN_CURRENT, QD4310_MAX_CURRENT);
     int16_t current_value = (int16_t)(current / QD4310_MAX_CURRENT * INT16_MAX);
     return QD4310_SendCommand(motor, QD4310_CMD_CURRENT, current_value);

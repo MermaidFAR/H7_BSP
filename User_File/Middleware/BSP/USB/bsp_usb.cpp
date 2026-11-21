@@ -8,6 +8,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_usb.h"
+#include "sys_critical.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -15,7 +16,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-Struct_USB_Manage_Object USB0_Manage_Object = {nullptr};
+__attribute__((section(".dma_buffer"), aligned(32)))
+Struct_USB_Manage_Object USB0_Manage_Object;
+
+static bool USB_Tx_Submitting;
 
 extern volatile bool init_finished;
 extern USBD_HandleTypeDef hUsbDeviceHS;
@@ -33,6 +37,7 @@ extern uint8_t UserRxBufferHS[APP_RX_DATA_SIZE];
 void USB_Init(USB_Callback Callback_Function)
 {
     USB0_Manage_Object.Callback_Function = Callback_Function;
+    USB0_Manage_Object.Rx_Timestamp = 0;
     USB0_Manage_Object.Rx_Buffer_Active = USB0_Manage_Object.Rx_Buffer_0;
     USB0_Manage_Object.Rx_Buffer_Ready = USB0_Manage_Object.Rx_Buffer_1;
 
@@ -61,27 +66,27 @@ uint8_t USB_Transmit_Data(uint8_t *Data, uint16_t Length)
         return USBD_FAIL;
     }
 
-    // 同时保护类句柄寿命、空闲检查和缓冲复制，避免 USB 断连中断或并发发送。
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    __DMB();
-    USBD_CDC_HandleTypeDef *hcdc =
-        (USBD_CDC_HandleTypeDef *)hUsbDeviceHS.pClassData;
-    uint8_t result = USBD_FAIL;
-    if (hcdc != nullptr)
+    uint32_t primask = SYS_Enter_Critical();
+    const auto *hcdc = static_cast<const USBD_CDC_HandleTypeDef *>(hUsbDeviceHS.pClassData);
+    if (hcdc == nullptr || hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED)
     {
-        if (hcdc->TxState != 0)
-        {
-            result = USBD_BUSY;
-        }
-        else
-        {
-            memcpy(USB0_Manage_Object.Tx_Buffer, Data, Length);
-            result = CDC_Transmit_HS(USB0_Manage_Object.Tx_Buffer, Length);
-        }
+        SYS_Exit_Critical(primask);
+        return USBD_FAIL;
     }
-    __DMB();
-    __set_PRIMASK(primask);
+    if (USB_Tx_Submitting || hcdc->TxState != 0)
+    {
+        SYS_Exit_Critical(primask);
+        return USBD_BUSY;
+    }
+    USB_Tx_Submitting = true;
+    SYS_Exit_Critical(primask);
+
+    memcpy(USB0_Manage_Object.Tx_Buffer, Data, Length);
+    const uint8_t result = CDC_Transmit_HS(USB0_Manage_Object.Tx_Buffer, Length);
+
+    primask = SYS_Enter_Critical();
+    USB_Tx_Submitting = false;
+    SYS_Exit_Critical(primask);
     return result;
 }
 

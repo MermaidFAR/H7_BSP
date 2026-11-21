@@ -281,12 +281,30 @@ uint8_t CDC_Transmit_HS(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 12 */
-  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceHS.pClassData;
-  if (hcdc->TxState != 0){
-    return USBD_BUSY;
+  /* USB reset/disconnect owns pClassData. Only mask the USB IRQ while
+     rechecking the class and committing the transfer to the endpoint. */
+  const uint32_t usb_irq_enabled = NVIC_GetEnableIRQ(OTG_HS_IRQn);
+  NVIC_DisableIRQ(OTG_HS_IRQn);
+
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef *)hUsbDeviceHS.pClassData;
+  if (hcdc == NULL || hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED)
+  {
+    result = USBD_FAIL;
   }
-  USBD_CDC_SetTxBuffer(&hUsbDeviceHS, Buf, Len);
-  result = USBD_CDC_TransmitPacket(&hUsbDeviceHS);
+  else if (hcdc->TxState != 0)
+  {
+    result = USBD_BUSY;
+  }
+  else
+  {
+    USBD_CDC_SetTxBuffer(&hUsbDeviceHS, Buf, Len);
+    result = USBD_CDC_TransmitPacket(&hUsbDeviceHS);
+  }
+
+  if (usb_irq_enabled != 0U)
+  {
+    NVIC_EnableIRQ(OTG_HS_IRQn);
+  }
   /* USER CODE END 12 */
   return result;
 }

@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_bmi088_accel_register.h"
+#include "sys_critical.h"
 #include "bsp_power.h"
 #include "alg_pid.h"
 #include "bsp_spi.h"
@@ -179,11 +180,11 @@ protected:
 
     // 内部函数
 
-    void Read_Single_Register(const uint8_t &Register_Address) const;
+    uint8_t Read_Single_Register(const uint8_t &Register_Address) const;
 
-    void Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const;
+    uint8_t Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const;
 
-    void Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
+    uint8_t Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
 
     void Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const;
 };
@@ -223,13 +224,9 @@ inline bool Class_BMI088_Accel::Get_Valid_Flag() const
  */
 inline Class_Matrix_f32<3, 1> Class_BMI088_Accel::Get_Raw_Accel() const
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const Class_Matrix_f32<3, 1> accel = Vector_Raw_Accel;
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return accel;
 }
 

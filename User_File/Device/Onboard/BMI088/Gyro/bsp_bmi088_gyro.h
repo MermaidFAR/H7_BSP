@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_bmi088_gyro_register.h"
+#include "sys_critical.h"
 #include "bsp_spi.h"
 #include "alg_matrix.h"
 #include "stm32h7xx_hal.h"
@@ -212,11 +213,11 @@ protected:
 
     // 内部函数
 
-    void Read_Single_Register(const uint8_t &Register_Address) const;
+    uint8_t Read_Single_Register(const uint8_t &Register_Address) const;
 
     void Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const;
 
-    void Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
+    uint8_t Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
 
     void Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const;
 
@@ -248,13 +249,9 @@ inline bool Class_BMI088_Gyro::Get_Valid_Flag() const
  */
 inline Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Get_Raw_Gyro() const
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const Class_Matrix_f32<3, 1> gyro = Vector_Raw_Gyro;
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return gyro;
 }
 
@@ -321,13 +318,9 @@ inline float Class_BMI088_Gyro::Get_FIFO_Sample_Period_Us() const
 
 inline uint64_t Class_BMI088_Gyro::Get_FIFO_Last_Interrupt_Timestamp_Us() const
 {
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const uint64_t timestamp_us = FIFO_Last_Interrupt_Timestamp_Us;
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return timestamp_us;
 }
 

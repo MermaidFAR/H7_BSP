@@ -16,6 +16,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_spi.h"
+#include "sys_critical.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -131,27 +132,17 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
 
 static bool SPI_Try_Acquire_Transaction(Struct_SPI_Manage_Object *manage_object)
 {
-    if (manage_object == nullptr)
-    {
-        return false;
-    }
-
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    const uint32_t primask = SYS_Enter_Critical();
     const bool acquired = !manage_object->Transaction_Active;
     if (acquired)
     {
         manage_object->Transaction_Active = true;
-        __DMB();
     }
     else
     {
         manage_object->Transaction_Busy_Count++;
     }
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
     return acquired;
 }
 
@@ -213,7 +204,7 @@ void SPI_Init(SPI_HandleTypeDef *hspi, SPI_Callback Callback_Function)
  * @return uint8_t 执行状态
  */
 uint8_t SPI_Transmit_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
-                          GPIO_PinState Activate_Level, const uint8_t *Tx_Data, uint16_t Tx_Length)
+                          GPIO_PinState Activate_Level, const uint8_t *Tx_Data, uint16_t Tx_Length, bool Blocking)
 {
     Struct_SPI_Manage_Object *manage_object = SPI_Get_Manage_Object(hspi);
     if (manage_object == nullptr || Tx_Data == nullptr || Tx_Length == 0 || Tx_Length > SPI_BUFFER_SIZE)
@@ -237,7 +228,7 @@ uint8_t SPI_Transmit_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, uint16_t
         HAL_GPIO_WritePin(GPIOx, GPIO_Pin, Activate_Level);
     }
 
-    if (hspi->Instance == SPI6)
+    if (Blocking || hspi->Instance == SPI6)
     {
         const HAL_StatusTypeDef status = HAL_SPI_Transmit(hspi, manage_object->Tx_Buffer, Tx_Length, 1);
         if (status != HAL_OK)
@@ -275,7 +266,7 @@ uint8_t SPI_Transmit_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, uint16_t
  */
 uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
                                   GPIO_PinState Activate_Level, const uint8_t *Tx_Data,
-                                  uint16_t Tx_Length, uint16_t Rx_Length)
+                                  uint16_t Tx_Length, uint16_t Rx_Length, bool Blocking)
 {
     Struct_SPI_Manage_Object *manage_object = SPI_Get_Manage_Object(hspi);
     const uint32_t transfer_length = static_cast<uint32_t>(Tx_Length) + Rx_Length;
@@ -303,7 +294,7 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
         HAL_GPIO_WritePin(GPIOx, GPIO_Pin, Activate_Level);
     }
 
-    if (hspi->Instance == SPI6)
+    if (Blocking || hspi->Instance == SPI6)
     {
         const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(
             hspi, manage_object->Tx_Buffer, manage_object->Rx_Buffer,

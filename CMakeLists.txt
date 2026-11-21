@@ -191,6 +191,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/SMC
         User_File/Middleware/BSP/ADC
         User_File/Middleware/BSP/SPI
+        User_File/System
         User_File/System/callback
         User_File/System/Timestamp
         User_File/System/IMU

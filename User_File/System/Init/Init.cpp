@@ -36,18 +36,13 @@ extern "C" void System_Init(void)
     SEGGER_SYSVIEW_Conf();
     // SEGGER_SYSVIEW_Stop();
     SYS_Timestamp.Init(&htim5);
-    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
-  
 
     UART_Init(&huart1, nullptr);
     UART_Init(&huart2, nullptr);
     UART_Init(&huart3, nullptr);
-    UART_Init(&huart4, nullptr);
     UART_Init(&huart5, nullptr);
     UART_Init(&huart6, nullptr);
     UART_Init(&huart7, nullptr);
-    UART_Init(&huart8, nullptr);
-    UART_Init(&huart9, nullptr);
     UART_Init(&huart10, nullptr);
 
     // 陀螺仪的SPI

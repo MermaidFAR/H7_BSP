@@ -181,7 +181,7 @@ void HAL_OSPI_MspInit(OSPI_HandleTypeDef* ospiHandle)
     __HAL_LINKDMA(ospiHandle,hmdma,hmdma_octospi2_fifo_th);
 
     /* OCTOSPI2 interrupt Init */
-    HAL_NVIC_SetPriority(OCTOSPI2_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(OCTOSPI2_IRQn, 10, 0);
     HAL_NVIC_EnableIRQ(OCTOSPI2_IRQn);
   /* USER CODE BEGIN OCTOSPI2_MspInit 1 */
 

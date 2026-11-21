@@ -9,6 +9,7 @@
 
 #include "dmmotor.h"
 #include "alg_basic.h"
+#include "sys_critical.h"
 #include "sys_timestamp.h"
 
 #include <string.h>
@@ -49,8 +50,7 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
                                      void *context)
 {
     Class_DMMotor *motor = (Class_DMMotor *)context;
-    if (motor == nullptr || data == nullptr || len < 8U ||
-        motor->hfdcan != callback_hfdcan || motor->master_id != id ||
+    if (len < 8U || motor->hfdcan != callback_hfdcan || motor->master_id != id ||
         (data[0] & 0x0FU) != motor->can_id)
     {
         return;
@@ -63,7 +63,7 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
     }
 
     /** 参数应答与运动反馈共用接收入口，先识别 0x55 写入操作和 0x0A 模式参数。 */
-    if (motor->requested_mode != 0 && len == 8 &&
+    if (motor->requested_mode != 0 &&
         data[0] == motor->can_id && data[1] == 0 &&
         data[2] == 0x55 && data[3] == 0x0A)
     {
@@ -74,8 +74,14 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
             /** 只有未超时且值匹配的应答才更新本地模式；合法的旧应答不作为运动反馈解码。 */
             if (motor->mode_pending && returned_mode == motor->requested_mode)
             {
-                motor->mode = (Enum_DMMotor_Mode)returned_mode;
-                __DMB();
+                if (motor->mode_submission == Mode_Submission::New_Request)
+                {
+                    motor->mode_submission = Mode_Submission::Confirmed;
+                }
+                else
+                {
+                    motor->mode = static_cast<Enum_DMMotor_Mode>(returned_mode);
+                }
                 motor->mode_pending = false;
             }
         }
@@ -166,6 +172,12 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
         return false;
     }
 
+    const uint32_t primask = SYS_Enter_Critical();
+    if (!BSP_CAN_RegisterCallback(motor_master_id, motor_hfdcan, FeedbackCallback, this))
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
     hfdcan = motor_hfdcan;
     can_id = motor_can_id;
     master_id = motor_master_id;
@@ -174,7 +186,8 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
     position_max = motor_position_max;
     velocity_max = motor_velocity_max;
     torque_max = motor_torque_max;
-    return BSP_CAN_RegisterCallback(master_id, hfdcan, FeedbackCallback, this);
+    SYS_Exit_Critical(primask);
+    return true;
 }
 
 /** @brief 按本地记录的模式选择管理命令的发送 ID；切换待应答期间仍使用原模式。 */
@@ -219,10 +232,12 @@ bool Class_DMMotor::SetZeroPosition()
     {
         return false;
     }
+    const uint32_t primask = SYS_Enter_Critical();
     feedback_initialized = false;
     last_position = 0.0f;
     total_round = 0;
     feedback.total_position = 0.0f;
+    SYS_Exit_Critical(primask);
     return true;
 }
 
@@ -248,29 +263,48 @@ bool Class_DMMotor::SetMode(Enum_DMMotor_Mode new_mode)
     message.data[3] = 0x0AU;
     /** 参数值占后 4 字节，沿用 STM32 的小端内存布局。 */
     memcpy(&message.data[4], &mode_value, sizeof(mode_value));
-    /** 将入队与待应答状态更新放在同一临界区，防止接收中断看到尚未登记的请求。 */
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
+    // 先登记，再入队。发送任务可能在 CAN_Tx_Submit 返回前就发出命令。
+    uint32_t primask = SYS_Enter_Critical();
+    if (mode_submission != Mode_Submission::Idle)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
     const uint64_t now_us = SYS_Timestamp.Get_Now_Microsecond();
     if (mode_pending && now_us - mode_request_timestamp_us >= DM_MODE_TIMEOUT_US)
     {
         mode_pending = false;
     }
-    const bool submitted = (!mode_pending || requested_mode == mode_value) && CAN_Tx_Submit(&message);
-    if (submitted)
+    if (mode_pending && requested_mode != mode_value)
     {
-        if (!mode_pending)
-        {
-            mode_request_timestamp_us = now_us;
-        }
+        SYS_Exit_Critical(primask);
+        return false;
+    }
+    const bool new_request = !mode_pending;
+    const uint32_t previous_request = requested_mode;
+    if (new_request)
+    {
+        mode_request_timestamp_us = now_us;
         requested_mode = mode_value;
         mode_pending = true;
     }
-    __DMB();
-    if (primask == 0)
+    mode_submission = new_request ? Mode_Submission::New_Request : Mode_Submission::Retry;
+    SYS_Exit_Critical(primask);
+
+    const bool submitted = CAN_Tx_Submit(&message);
+
+    primask = SYS_Enter_Critical();
+    if (!submitted && new_request)
     {
-        __enable_irq();
+        mode_pending = false;
+        requested_mode = previous_request;
     }
+    else if (mode_submission == Mode_Submission::Confirmed)
+    {
+        mode = new_mode;
+    }
+    mode_submission = Mode_Submission::Idle;
+    SYS_Exit_Critical(primask);
     return submitted;
 }
 

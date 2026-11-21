@@ -64,6 +64,8 @@ public:
     Struct_DMMotor_Feedback feedback;
 
 private:
+    enum class Mode_Submission : uint8_t { Idle, Retry, New_Request, Confirmed };
+
     static void FeedbackCallback(FDCAN_HandleTypeDef *hfdcan,
                                  uint32_t id,
                                  uint8_t *data,
@@ -79,6 +81,7 @@ private:
     volatile Enum_DMMotor_Mode mode = Enum_DMMotor_Mode::MIT;
     volatile uint32_t requested_mode = 0;
     volatile bool mode_pending = false;
+    volatile Mode_Submission mode_submission = Mode_Submission::Idle;
     volatile uint64_t mode_request_timestamp_us = 0;
     bool reverse = false;
     float position_max = 12.5f;

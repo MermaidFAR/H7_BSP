@@ -9,6 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "dji_motor.h"
+#include "sys_critical.h"
 #include "sys_timestamp.h"
 
 /* Private macros ------------------------------------------------------------*/
@@ -168,17 +169,14 @@ static int DJI_Motor_Find_Free_Registration(FDCAN_HandleTypeDef *hfdcan, uint32_
 /** @brief 保存中断屏蔽状态，保护任务与接收中断共享的时间戳和在线标志。 */
 static uint32_t DJI_Motor_Enter_Critical()
 {
-    uint32_t interrupt_state = __get_PRIMASK();
-    __disable_irq();
-    __DMB();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     return interrupt_state;
 }
 
 /** @brief 恢复进入前的中断状态，避免在原本关中断的上下文中误开中断。 */
 static void DJI_Motor_Exit_Critical(uint32_t interrupt_state)
 {
-    __DMB();
-    __set_PRIMASK(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
 }
 
 /** @brief 将配置中的 PID 参数统一传给现有算法接口。 */
@@ -393,12 +391,9 @@ void Class_DJIMotor::Set_Outer_Loop(Enum_DJIMotor_Loop loop)
 /** @brief 在临界区内读取 64 位时间戳，防止 32 位 MCU 读取一半时被接收中断更新。 */
 uint64_t Class_DJIMotor::Get_Last_Feedback_Timestamp_Us() const
 {
-    uint32_t interrupt_state = __get_PRIMASK();
-    __disable_irq();
-    __DMB();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     uint64_t timestamp_us = last_feedback_timestamp_us;
-    __DMB();
-    __set_PRIMASK(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
     return timestamp_us;
 }
 

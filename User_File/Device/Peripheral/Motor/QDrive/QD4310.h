@@ -93,7 +93,7 @@ bool QD4310_SetZeroAngle(QD4310_t *motor);
 
 bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value);
 
-void QD4310_Init(QD4310_t* motor, uint8_t id, FDCAN_HandleTypeDef* hfdcan);
+bool QD4310_Init(QD4310_t* motor, uint8_t id, FDCAN_HandleTypeDef* hfdcan);
 
 // 数学常数定义
 #define QD4310_PI (3.14159265358979323846f)

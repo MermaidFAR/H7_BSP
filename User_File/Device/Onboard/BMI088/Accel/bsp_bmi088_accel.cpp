@@ -12,6 +12,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_bmi088_accel.h"
+#include "sys_critical.h"
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -59,20 +60,14 @@ uint32_t Class_BMI088_Accel::Get_Temperature_Age_Us() const
 Struct_BMI088_Accel_Temperature_State Class_BMI088_Accel::Get_Temperature_State() const
 {
     Struct_BMI088_Accel_Temperature_State state = {};
-    const uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    __DMB();
+    const uint32_t primask = SYS_Enter_Critical();
     state.Now_Timestamp_Us = SYS_Timestamp.Get_Current_Timestamp();
     state.Last_Valid_Timestamp_Us = Temperature_Last_Valid_Timestamp;
     state.Temperature = Now_Temperature;
     state.Stale_Counter = BMI088_Temperature_Stale_Counter;
     state.Heater_PWM_Compare = Heater_PWM_Compare;
     const bool raw_valid = Temperature_Valid_Flag;
-    __DMB();
-    if (primask == 0U)
-    {
-        __enable_irq();
-    }
+    SYS_Exit_Critical(primask);
 
     if (raw_valid)
     {
@@ -123,62 +118,58 @@ bool Class_BMI088_Accel::Init(const bool &__Heater_Enable)
         __HAL_TIM_SET_COMPARE(htim, TIM_Channel, 0);
     }
 
-    uint8_t res;
-
-    // 检测通信是否正常
-    Register.ACC_CHIP_ID_RO = 0x00;
-    for (uint8_t attempt = 0; attempt < max_attempts && Register.ACC_CHIP_ID_RO != 0x1e; attempt++)
+    const uint8_t chip_id_address = offsetof(Struct_BMI088_Accel_Register, ACC_CHIP_ID_RO);
+    const auto check_chip_id = [&]()
     {
-        Read_Single_Register(offsetof(Struct_BMI088_Accel_Register, ACC_CHIP_ID_RO));
-        Namespace_SYS_Timestamp::Delay_Millisecond(100);
-    }
-    if (Register.ACC_CHIP_ID_RO != 0x1e)
-    {
-        return false;
-    }
-
-    // 软重启
-    res = 0xb6;
-    Write_Single_Register(offsetof(Struct_BMI088_Accel_Register, ACC_SOFTRESET_WO), &res);
-    Namespace_SYS_Timestamp::Delay_Millisecond(100);
-
-    // 检测通信是否正常
-    Register.ACC_CHIP_ID_RO = 0x00;
-    for (uint8_t attempt = 0; attempt < max_attempts && Register.ACC_CHIP_ID_RO != 0x1e; attempt++)
-    {
-        Read_Single_Register(offsetof(Struct_BMI088_Accel_Register, ACC_CHIP_ID_RO));
-        Namespace_SYS_Timestamp::Delay_Millisecond(100);
-    }
-    if (Register.ACC_CHIP_ID_RO != 0x1e)
-    {
-        return false;
-    }
-
-    for (uint8_t i = 0; i < BMI088_ACCEL_INIT_INSTRUCTION_NUM; i++)
-    {
-        // 使用与目标不同的哨兵值，值为 0 的配置也必须实际写入并回读。
-        uint8_t *readback = ((uint8_t *) (&Register)) + BMI088_ACCEL_REGISTER_CONFIG[i][0];
-        *readback = ~BMI088_ACCEL_REGISTER_CONFIG[i][1];
-        for (uint8_t attempt = 0; attempt < max_attempts && *readback != BMI088_ACCEL_REGISTER_CONFIG[i][1]; attempt++)
+        for (uint8_t attempt = 0; attempt < max_attempts; attempt++)
         {
-            // 写入寄存器
-            Write_Single_Register(BMI088_ACCEL_REGISTER_CONFIG[i][0], &BMI088_ACCEL_REGISTER_CONFIG[i][1]);
-            Namespace_SYS_Timestamp::Delay_Millisecond(100);
-
-            // 读取寄存器
-            Read_Single_Register(BMI088_ACCEL_REGISTER_CONFIG[i][0]);
-            Namespace_SYS_Timestamp::Delay_Millisecond(100);
+            if (Read_Single_Register(chip_id_address) == HAL_OK && Register.ACC_CHIP_ID_RO == 0x1e)
+            {
+                return true;
+            }
         }
-        if (*readback != BMI088_ACCEL_REGISTER_CONFIG[i][1])
+        return false;
+    };
+
+    // BMI088 手册 5.3.22 规定软复位后等待 1 ms。
+    const uint8_t reset = 0xb6;
+    if (!check_chip_id() ||
+        Write_Single_Register(offsetof(Struct_BMI088_Accel_Register, ACC_SOFTRESET_WO), &reset) != HAL_OK)
+    {
+        return false;
+    }
+    Namespace_SYS_Timestamp::Delay_Millisecond(1);
+    if (!check_chip_id())
+    {
+        return false;
+    }
+
+    for (const auto &config : BMI088_ACCEL_REGISTER_CONFIG)
+    {
+        const uint8_t address = config[0];
+        const uint8_t value = config[1];
+        // 挂起及上电切换期间需要 1 ms 同步，进入正常模式后只需 2 us。
+        const bool power_config = address == offsetof(Struct_BMI088_Accel_Register, ACC_PWR_CTRL_RW) ||
+                                  address == offsetof(Struct_BMI088_Accel_Register, ACC_PWR_CONF_RW);
+        const uint32_t write_delay_us = power_config ? 1000U : 2U;
+        bool configured = false;
+        for (uint8_t attempt = 0; attempt < max_attempts && !configured; attempt++)
+        {
+            if (Write_Single_Register(address, &value) == HAL_OK)
+            {
+                Namespace_SYS_Timestamp::Delay_Microsecond(write_delay_us);
+                configured = Read_Single_Register(address) == HAL_OK &&
+                             reinterpret_cast<const uint8_t *>(&Register)[address] == value;
+            }
+        }
+        if (!configured)
         {
             return false;
         }
     }
 
     // 预读取一次加速度计数据
-    Read_Multi_Register(offsetof(Struct_BMI088_Accel_Register, ACC_X_RO), 6);
-    Namespace_SYS_Timestamp::Delay_Millisecond(100);
-    return true;
+    return Read_Multi_Register(offsetof(Struct_BMI088_Accel_Register, ACC_X_RO), 6) == HAL_OK;
 }
 
 /**
@@ -356,36 +347,36 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
 }
 
 /**
- * @brief 读取单个寄存器, 数据不会立即返回, 而是在SPI接收回调函数中处理
+ * @brief 阻塞读取单个寄存器，由 SPI 接收回调填充寄存器缓存
  *
  * @param Register_Address 寄存器地址
  */
-void Class_BMI088_Accel::Read_Single_Register(const uint8_t &Register_Address) const
+uint8_t Class_BMI088_Accel::Read_Single_Register(const uint8_t &Register_Address) const
 {
     uint8_t tx_data[2] = {};
     tx_data[0] = static_cast<uint8_t>(Register_Address | BMI088_ACCEL_READ_MASK);
 
-    SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                              Activate_Pin_State, tx_data, sizeof(tx_data), 1);
+    return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
+                              Activate_Pin_State, tx_data, sizeof(tx_data), 1, true);
 }
 
-/** * @brief 读取多个寄存器, 数据不会立即返回, 而是在SPI接收回调函数中处理
+/** * @brief 阻塞读取多个寄存器，由 SPI 接收回调填充寄存器缓存
  *
  * @param Register_Address 寄存器地址
  * @param Rx_Length 接收数据长度
  */
-void Class_BMI088_Accel::Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const
+uint8_t Class_BMI088_Accel::Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const
 {
     constexpr uint32_t tx_length = 2U;
     if (Rx_Length > (SPI_BUFFER_SIZE - tx_length))
     {
-        return;
+        return HAL_ERROR;
     }
     uint8_t tx_data[2] = {};
     tx_data[0] = static_cast<uint8_t>(Register_Address | BMI088_ACCEL_READ_MASK);
 
-    SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                              Activate_Pin_State, tx_data, sizeof(tx_data), static_cast<uint16_t>(Rx_Length));
+    return SPI_Transmit_Receive_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
+                              Activate_Pin_State, tx_data, sizeof(tx_data), static_cast<uint16_t>(Rx_Length), true);
 }
 
 /**
@@ -394,12 +385,12 @@ void Class_BMI088_Accel::Read_Multi_Register(const uint8_t &Register_Address, co
  * @param Register_Address 寄存器地址
  * @param Tx_Data_Buffer 发送数据缓冲区
  */
-void Class_BMI088_Accel::Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const
+uint8_t Class_BMI088_Accel::Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const
 {
     const uint8_t tx_data[2] = {Register_Address, Tx_Data_Buffer[0]};
 
-    SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
-                      Activate_Pin_State, tx_data, sizeof(tx_data));
+    return SPI_Transmit_Data(SPI_Manage_Object->SPI_Handler, CS_GPIO_Port, CS_Pin,
+                      Activate_Pin_State, tx_data, sizeof(tx_data), true);
 }
 
 /**

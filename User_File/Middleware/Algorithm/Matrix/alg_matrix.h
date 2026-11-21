@@ -165,7 +165,7 @@ public:
     }
 
     template<int tmp>
-    inline Class_Matrix_f32<row, tmp> operator*(const Class_Matrix_f32<column, tmp> &Matrix)
+    inline Class_Matrix_f32<row, tmp> operator*(const Class_Matrix_f32<column, tmp> &Matrix) const
     {
         Class_Matrix_f32<row, tmp> result;
         for (int i = 0; i < row; i++)
@@ -186,16 +186,21 @@ public:
 
     inline Class_Matrix_f32<row, column> operator/(const float &Value) const
     {
-        if (fabs(Value) <= Matrix_Compare_Epsilon)
-        {
-            return (*this);
-        }
-        Class_Matrix_f32<row, column> result;
+        Class_Matrix_f32<row, column> result = *this;
+        result /= Value;
+        return result;
+    }
+
+    inline bool Is_Finite() const
+    {
         for (int i = 0; i < row * column; i++)
         {
-            result.Data[i] = Data[i] / Value;
+            if (!isfinite(Data[i]))
+            {
+                return false;
+            }
         }
-        return (result);
+        return true;
     }
 
     inline Class_Matrix_f32<row, column> &operator+=(const float &Value)
@@ -245,13 +250,11 @@ public:
 
     inline Class_Matrix_f32<row, column>& operator/=(const float& Value)
     {
-        if (fabs(Value) <= Matrix_Compare_Epsilon)
-        {
-            return (*this);
-        }
+        // 除零用 NaN 显式传播；非零小数仍按实际值参与运算。
+        const float divisor = Value == 0.0f ? NAN : Value;
         for (int i = 0; i < row * column; i++)
         {
-            Data[i] /= Value;
+            Data[i] /= divisor;
         }
         return (*this);
     }
