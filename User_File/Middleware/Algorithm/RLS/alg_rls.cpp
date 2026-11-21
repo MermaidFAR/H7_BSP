@@ -31,7 +31,7 @@ bool Class_RLS::Init(uint8_t dimension, float forgetting_factor, float initial_c
     Initial_Covariance = initial_covariance;
     for (uint8_t i = 0; i < RLS_MAX_DIMENSION; i++)
     {
-        Initial_Parameters[i] = i < dimension && initial_parameters != NULL ? initial_parameters[i] : 0.0;
+        Initial_Parameters[i] = i < dimension && initial_parameters != NULL ? initial_parameters[i] : 0.0f;
     }
     Initialized_Flag = true;
     Reset();
@@ -60,12 +60,12 @@ bool Class_RLS::Update(const float *features, float measurement)
     double denominator = Forgetting_Factor;
     for (uint8_t i = 0; i < Dimension; i++)
     {
-        prediction += features[i] * Parameters[i];
+        prediction += (double)features[i] * Parameters[i];
         for (uint8_t j = 0; j < Dimension; j++)
         {
-            covariance_feature[i] += Covariance[i][j] * features[j];
+            covariance_feature[i] += Covariance[i][j] * (double)features[j];
         }
-        denominator += features[i] * covariance_feature[i];
+        denominator += (double)features[i] * covariance_feature[i];
     }
     if (!isfinite(denominator) || denominator <= 0.0)
     {
@@ -91,7 +91,7 @@ bool Class_RLS::Update(const float *features, float measurement)
     // 候选状态完整校验后再提交；参数必须能由 float 接口返回。
     for (uint8_t i = 0; i < Dimension; i++)
     {
-        if (!(fabs(new_parameters[i]) <= FLT_MAX) || new_covariance[i][i] <= 0.0)
+        if (!(fabs(new_parameters[i]) <= (double)FLT_MAX) || new_covariance[i][i] <= 0.0)
         {
             return false;
         }

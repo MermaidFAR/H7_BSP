@@ -28,6 +28,43 @@ Class_EricTool_UART EricTool_UART;
 
 /* Function prototypes -------------------------------------------------------*/
 
+static bool EricTool_Copy_Channels(const volatile float **data, uint8_t capacity,
+                                   const volatile float *const *channels, uint8_t count)
+{
+    if (count > capacity || (count != 0U && channels == nullptr))
+    {
+        return false;
+    }
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        if (channels[i] == nullptr)
+        {
+            return false;
+        }
+    }
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        data[i] = channels[i];
+    }
+    return true;
+}
+
+void Class_EricTool_UART::Set_Data(const volatile float *const *Channels, uint8_t Count)
+{
+    if (EricTool_Copy_Channels(Data, sizeof(Data) / sizeof(Data[0]), Channels, Count))
+    {
+        Data_Number = Count;
+    }
+}
+
+void Class_EricTool_USB::Set_Data(const volatile float *const *Channels, uint8_t Count)
+{
+    if (EricTool_Copy_Channels(Data, sizeof(Data) / sizeof(Data[0]), Channels, Count))
+    {
+        Data_Number = Count;
+    }
+}
+
 /**
  * @brief 解析一条 variable:value# 指令；失败输出 index=-1、value=0。
  * @note 只读取 Length 范围，变量名最多 99 字节；支持负数、小数，不支持指数形式。
@@ -175,7 +212,8 @@ void Class_EricTool_UART::Output()
 
     for (int i = 0; i < Data_Number; i++)
     {
-        memcpy(tmp_buffer + i * sizeof(uint32_t), Data[i], sizeof(uint32_t));
+        const float value = *Data[i];
+        memcpy(tmp_buffer + i * sizeof(value), &value, sizeof(value));
     }
 
     memcpy(tmp_buffer + Data_Number * sizeof(uint32_t), &Frame_Tail, sizeof(uint32_t));

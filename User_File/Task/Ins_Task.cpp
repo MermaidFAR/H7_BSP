@@ -1,3 +1,4 @@
+/** @file Ins_Task.cpp @brief 预留惯性导航任务入口 */
 #include "bsp_bmi088.h"
 #include "user_task.h"
 

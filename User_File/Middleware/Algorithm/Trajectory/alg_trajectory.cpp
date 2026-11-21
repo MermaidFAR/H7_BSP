@@ -45,12 +45,12 @@ bool Class_Trajectory::Reset(float __Position, float __Velocity, float __Acceler
 {
     if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(__Position) ||
         Basic_Math_Is_Invalid_Float(__Velocity) || Basic_Math_Is_Invalid_Float(__Acceleration) ||
-        fabs(__Velocity) > Velocity_Max || fabs(__Acceleration) > Acceleration_Max)
+        (double)fabsf(__Velocity) > Velocity_Max || (double)fabsf(__Acceleration) > Acceleration_Max)
     {
         return (false);
     }
     double acceleration = __Acceleration;
-    double peak_velocity = __Velocity + acceleration * fabs(acceleration) / (2.0 * Jerk_Max);
+    double peak_velocity = (double)__Velocity + acceleration * fabs(acceleration) / (2.0 * Jerk_Max);
     if (fabs(peak_velocity) > Velocity_Max)
     {
         return (false);
@@ -92,7 +92,7 @@ bool Class_Trajectory::Set_Target_Position(float __Position)
     {
         return (false);
     }
-    if (Target_Type != TARGET_POSITION || Target != __Position || Status == TRAJECTORY_ERROR)
+    if (Target_Type != TARGET_POSITION || Target != (double)__Position || Status == TRAJECTORY_ERROR)
     {
         Target_Type = TARGET_POSITION;
         Target = __Position;
@@ -105,11 +105,11 @@ bool Class_Trajectory::Set_Target_Position(float __Position)
 bool Class_Trajectory::Set_Target_Velocity(float __Velocity)
 {
     if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(__Velocity) ||
-        fabs(__Velocity) > Velocity_Max)
+        (double)fabsf(__Velocity) > Velocity_Max)
     {
         return (false);
     }
-    if (Target_Type != TARGET_VELOCITY || Target != __Velocity || Status == TRAJECTORY_ERROR)
+    if (Target_Type != TARGET_VELOCITY || Target != (double)__Velocity || Status == TRAJECTORY_ERROR)
     {
         Target_Type = TARGET_VELOCITY;
         Target = __Velocity;

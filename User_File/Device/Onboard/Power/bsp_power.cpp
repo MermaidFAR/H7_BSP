@@ -41,4 +41,35 @@ void Class_Power::Init(const bool &__DC24_0_Status, const bool &__DC24_1_Status,
     HAL_GPIO_WritePin(DC5__OUTPUT_GPIO_Port, DC5__OUTPUT_Pin, __DC5_Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
+bool Class_Power::Get_Power_Voltage(float *voltage, uint64_t *sample_timestamp_us) const
+{
+    if (voltage == nullptr)
+    {
+        return false;
+    }
+
+    uint16_t adc_value = 0U;
+    uint64_t timestamp_us = 0U;
+    const uint32_t primask = SYS_Enter_Critical();
+    const Struct_ADC_Manage_Object *adc = ADC_Manage_Object;
+    const bool valid = adc != nullptr && adc->ADC_Handler != nullptr && adc->Sample_Valid &&
+                       HAL_ADC_GetError(adc->ADC_Handler) == HAL_ADC_ERROR_NONE &&
+                       __HAL_ADC_GET_FLAG(adc->ADC_Handler, ADC_FLAG_OVR) == RESET &&
+                       SYS_Timestamp_Get_Microsecond() - adc->Sample_Timestamp <= 100000U;
+    if (valid)
+    {
+        adc_value = adc->ADC_Data[ADC_Buffer_Offset];
+        timestamp_us = adc->Sample_Timestamp;
+    }
+    SYS_Exit_Critical(primask);
+
+    // 16 位采样，参考电压 3.3 V，分压比例 11:1。
+    *voltage = ((float)adc_value / 65536.0f) * 3.3f * 11.0f;
+    if (sample_timestamp_us != nullptr)
+    {
+        *sample_timestamp_us = timestamp_us;
+    }
+    return valid;
+}
+
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

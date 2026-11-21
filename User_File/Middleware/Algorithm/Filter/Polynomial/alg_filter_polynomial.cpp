@@ -38,7 +38,7 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
     double projection_3 = (3.0 * n_squared - 7.0) / 20.0;
     double norm_3 = n * (n_squared - 1.0) * (n_squared - 4.0) *
                     (n_squared - 9.0) / 2800.0;
-    double sampling_frequency = 1.0 / __D_T;
+    double sampling_frequency = 1.0 / (double)__D_T;
 
     for (uint32_t i = 0; i < __Window_Size; i++)
     {
@@ -71,7 +71,7 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
         for (uint32_t derivative = 0; derivative <= __Polynomial_Order; derivative++)
         {
             double scaled = value[derivative] * scale;
-            if (fabs(scaled) > FLT_MAX)
+            if (fabs(scaled) > (double)FLT_MAX)
             {
                 return (false);
             }

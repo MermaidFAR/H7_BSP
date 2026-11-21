@@ -26,7 +26,7 @@ CMSIS-RTOS V2**，使用 **GNU Arm + CMake + Ninja** 构建。
 
 | 类别 | 已提供的组件 | 源码入口 |
 | --- | --- | --- |
-| 通信与外设 | CAN / FDCAN、UART DMA + IDLE、SPI、USB CDC、OSPI、ADC | [BSP](User_File/Middleware/BSP) |
+| 通信与外设 | CAN / FDCAN、UART DMA + IDLE、SPI、USB CDC、OSPI、ADC | [BSP](User_File/BSP) |
 | 电机驱动 | DJI M2006 / M3508 / GM6020、达妙电机、QDrive QD4310 | [Motor](User_File/Device/Peripheral/Motor) |
 | 惯性传感 | BMI088 FIFO / SPI DMA 采集、温控、VQF 姿态与零偏估计 | [BMI088](User_File/Device/Onboard/BMI088)、[IMU](User_File/System/IMU) |
 | 板载设备 | W25Q64JV Flash、电源控制与采样、WS2812、蜂鸣器、按键 | [Onboard](User_File/Device/Onboard) |
@@ -97,14 +97,25 @@ OpenOCD 的探针配置位于 `User_Config/`，Ozone 工程为 `H7_BSP.jdebug`�
 
 - 使用 Ozone / GDB 观察电机反馈、算法状态、初始化结果与任务栈水位。
 - 使用 SystemView / RTT 观察任务调度、中断和运行时信息。
-- 使用 EricTool 通过 USB / UART 输出数据，`TransportTask` 提供周期输出示例。
+- 使用 EricTool 通过 USB / UART 输出数据，[Transport_Task.cpp](User_File/Task/Transport_Task.cpp) 提供周期输出示例。
+
+在 Ozone / GDB 展开 `SYS_Health` 可查看初始化错误、IMU、Flash、电源电压、整车状态及三类电机的在线统计。
+ABI 版本为 3。读取快照时核对 `ABI_Size`，并确认 `Sequence` 与 `Sequence_End` 相等且为偶数。
+未初始化的设备显示 `HEALTH_UNINIT`，初始化失败显示 `HEALTH_FAULT` 和 `HEALTH_REASON_INIT_FAILED`。
+IMU 和电机从未收到数据时标记 `HEALTH_REASON_NO_DATA`，收到数据后的反馈超时标记 `HEALTH_REASON_STALE`。
+调试时将 `SYS_Health_Buzzer_Mute` 置 1 可静音，置 0 恢复。两种 EricTool 均可通过
+`Set_Data(channels, count)` 接收浮点指针数组，例如将 `&SYS_Health.Power_Voltage_V` 加入通道。
+
+`Status_Task` 每 50 ms 更新判定。未初始化、等待首帧、离线、故障、初始化错误和欠压时，
+`Sys_Health_Is_Safe()` 返回 false。欠压默认阈值为 18 V，可通过 `SYS_HEALTH_MIN_POWER_V` 调整。
+`Control_Task` 提供应用接入零力矩或失能指令的位置。
 
 ## 框架结构
 
 ```mermaid
 graph TD
     App[Application / Task] --> Device[Device]
-    App --> Algorithm[Algorithm]
+    App --> Algorithm[Middleware / Algorithm]
     App --> System[System]
     Device --> BSP[BSP]
     System --> BSP
@@ -114,15 +125,23 @@ graph TD
 
 ```text
 User_File/
-├── Application/            应用组件与控制逻辑
-├── Task/                   CMSIS-RTOS V2 任务入口
+├── BSP/                    外设管理、收发与回调注册
 ├── Device/
 │   ├── Onboard/            板载传感器、Flash、电源与指示组件
 │   └── Peripheral/         电机及外接调试工具
 ├── Middleware/
-│   ├── BSP/                外设管理、收发与回调注册
 │   └── Algorithm/          控制、观测、滤波与数学组件
-└── System/                 初始化、回调、时间戳、状态与调试
+├── System/
+│   ├── Callback/           HAL 回调分发
+│   ├── Critical/           临界区原语
+│   ├── Debug/              调试与观测变量
+│   ├── Health/             健康状态与安全判定
+│   ├── IMU/                惯性传感配置
+│   ├── Init/               系统初始化
+│   ├── Storage/            存储布局
+│   └── Timestamp/          系统时间戳
+├── Task/                   CMSIS-RTOS V2 任务入口
+└── Application/            应用组件与控制逻辑
 Core/                       CubeMX 生成的启动、外设和 RTOS 配置
 Drivers/                    STM32 HAL / CMSIS
 Middlewares/                FreeRTOS、USB Device、CMSIS-DSP
@@ -207,7 +226,7 @@ CubeMX 用户修改放在 `USER CODE BEGIN/END` 区域，用户源码注册、�
 
 ## 文档入口
 
-- 电机反馈、配置与控制接口见 [DJI 电机驱动](User_File/Device/Peripheral/Motor/DJImotor/dji_motor.md) 和 [达妙电机驱动](User_File/Device/Peripheral/Motor/DMmotor/dmmotor.md)。
+- 电机反馈、配置与控制接口见 [DJI 电机驱动](User_File/Device/Peripheral/Motor/DJImotor/dji_motor.md) 和 [达妙电机驱动](User_File/Device/Peripheral/Motor/DMmotor/dm_motor.md)。
 - 框架现有模块的详细关系见 [模块全景图](Assets/Architecture/H7_BSP.svg) 和 [交互图](Assets/Architecture/H7_BSP.html)。
 - 版本变更见 [CHANGELOG](CHANGELOG.md)。
 

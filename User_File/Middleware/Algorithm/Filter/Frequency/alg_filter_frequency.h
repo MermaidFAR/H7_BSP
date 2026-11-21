@@ -186,7 +186,7 @@ bool Class_Filter_Frequency<Filter_Frequency_Order>::Init(const float &__Value_C
         }
         coefficient_max = fmaxf(coefficient_max, fabsf(coefficient));
         float reference = arm_cos_f32(((float)i - Filter_Frequency_Order / 2.0f) * omega_reference);
-        gain += (double)coefficient * reference * (i == Filter_Frequency_Order - i ? 1.0 : 2.0);
+        gain += (double)coefficient * (double)reference * (i == Filter_Frequency_Order - i ? 1.0 : 2.0);
     }
 
     float normalization = (float)gain;

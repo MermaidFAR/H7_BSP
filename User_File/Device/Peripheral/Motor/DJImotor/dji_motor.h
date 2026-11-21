@@ -144,7 +144,7 @@ public:
     bool Disable();
     void Set_Outer_Loop(Enum_DJIMotor_Loop loop);
     bool Set_Feedback_Source(Enum_DJIMotor_Loop loop, Enum_DJIMotor_Feedback source,
-                             const float *feedback = nullptr);
+                             const float *external_value = nullptr);
     uint64_t Get_Last_Feedback_Timestamp_Us() const;
     static bool Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot);
 

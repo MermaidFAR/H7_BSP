@@ -57,8 +57,6 @@ static bool DJI_Motor_Resolve_Protocol(Enum_DJIMotor_Type type,
                                        float *command_limit);
 static int DJI_Motor_Find_Group(FDCAN_HandleTypeDef *hfdcan, uint32_t tx_id);
 static int DJI_Motor_Find_Free_Registration(FDCAN_HandleTypeDef *hfdcan, uint32_t rx_id);
-static uint32_t DJI_Motor_Enter_Critical();
-static void DJI_Motor_Exit_Critical(uint32_t interrupt_state);
 
 /* Function prototypes -------------------------------------------------------*/
 
@@ -164,19 +162,6 @@ static int DJI_Motor_Find_Free_Registration(FDCAN_HandleTypeDef *hfdcan, uint32_
         }
     }
     return free_index;
-}
-
-/** @brief 保存中断屏蔽状态，保护任务与接收中断共享的时间戳和在线标志。 */
-static uint32_t DJI_Motor_Enter_Critical()
-{
-    uint32_t interrupt_state = SYS_Enter_Critical();
-    return interrupt_state;
-}
-
-/** @brief 恢复进入前的中断状态，避免在原本关中断的上下文中误开中断。 */
-static void DJI_Motor_Exit_Critical(uint32_t interrupt_state)
-{
-    SYS_Exit_Critical(interrupt_state);
 }
 
 /** @brief 将配置中的 PID 参数统一传给现有算法接口。 */
@@ -290,7 +275,7 @@ bool Class_DJIMotor::Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot)
     {
         return false;
     }
-    uint32_t interrupt_state = DJI_Motor_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     const Class_DJIMotor *motor = DJI_Motor_Registrations[index].motor;
     bool ready = motor != nullptr && motor->initialized;
     if (ready)
@@ -302,7 +287,7 @@ bool Class_DJIMotor::Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot)
         snapshot->feedback_received = motor->feedback_initialized;
         snapshot->enabled = motor->enabled;
     }
-    DJI_Motor_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
     return ready;
 }
 
@@ -463,10 +448,10 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
     {
         motor->feedback.temperature = data[6];
     }
-    uint32_t interrupt_state = DJI_Motor_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     motor->last_feedback_timestamp_us = SYS_Timestamp.Get_Now_Microsecond();
     motor->online = true;
-    DJI_Motor_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
 }
 
 /** @brief 清零本电机的两个报文字节并清除 PID 执行标志，保留同帧其他电机指令。 */
@@ -495,14 +480,14 @@ bool Class_DJIMotor::Check_Feedback_Timeout()
         return false;
     }
 
-    uint32_t interrupt_state = DJI_Motor_Enter_Critical();
+    uint32_t interrupt_state = SYS_Enter_Critical();
     uint64_t now_us = SYS_Timestamp.Get_Now_Microsecond();
     if (online && now_us - last_feedback_timestamp_us > feedback_timeout_us)
     {
         online = false;
     }
     bool ready = enabled && online;
-    DJI_Motor_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(interrupt_state);
     if (ready)
     {
         return true;
@@ -616,22 +601,22 @@ bool Class_DJIMotor::Disable()
  */
 bool Class_DJIMotor::Set_Feedback_Source(Enum_DJIMotor_Loop loop,
                                          Enum_DJIMotor_Feedback source,
-                                         const float *feedback)
+                                         const float *external_value)
 {
-    if (source == DJI_MOTOR_FEEDBACK_EXTERNAL && feedback == nullptr)
+    if (source == DJI_MOTOR_FEEDBACK_EXTERNAL && external_value == nullptr)
     {
         return false;
     }
     if (loop == DJI_MOTOR_ANGLE_LOOP)
     {
         angle_feedback = source;
-        external_angle = feedback;
+        external_angle = external_value;
         return true;
     }
     if (loop == DJI_MOTOR_SPEED_LOOP)
     {
         speed_feedback = source;
-        external_speed = feedback;
+        external_speed = external_value;
         return true;
     }
     return false;

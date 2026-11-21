@@ -1,5 +1,5 @@
 /**
- * @file dmmotor.h
+ * @file dm_motor.h
  * @brief 达妙电机配置、控制接口与反馈数据。
  * @author Kylin-6
  * @note 原始驱动由 Kylin-6 在 PR #4 贡献，后续适配由 zzm 维护。
@@ -11,6 +11,9 @@
 #include "bsp_can.h"
 
 #include <stdint.h>
+
+#define DM_MOTOR_MAX_MOTORS 8U
+#define DM_MOTOR_DEFAULT_FEEDBACK_TIMEOUT_MS 100U
 
 enum Enum_DMMotor_Mode : uint8_t
 {
@@ -31,6 +34,18 @@ struct Struct_DMMotor_Feedback
     float rotor_temperature = 0.0f; // 转子温度，摄氏度
 };
 
+struct Struct_DMMotor_Health
+{
+    FDCAN_HandleTypeDef *hfdcan;
+    uint32_t rx_id;
+    uint64_t last_feedback_us;
+    uint64_t feedback_timeout_us;
+    bool feedback_received;
+    bool online;
+    bool enabled;
+    uint8_t state;
+};
+
 class Class_DMMotor
 {
 public:
@@ -41,7 +56,10 @@ public:
               bool reverse = false,
               float position_max = 12.5f,
               float velocity_max = 30.0f,
-              float torque_max = 10.0f);
+              float torque_max = 10.0f,
+              uint32_t feedback_timeout_ms = DM_MOTOR_DEFAULT_FEEDBACK_TIMEOUT_MS);
+    // 注册实例须在框架运行期间保持有效。查询在线状态不会改变使能或指令。
+    static bool Get_Health(uint8_t index, Struct_DMMotor_Health *snapshot);
     // true 仅表示命令入队成功，不代表电机已执行；false 时可由上层重试。
     bool Enable();
     bool Disable();
@@ -93,6 +111,10 @@ private:
     float position_max = 12.5f;
     float velocity_max = 30.0f;
     float torque_max = 10.0f;
+    uint64_t feedback_timeout_us = DM_MOTOR_DEFAULT_FEEDBACK_TIMEOUT_MS * 1000ULL;
+    uint64_t last_feedback_timestamp_us = 0U;
+    bool feedback_received = false;
+    bool online = false;
     bool feedback_initialized = false;
     float last_position = 0.0f;
     int32_t total_round = 0;

@@ -33,7 +33,15 @@ class Class_Power
 public:
     void Init(const bool &__DC24_0_Status = false, const bool &__DC24_1_Status = false, const bool &__DC5_Status = false);
 
+    bool Is_Initialized() const
+    {
+        return ADC_Manage_Object != nullptr && ADC_Manage_Object->ADC_Handler != nullptr;
+    }
+
     inline float Get_Power_Voltage() const;
+
+    /** 获取有效电压及采样时间；失效时电压和采样时间均为零。 */
+    bool Get_Power_Voltage(float *voltage, uint64_t *sample_timestamp_us = nullptr) const;
 
     inline void Set_DC24_0(const bool &__Status);
 
@@ -75,21 +83,9 @@ extern Class_Power BSP_Power;
  */
 inline float Class_Power::Get_Power_Voltage() const
 {
-    uint32_t adc_value = 0;
-    uint32_t primask = SYS_Enter_Critical();
-    if (ADC_Manage_Object != nullptr && ADC_Manage_Object->ADC_Handler != nullptr &&
-        ADC_Manage_Object->Sample_Valid &&
-        HAL_ADC_GetError(ADC_Manage_Object->ADC_Handler) == HAL_ADC_ERROR_NONE &&
-        __HAL_ADC_GET_FLAG(ADC_Manage_Object->ADC_Handler, ADC_FLAG_OVR) == RESET &&
-        SYS_Timestamp.Get_Current_Timestamp() - ADC_Manage_Object->Sample_Timestamp <= 100000)
-    {
-        adc_value = ADC_Manage_Object->ADC_Data[ADC_Buffer_Offset];
-    }
-    SYS_Exit_Critical(primask);
-    // 计算电压, 假设ADC分辨率为16位,
-    float voltage = ((float) (adc_value) / (float) (1 << 16)) * 3.3f * 11.0f;
-    // 返回电压值
-    return (voltage);
+    float voltage;
+    Get_Power_Voltage(&voltage);
+    return voltage;
 }
 
 /**

@@ -41,7 +41,8 @@ public:
 
     inline float Get_Variable_Value() const;
 
-    inline void Set_Data(const int &Number, ...);
+    void Set_Data(const volatile float *const *Channels, uint8_t Count);
+    inline void Set_Data(int Number, ...);
 
     void UART_RxCpltCallback(const uint8_t *Rx_Data, const uint16_t &Length);
 
@@ -67,7 +68,7 @@ protected:
   uint8_t Tx_Buffer[UART_BUFFER_SIZE];
 
   // 需要绘图的各个变量数据地址（最多 24 个通道）
-  const void *Data[24];
+  const volatile float *Data[24];
   // 当前发送的数据数量
   uint8_t Data_Number = 0;
   // 当前接收的指令在指令字典中的编号（-1 表示未匹配）
@@ -100,7 +101,7 @@ public:
 
     inline float Get_Variable_Value() const;
 
-    inline void Set_Data(const volatile float *const *Channels, uint8_t Count);
+    void Set_Data(const volatile float *const *Channels, uint8_t Count);
     inline void Set_Data(int Number, ...);
 
     void USB_RxCallback(const uint8_t *Rx_Data, const uint16_t &Length);
@@ -162,16 +163,20 @@ inline float Class_EricTool_UART::Get_Variable_Value() const
  * @param Number 数据数量
  * @param ...    各变量的指针（float*）
  */
-inline void Class_EricTool_UART::Set_Data(const int &Number, ...)
+inline void Class_EricTool_UART::Set_Data(int Number, ...)
 {
+    if (Number < 0 || (unsigned int)Number > sizeof(Data) / sizeof(Data[0]))
+    {
+        return;
+    }
     va_list data_ptr;
     va_start(data_ptr, Number);
     for (int i = 0; i < Number; i++)
     {
-        Data[i] = (void *) va_arg(data_ptr, int);
+        Data[i] = (const volatile float *)(uintptr_t)va_arg(data_ptr, int);
     }
     va_end(data_ptr);
-    Data_Number = Number;
+    Data_Number = (uint8_t)Number;
 }
 
 /**
@@ -192,32 +197,6 @@ inline int32_t Class_EricTool_USB::Get_Variable_Index() const
 inline float Class_EricTool_USB::Get_Variable_Value() const
 {
     return (Variable_Value);
-}
-
-/**
- * @brief 设置需要发送的变量数据
- *
- * @param Channels 各变量的指针数组
- * @param Count 数据数量
- */
-inline void Class_EricTool_USB::Set_Data(const volatile float *const *Channels, uint8_t Count)
-{
-    if (Count > sizeof(Data) / sizeof(Data[0]) || (Count != 0 && Channels == nullptr))
-    {
-        return;
-    }
-    for (uint32_t i = 0; i < Count; i++)
-    {
-        if (Channels[i] == nullptr)
-        {
-            return;
-        }
-    }
-    for (uint32_t i = 0; i < Count; i++)
-    {
-        Data[i] = Channels[i];
-    }
-    Data_Number = Count;
 }
 
 // 兼容使用 STM32 32 位地址参数的旧调用。

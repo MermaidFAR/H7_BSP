@@ -4,8 +4,8 @@
  * @brief Central W25Q64 address allocation.
  */
 
-#ifndef __SYS_FLASH_LAYOUT_H
-#define __SYS_FLASH_LAYOUT_H
+#ifndef SYS_FLASH_LAYOUT_H
+#define SYS_FLASH_LAYOUT_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -33,4 +33,4 @@ static_assert((IMU_BIAS_SLOT_B_ADDRESS + W25Q64_SECTOR_SIZE) == W25Q64_SIZE,
               "IMU bias slots must end at the flash boundary");
 }
 
-#endif /* __SYS_FLASH_LAYOUT_H */
+#endif /* SYS_FLASH_LAYOUT_H */

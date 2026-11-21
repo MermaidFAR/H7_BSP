@@ -354,7 +354,7 @@ inline Class_Matrix_f32<3, 1> Class_Quaternion_f32::Get_Euler_Angle() const
     float q3 = Data[3] * modulus;
     result[0][0] = atan2f(2.0f * (q0 * q3 + q1 * q2), 1.0f - 2.0f * (q2 * q2 + q3 * q3));
     float sin_pitch = 2.0f * (q0 * q2 - q3 * q1);
-    if (fabs(sin_pitch) >= 1.0f)
+    if (fabsf(sin_pitch) >= 1.0f)
     {
         if (sin_pitch > 0.0f)
         {

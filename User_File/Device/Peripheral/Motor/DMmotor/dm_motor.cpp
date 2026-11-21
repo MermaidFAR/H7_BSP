@@ -1,5 +1,5 @@
 /**
- * @file dmmotor.cpp
+ * @file dm_motor.cpp
  * @brief 达妙电机控制帧编码、反馈解析与模式切换。
  * @author Kylin-6
  * @note 原始驱动由 Kylin-6 在 PR #4 贡献，后续适配由 zzm 维护。
@@ -7,7 +7,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "dmmotor.h"
+#include "dm_motor.h"
 #include "alg_basic.h"
 #include "sys_critical.h"
 #include "sys_timestamp.h"
@@ -34,6 +34,8 @@ static constexpr float DM_KP_MIN = 0.0f;
 static constexpr float DM_KP_MAX = 500.0f;
 static constexpr float DM_KD_MIN = 0.0f;
 static constexpr float DM_KD_MAX = 5.0f;
+static constexpr uint8_t DM_FEEDBACK_ENABLED = 1U;
+static Class_DMMotor *DM_Motor_Registrations[DM_MOTOR_MAX_MOTORS];
 
 /* Private function declarations ---------------------------------------------*/
 
@@ -56,8 +58,8 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
         return;
     }
 
-    if (motor->mode_pending &&
-        SYS_Timestamp.Get_Now_Microsecond() - motor->mode_request_timestamp_us >= DM_MODE_TIMEOUT_US)
+    const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+    if (motor->mode_pending && now_us - motor->mode_request_timestamp_us >= DM_MODE_TIMEOUT_US)
     {
         motor->mode_pending = false;
     }
@@ -90,7 +92,6 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
     }
 
     /** 运动反馈布局：状态/ID 各 4 位，位置 16 位，速度与转矩各 12 位，末尾为两路温度。 */
-    motor->feedback.state = (data[0] >> 4) & 0x0FU;
     const float decoded_position =
         Basic_Math_Int_To_Float((data[1] << 8) | data[2], 0, 0xFFFF,
                                 -motor->position_max, motor->position_max);
@@ -128,6 +129,13 @@ void Class_DMMotor::FeedbackCallback(FDCAN_HandleTypeDef *callback_hfdcan,
                                             -motor->torque_max, motor->torque_max);
     motor->feedback.mos_temperature = data[6];
     motor->feedback.rotor_temperature = data[7];
+
+    const uint32_t primask = SYS_Enter_Critical();
+    motor->feedback.state = data[0] >> 4;
+    motor->last_feedback_timestamp_us = now_us;
+    motor->feedback_received = true;
+    motor->online = true;
+    SYS_Exit_Critical(primask);
 }
 
 /**
@@ -158,9 +166,11 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
                          bool motor_reverse,
                          float motor_position_max,
                          float motor_velocity_max,
-                         float motor_torque_max)
+                         float motor_torque_max,
+                         uint32_t feedback_timeout_ms)
 {
-    if (motor_hfdcan == nullptr || motor_can_id > 0x0FU || motor_master_id > 0x7FFU)
+    if (motor_hfdcan == nullptr || motor_can_id > 0x0FU || motor_master_id > 0x7FFU ||
+        feedback_timeout_ms == 0U)
     {
         return false;
     }
@@ -173,7 +183,14 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    if (!BSP_CAN_RegisterCallback(motor_master_id, motor_hfdcan, FeedbackCallback, this))
+    uint8_t index = 0U;
+    while (index < DM_MOTOR_MAX_MOTORS &&
+           DM_Motor_Registrations[index] != nullptr && DM_Motor_Registrations[index] != this)
+    {
+        index++;
+    }
+    if (index == DM_MOTOR_MAX_MOTORS ||
+        !BSP_CAN_RegisterCallback(motor_master_id, motor_hfdcan, FeedbackCallback, this))
     {
         SYS_Exit_Critical(primask);
         return false;
@@ -186,7 +203,42 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
     position_max = motor_position_max;
     velocity_max = motor_velocity_max;
     torque_max = motor_torque_max;
+    feedback_timeout_us = (uint64_t)feedback_timeout_ms * 1000ULL;
+    last_feedback_timestamp_us = 0U;
+    feedback_received = false;
+    online = false;
+    DM_Motor_Registrations[index] = this;
     SYS_Exit_Critical(primask);
+    return true;
+}
+
+bool Class_DMMotor::Get_Health(uint8_t index, Struct_DMMotor_Health *snapshot)
+{
+    if (snapshot == nullptr || index >= DM_MOTOR_MAX_MOTORS)
+    {
+        return false;
+    }
+
+    const uint32_t primask = SYS_Enter_Critical();
+    const Class_DMMotor *motor = DM_Motor_Registrations[index];
+    if (motor == nullptr)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
+    snapshot->hfdcan = motor->hfdcan;
+    snapshot->rx_id = motor->master_id;
+    snapshot->last_feedback_us = motor->last_feedback_timestamp_us;
+    snapshot->feedback_timeout_us = motor->feedback_timeout_us;
+    snapshot->feedback_received = motor->feedback_received;
+    snapshot->online = motor->online;
+    snapshot->state = motor->feedback.state;
+    snapshot->enabled = motor->feedback_received && motor->feedback.state == DM_FEEDBACK_ENABLED;
+    SYS_Exit_Critical(primask);
+
+    const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+    snapshot->online = snapshot->online && now_us >= snapshot->last_feedback_us &&
+                       now_us - snapshot->last_feedback_us <= snapshot->feedback_timeout_us;
     return true;
 }
 

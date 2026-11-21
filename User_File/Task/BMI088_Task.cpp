@@ -30,7 +30,7 @@
  * 再持续解算直到陀螺仪单生产者/单消费者队列为空；由此将中断中的短时数据接收
  * 与任务中的VQF运算分离。
  */
-extern "C" void BMI088_Task(void *argument) {
+extern "C" void BMI088_Task(void *) {
   // 姿态解算依赖高频陀螺仪数据，提升任务优先级以降低 FIFO 排队延迟。
   osThreadSetPriority(osThreadGetId(), osPriorityHigh2);
 

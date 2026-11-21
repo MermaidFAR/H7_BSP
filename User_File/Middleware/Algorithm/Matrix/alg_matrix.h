@@ -266,7 +266,7 @@ public:
         {
             for (int i = 0; i < row * column; i++)
             {
-                if (fabs(Data[i] - Matrix.Data[i]) > Matrix_Compare_Epsilon)
+                if (fabsf(Data[i] - Matrix.Data[i]) > Matrix_Compare_Epsilon)
                 {
                     return (false);
                 }
@@ -519,7 +519,7 @@ inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row
                 return (Namespace_ALG_Matrix::Zero<tmp_row, tmp_row>());
             }
             extended_matrix[i][j] = value;
-            const float absolute_value = fabs(value);
+            const float absolute_value = fabsf(value);
             if (absolute_value > row_scale[i])
             {
                 row_scale[i] = absolute_value;
@@ -536,11 +536,11 @@ inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row
     // 高斯消元法；以 double 比较比例，避免 float 除法及阈值乘尺度溢出/下溢。
     for (int i = 0; i < tmp_row; i++)
     {
-        double max_ratio = fabs((double)extended_matrix[i][i]) / row_scale[i];
+        double max_ratio = fabs((double)extended_matrix[i][i]) / (double)row_scale[i];
         int max_index = i;
         for (int j = i + 1; j < tmp_row; j++)
         {
-            const double ratio = fabs((double)extended_matrix[j][i]) / row_scale[j];
+            const double ratio = fabs((double)extended_matrix[j][i]) / (double)row_scale[j];
             if (ratio > max_ratio)
             {
                 max_ratio = ratio;

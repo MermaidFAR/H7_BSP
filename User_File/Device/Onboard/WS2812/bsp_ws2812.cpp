@@ -67,7 +67,9 @@ void Class_WS2812::Init(const uint8_t &__Red, const uint8_t &__Green, const uint
  */
 void Class_WS2812::TIM_10ms_Write_PeriodElapsedCallback()
 {
+    const uint32_t primask = SYS_Enter_Critical();
     const Struct_WS2812_Color color = Color;
+    SYS_Exit_Critical(primask);
     if (Has_Written_Color &&
         color.Red == Last_Written_Color.Red &&
         color.Green == Last_Written_Color.Green &&

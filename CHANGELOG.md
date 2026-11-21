@@ -11,7 +11,7 @@
 - Pulse 周期调度改为固定回调表；ADC 初始化现在检查参数、校准和 DMA 启动结果，并通过 `System_Get_Init_Errors()` 报告 ADC1 失败。BMI088 初始化失败后不启动 FIFO，也不进入姿态计算。
 - DJI 电机拒绝越界编码器反馈，控制输出为非有限值时清零；WS2812 首次写入后仅在颜色变化时重新发送，SPI 发送失败则保留待重试状态。
 - W25Q64JV 忙超时改为以本次传输起点计时；BMI088 陀螺仪 FIFO 批次时间戳以实际批次最后一帧为锚点，跨批次仅用 1 µs 保持顺序。
-- 三路 FDCAN 均启用硬件自动重发。自动重发不等于对端已执行；无 ACK、总线错误和接收回调形成的回显环需分别排查，详见 [README 的 CAN 排障说明](README.md#can-自动重发与异常回传风暴)。
+- 三路 FDCAN 均启用硬件自动重发。自动重发不等于对端已执行；无 ACK、总线错误和接收回调形成的回显环需分别排查。总线接口见 [总线与回调](README.md#总线与回调)。
 
 ### 验证边界
 
@@ -42,7 +42,7 @@
 
 ### 新增
 
-- 新增 UART BSP 抽象（`User_File/Middleware/BSP/UART/bsp_uart.cpp/.h`），仿 SCUT-Robotlab / 达妙 `drv_uart` 双缓冲范式改写并适配本工程：
+- 新增 UART BSP 抽象（`User_File/BSP/UART/bsp_uart.cpp/.h`），仿 SCUT-Robotlab / 达妙 `drv_uart` 双缓冲范式改写并适配本工程：
   - 接收采用 `HAL_UARTEx_ReceiveToIdle_DMA` + IDLE 中断 + 双缓冲（`Rx_Buffer_0/1` 交替），收不定长帧；切缓冲后记录 `Rx_Timestamp`。
   - 仅接管具备 RX DMA 的 7 路：USART1/2/3、UART5、USART6、UART7、USART10。UART4/8/9 因 STM32H7 DMA1+DMA2 共 16 条 stream 已被占满（7 路 UART 收发 + SPI + ADC），分不到 DMA，暂不接管。
   - UART5 仅有 RX DMA、无 TX DMA，`UART_Transmit_Data()` 检测 `huart->hdmatx == nullptr` 时自动回退阻塞发送。
@@ -63,11 +63,11 @@
 
 - 新增项目 README，集中说明工程定位、目录结构、启动链路、已实现功能、未实现功能、构建方式和后续建议。
 - 新增本更新日志，用于持续记录 BSP 开发进度。
-- 新增 `User_File/Task/TransportTask.cpp` 的实际任务入口，原空文件已补齐为可构建骨架。
+- 新增 `User_File/Task/Transport_Task.cpp` 的实际任务入口，原空文件已补齐为可构建骨架。
 - 在 `TransportTask` 中接入 `MX_USB_DEVICE_Init()`，USB Device 初始化从 CubeMX 弱任务实现迁移到用户任务实现中。
 - 在 `User_File/Task/user_task.h` 中声明 `Ins_Task()` 与 `Transport_Task()`，使用户任务入口与 FreeRTOS 创建逻辑保持一致。
-- 在根 `CMakeLists.txt` 中注册 `TransportTask.cpp`，任务文件已纳入构建。
-- 新增 `User_File/Task/CanTxTask.cpp` 与 `User_File/Task/StatusTask.cpp`，接管 CubeMX 已创建的 `CanTxTask` 与 `StatusTask` 任务入口。
+- 在根 `CMakeLists.txt` 中注册 `Transport_Task.cpp`，任务文件已纳入构建。
+- 新增 `User_File/Task/Can_Tx_Task.cpp` 与 `User_File/Task/Status_Task.cpp`，接管 CubeMX 已创建的 `CanTxTask` 与 `StatusTask` 任务入口。
 - 在 `User_File/Task/user_task.h` 中补充 `can_tx_task()` 与 `status_task()` 声明，并在根 `CMakeLists.txt` 注册新增任务文件。
 
 ### 已完成
@@ -77,7 +77,7 @@
 - README 增补 C/C++ 协作设计、Ozone 调试镜像设计、CMake Tools 解析提示说明。
 - README 增补 FreeRTOS 后续任务拆分原则，明确 `InsTask` 只作为姿态数据生产者，云台/底盘/发射通过 `INS_State` 快照和事件通知解耦。
 - README 增补通信任务分层原则，区分 CAN 控制链路、USB/串口遥测、遥控/视觉/裁判系统解析与 `TransportTask` 职责边界。
-- 将 `Core/Src/freertos.c` 中的 `status_task()` 默认实现改为弱符号，避免用户层 `StatusTask.cpp` 强实现产生重复定义。
+- 将 `Core/Src/freertos.c` 中的 `status_task()` 默认实现改为弱符号，避免用户层 `Status_Task.cpp` 强实现产生重复定义。
 - 将 CAN BSP 发送互斥锁迁移到 CMSIS-RTOS V2 API，并在 `MX_FREERTOS_Init()` 任务创建前调用 `BSP_CAN_ConfigInit()` 完成 FDCAN 启动与锁初始化。
 - 将 `cmake/stm32cubemx/CMakeLists.txt` 从混合换行规范化为 CRLF，并清理 `MX_LINK_LIBS` 段尾随空白，以规避 VS Code/CMake Tools 自动分析器误报。
 - 验证新增用户源文件应手动注册到根 `CMakeLists.txt` 的 `target_sources`；临时测试源文件已从构建列表清理。
@@ -152,7 +152,7 @@
 
 ### 仍未完成
 
-- `BSP_CAN_Init_Msg()`、`BSP_CAN_SendPer()`、`CanTxTask` 周期发送 + 异步队列逻辑均已写入实现（见 `bsp_can.c` / `CanTxTask.cpp`），但 `SendMsg` 的 `len == 0` 保护与 `vTaskDelayUntil` 周期写法仍待收口（见 2026-06-01 条目）。
+- `BSP_CAN_Init_Msg()`、`BSP_CAN_SendPer()`、`CanTxTask` 周期发送 + 异步队列逻辑均已写入实现（见 `bsp_can.c` / `Can_Tx_Task.cpp`），但 `SendMsg` 的 `len == 0` 保护与 `vTaskDelayUntil` 周期写法仍待收口（见 2026-06-01 条目）。
 
 ## 2026-04-10 之前
 
@@ -161,6 +161,6 @@
 - CubeMX 工程已生成 STM32H723ZG 外设初始化代码。
 - 工程已具备 CMake + Ninja 构建结构。
 - `User_File/Middleware/Algorithm/` 已包含基础数学、矩阵、四元数、PID、FSM、队列、斜坡、Kalman、EKF、频率滤波等算法组件。
-- `User_File/Middleware/BSP/` 已有 SPI 与 ADC 抽象雏形。
+- `User_File/BSP/` 已有 SPI 与 ADC 抽象雏形。
 - `User_File/Device/Components/` 已有 BMI088 与 Power 组件。
 - SystemView、SEGGER RTT、USB Device、FreeRTOS、CMSIS-DSP 等依赖已放入工程。

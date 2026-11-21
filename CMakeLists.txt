@@ -119,9 +119,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Slope/alg_slope.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Trajectory/alg_trajectory.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/SMC/alg_smc.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/ADC/bsp_adc.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/SPI/bsp_spi.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/callback/callback.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/BSP/ADC/bsp_adc.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/BSP/SPI/bsp_spi.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Callback/callback.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Timestamp/sys_timestamp.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/IMU/sys_imu.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Power/bsp_power.cpp
@@ -137,14 +137,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Init/Init.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/InsTask.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TransportTask.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/CanTxTask.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/debug/sys_debug.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/CAN/bsp_can.c
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/UART/bsp_uart.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/USB/bsp_usb.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/BSP/OSPI/bsp_ospi.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Ins_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Transport_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Can_Tx_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Debug/sys_debug.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/BSP/CAN/bsp_can.c
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/BSP/UART/bsp_uart.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/BSP/USB/bsp_usb.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/BSP/OSPI/bsp_ospi.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/W25Q64JV/bsp_w25q64jv_register.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/W25Q64JV/bsp_w25q64jv.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Buzzer/bsp_buzzer.cpp
@@ -153,17 +153,23 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/BMI088_Task.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StorageTask.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/StatusTask.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Storage_Task.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Status_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Health/sys_health.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/QD4310.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/DMmotor/dmmotor.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/QDrive/qd4310.c
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/DMmotor/dm_motor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/Motor/DJImotor/dji_motor.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Pulse/alg_pulse.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Control_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/SpinMode/spin_mode.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Application/PowerControl/power_control.cpp
 
+)
+
+get_target_property(H7_BSP_USER_SOURCES ${CMAKE_PROJECT_NAME} SOURCES)
+list(FILTER H7_BSP_USER_SOURCES INCLUDE REGEX "(^|/)User_File/.*\\.(c|cpp)$")
+set_property(SOURCE ${H7_BSP_USER_SOURCES} APPEND PROPERTY
+    COMPILE_OPTIONS -Wextra -Wdouble-promotion -Wshadow
 )
 
 # Add include paths
@@ -189,10 +195,10 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Slope
         User_File/Middleware/Algorithm/Trajectory
         User_File/Middleware/Algorithm/SMC
-        User_File/Middleware/BSP/ADC
-        User_File/Middleware/BSP/SPI
-        User_File/System
-        User_File/System/callback
+        User_File/BSP/ADC
+        User_File/BSP/SPI
+        User_File/System/Critical
+        User_File/System/Callback
         User_File/System/Timestamp
         User_File/System/IMU
         User_File/Device/Onboard/Power
@@ -202,12 +208,12 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         Middlewares/ST/ARM/DSP/Inc
         User_File/System/Init
         User_File/Task
-        User_File/System/debug
+        User_File/System/Debug
         User_File/System/Health
-        User_File/Middleware/BSP/CAN
-        User_File/Middleware/BSP/UART
-        User_File/Middleware/BSP/USB
-        User_File/Middleware/BSP/OSPI
+        User_File/BSP/CAN
+        User_File/BSP/UART
+        User_File/BSP/USB
+        User_File/BSP/OSPI
         User_File/Device/Onboard/W25Q64JV
         User_File/Device/Onboard/Buzzer
         User_File/Device/Onboard/Key

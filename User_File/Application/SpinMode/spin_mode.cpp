@@ -26,14 +26,14 @@ bool SpinMode::Init(const SpinConfig_t *config)
     return true;
 }
 
-void SpinMode::Set_WorldTarget(float world_angle)
+void SpinMode::Set_WorldTarget(float target_angle)
 {
-    this->world_angle = world_angle;
+    world_angle = target_angle;
 }
 
-void SpinMode::Set_theta(float theta)
+void SpinMode::Set_theta(float measured_theta)
 {
-    this->theta = theta;
+    theta = measured_theta;
 }
 
 void SpinMode::Set_MoveTarget(float vx, float vy, float vw)

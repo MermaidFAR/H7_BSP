@@ -69,14 +69,14 @@ class SpinMode
      * @param world_angle rad；逆时针为正，可由上层按 IMU 姿态设置并保持。
      * @note 原样保留连续角度；不参与速度计算，不自动采集、锁存或修正目标。
      */
-    void Set_WorldTarget(float world_angle);
+    void Set_WorldTarget(float target_angle);
 
     /**
      * @brief 更新当前云台与底盘的相对夹角，计算时扣除 config.zero_point。
      * @param theta rad；theta - zero_point = 云台 Yaw - 底盘 Yaw，逆时针为正。
      * @note 可输入连续角度，计算时归一化为最短相对角；已归零时 zero_point 设为 0。
      */
-    void Set_theta(float theta);
+    void Set_theta(float measured_theta);
 
     /**
      * @brief 设置运动指令；模块仅转换平移坐标系并计算输出，不执行底盘控制。

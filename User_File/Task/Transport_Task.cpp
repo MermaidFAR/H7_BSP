@@ -1,5 +1,5 @@
 /**
- * @file    TransportTask.cpp
+ * @file    Transport_Task.cpp
  * @brief   传输任务 —— USB CDC 初始化与遥测输出
  * @author  zzm
  * @version 1.2
@@ -23,7 +23,7 @@
 
 /* Function prototypes -------------------------------------------------------*/
 
-extern "C" void Transport_Task(void *argument)
+extern "C" void Transport_Task(void *)
 {
     static const volatile float *const imu_channels[] = {
         &Debug_IMU_Data.Euler_Yaw_rad,

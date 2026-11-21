@@ -26,7 +26,10 @@ out/
 # STM32CubeMX 相关
 mx.scratch
 *.bak
-!.settings
+
+# 本地工具缓存
+/.codegraph/
+/.settings/
 
 # IDE 与编辑器配置
 .idea/
@@ -44,8 +47,8 @@ JLinkLog.txt
 Debug.jdebug.user
 
 # Override the global STM32CubeIDE Debug/ rule for source files.
-!User_File/System/debug/
-!User_File/System/debug/**
+!User_File/System/Debug/
+!User_File/System/Debug/**
 
 # 操作系统级缓存
 .DS_Store

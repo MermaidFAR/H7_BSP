@@ -77,7 +77,7 @@ bool Class_W25Q64JV::Init(const Enum_W25Q64JV_Mode &__Flash_Mode)
             return false;
         }
 
-        OSPI_MemoryMappedTypeDef tmp_config = {0};
+        OSPI_MemoryMappedTypeDef tmp_config = {};
         if (HAL_OSPI_MemoryMapped(OSPI_Manage_Object->OSPI_Handler, &tmp_config) != HAL_OK)
         {
             return false;

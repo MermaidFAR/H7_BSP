@@ -23,10 +23,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 __attribute__((section(".dma_buffer"), aligned(32)))
-Struct_OSPI_Manage_Object OSPI1_Manage_Object = {nullptr};
+Struct_OSPI_Manage_Object OSPI1_Manage_Object = {};
 
 __attribute__((section(".dma_buffer"), aligned(32)))
-Struct_OSPI_Manage_Object OSPI2_Manage_Object = {nullptr};
+Struct_OSPI_Manage_Object OSPI2_Manage_Object = {};
 
 /* Private function declarations ---------------------------------------------*/
 

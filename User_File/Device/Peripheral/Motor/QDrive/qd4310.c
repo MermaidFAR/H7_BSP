@@ -1,5 +1,5 @@
 /**
- * @file    QD4310.c
+ * @file    qd4310.c
  * @brief   QD4310 FOC 伺服电机驱动实现
  * @details 基于 QDrive 协议, 通过 CAN 总线发送 7 种控制命令 (使能/失能/电流/转速/角度/低速/步进角度),
  *          并解析电机反馈帧获取实时状态 (使能位/电流/转速/角度)。
@@ -18,12 +18,14 @@
  * @copyright USTC-RoboWalker (c) 2026
  */
 
-#include "QD4310.h"
+#include "qd4310.h"
 #include "sys_critical.h"
+#include "sys_timestamp.h"
 
 #include <math.h>
 #include <string.h>
 
+static QD4310_t *QD4310_Registrations[QD4310_MAX_MOTORS];
 static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8]);
 
 /**
@@ -60,15 +62,47 @@ bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan)
 
     // 注册成功后再设置实例，并在完整初始化前阻止接收中断访问。
     const uint32_t primask = SYS_Enter_Critical();
-    const bool registered = BSP_CAN_RegisterCallback(id + 0x500, hfdcan, QDrive_Callback, motor);
+    uint8_t index = 0U;
+    while (index < QD4310_MAX_MOTORS &&
+           QD4310_Registrations[index] != NULL && QD4310_Registrations[index] != motor)
+    {
+        index++;
+    }
+    const bool registered = index < QD4310_MAX_MOTORS &&
+                            BSP_CAN_RegisterCallback(id + 0x500, hfdcan, QDrive_Callback, motor);
     if (registered)
     {
         memset(motor, 0, sizeof(*motor));
         motor->id = id;
         motor->hfdcan = hfdcan;
+        QD4310_Registrations[index] = motor;
     }
     SYS_Exit_Critical(primask);
     return registered;
+}
+
+bool QD4310_GetHealth(uint8_t index, QD4310_Health_t *snapshot)
+{
+    if (snapshot == NULL || index >= QD4310_MAX_MOTORS)
+    {
+        return false;
+    }
+
+    const uint32_t primask = SYS_Enter_Critical();
+    const QD4310_t *motor = QD4310_Registrations[index];
+    if (motor == NULL)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
+    snapshot->hfdcan = motor->hfdcan;
+    snapshot->rx_id = 0x500U + motor->id;
+    snapshot->last_feedback_us = motor->last_feedback_us;
+    snapshot->feedback_timeout_us = QD4310_FEEDBACK_TIMEOUT_MS * 1000ULL;
+    snapshot->feedback_received = motor->feedback_received;
+    snapshot->enabled = motor->enabled;
+    SYS_Exit_Critical(primask);
+    return true;
 }
 
 /**
@@ -96,7 +130,7 @@ bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
     {
         return false;
     }
-    Struct_CAN_Tx_Msg message = {0};
+    Struct_CAN_Tx_Msg message = {NULL, 0U, {0U}, 0U};
 
     message.hfdcan = motor->hfdcan;
     message.id = motor->id + 0x400;
@@ -137,8 +171,6 @@ void QD4310_Update(QD4310_t *motor, const uint8_t feedback[8])
 
 static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8])
 {
-    motor->enabled = feedback[0] & 0x01;
-
     int16_t current_raw = (int16_t)((feedback[3] << 8) | feedback[2]);
     motor->current = (float)current_raw * 10.0f / INT16_MAX;
 
@@ -147,6 +179,12 @@ static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8])
 
     uint16_t angle_raw = (uint16_t)((feedback[7] << 8) | feedback[6]);
     motor->angle = (float)angle_raw * QD4310_TWO_PI / UINT16_MAX;
+
+    const uint32_t primask = SYS_Enter_Critical();
+    motor->enabled = (feedback[0] & 0x01U) != 0U;
+    motor->last_feedback_us = SYS_Timestamp_Get_Microsecond();
+    motor->feedback_received = true;
+    SYS_Exit_Critical(primask);
 }
 
 /**

@@ -15,6 +15,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_spi.h"
+#include "sys_critical.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -153,9 +154,14 @@ inline void Class_WS2812::Set_RGB(const uint8_t &__Red, const uint8_t &__Green, 
  */
 inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &__Color, const float &__Brightness)
 {
-    Color.Red = (uint8_t)((float) (__Color.Red) * __Brightness);
-    Color.Green = (uint8_t)((float) (__Color.Green) * __Brightness);
-    Color.Blue = (uint8_t)((float) (__Color.Blue) * __Brightness);
+    const Struct_WS2812_Color color = {
+        (uint8_t)((float)__Color.Red * __Brightness),
+        (uint8_t)((float)__Color.Green * __Brightness),
+        (uint8_t)((float)__Color.Blue * __Brightness),
+    };
+    const uint32_t primask = SYS_Enter_Critical();
+    Color = color;
+    SYS_Exit_Critical(primask);
 }
 
 #endif

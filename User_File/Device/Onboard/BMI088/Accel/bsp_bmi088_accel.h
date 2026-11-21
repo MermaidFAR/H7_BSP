@@ -148,7 +148,7 @@ protected:
     // 内部变量
 
     // 寄存器结构体
-    Struct_BMI088_Accel_Register Register = {0};
+    Struct_BMI088_Accel_Register Register = {};
 
     // 加热电阻预热时间戳
     bool Heater_Preheat_Finished_Flag = false;

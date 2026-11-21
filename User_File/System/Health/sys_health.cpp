@@ -2,6 +2,9 @@
 #include "sys_health.h"
 #include "sys_critical.h"
 #include "bsp_bmi088.h"
+#include "bsp_power.h"
+#include "bsp_w25q64jv.h"
+#include "Init.h"
 #include "sys_debug.h"
 #include "sys_timestamp.h"
 #include <stddef.h>
@@ -9,11 +12,28 @@
 
 extern "C" {
 volatile Struct_Sys_Health SYS_Health __attribute__((used)) = {};
+volatile uint8_t SYS_Health_Buzzer_Mute __attribute__((used)) = 0U;
 }
 
+struct Health_Tracking
+{
+    uint64_t First_Seen_us;
+    Struct_Sys_Health_Item Item;
+    uint8_t Recovery_Count;
+};
+
+struct Health_Motor_Tracking
+{
+    Health_Tracking Link;
+    FDCAN_HandleTypeDef *Bus;
+    uint32_t Feedback_Id;
+    bool Feedback_Received;
+};
+
 static Struct_Sys_Health Health_Next;
-static uint8_t Recovery_Count[DJI_MOTOR_MAX_MOTORS + 1];
-static uint64_t First_Seen_us[DJI_MOTOR_MAX_MOTORS + 1];
+static Health_Tracking Health_IMU;
+static Health_Tracking Health_Power;
+static Health_Motor_Tracking Health_Motors[SYS_HEALTH_MAX_MOTORS];
 static uint32_t Previous_IMU_Counters[9];
 static bool Previous_IMU_Valid;
 
@@ -41,58 +61,97 @@ static void Health_Publish()
     SYS_Exit_Critical(interrupt_state);
 }
 
-void Sys_Health_Init(void)
+static void Health_Set_State(Health_Tracking *tracking, Enum_Sys_Health_State state,
+                             uint32_t reason)
 {
-    Health_Next = {};
-    Health_Next.ABI_Version = 2;
-    Health_Next.ABI_Size = sizeof(Struct_Sys_Health);
-    Previous_IMU_Valid = false;
-    memset(Recovery_Count, 0, sizeof(Recovery_Count));
-    memset(First_Seen_us, 0, sizeof(First_Seen_us));
-    uint32_t interrupt_state = SYS_Enter_Critical();
-    memcpy((void *)&SYS_Health, &Health_Next, sizeof(Health_Next));
-    SYS_Exit_Critical(interrupt_state);
-}
-
-static void Health_Set_State(uint32_t index, Struct_Sys_Health_Item *item,
-                             Enum_Sys_Health_State state, uint32_t reason)
-{
-    if (state == HEALTH_OK && item->State >= HEALTH_WARN)
+    if (state == HEALTH_OK && tracking->Item.State >= HEALTH_WARN)
     {
-        if (++Recovery_Count[index] < SYS_HEALTH_RECOVERY_CHECKS)
+        if (++tracking->Recovery_Count < SYS_HEALTH_RECOVERY_CHECKS)
         {
-            item->Reason = HEALTH_REASON_RECOVERING;
+            tracking->Item.Reason |= HEALTH_REASON_RECOVERING;
             return;
         }
     }
-    Recovery_Count[index] = 0;
-    item->State = state;
-    item->Reason = reason;
+    tracking->Recovery_Count = 0U;
+    tracking->Item.State = state;
+    tracking->Item.Reason = reason;
 }
 
-static Enum_Sys_Health_State Health_Data_State(uint32_t index, const Struct_Sys_Health_Item *item,
-                                              bool received, uint64_t timestamp, uint64_t timeout_us,
-                                              uint64_t now, uint32_t *reason)
+static Enum_Sys_Health_State Health_Data_State(Health_Tracking *tracking, bool received,
+                                              uint64_t timestamp_us, uint64_t timeout_us,
+                                              uint64_t now_us, uint32_t *reason)
 {
-    if (item->State == HEALTH_DISABLED)
-        First_Seen_us[index] = now;
+    if (tracking->Item.State == HEALTH_DISABLED)
+    {
+        tracking->First_Seen_us = now_us;
+    }
     if (!received)
     {
         *reason |= HEALTH_REASON_NO_DATA;
-        return now - First_Seen_us[index] > (uint64_t)SYS_HEALTH_STARTUP_TIMEOUT_MS * 1000
+        return now_us - tracking->First_Seen_us >= SYS_HEALTH_STARTUP_TIMEOUT_MS * 1000ULL
                    ? HEALTH_OFFLINE : HEALTH_STARTING;
     }
-    if (timestamp > now)
+    if (timestamp_us > now_us)
     {
         *reason |= HEALTH_REASON_TIMESTAMP;
         return HEALTH_FAULT;
     }
-    if (now - timestamp > timeout_us)
+    if (now_us - timestamp_us > timeout_us)
     {
         *reason |= HEALTH_REASON_STALE;
         return HEALTH_OFFLINE;
     }
-    return *reason != 0 ? HEALTH_WARN : HEALTH_OK;
+    return *reason != 0U ? HEALTH_WARN : HEALTH_OK;
+}
+
+static Enum_Sys_Health_State Health_Worse_State(Enum_Sys_Health_State first,
+                                               Enum_Sys_Health_State second)
+{
+    if (first == HEALTH_FAULT || second == HEALTH_FAULT)
+    {
+        return HEALTH_FAULT;
+    }
+    if (first == HEALTH_OFFLINE || second == HEALTH_OFFLINE)
+    {
+        return HEALTH_OFFLINE;
+    }
+    if (first == HEALTH_UNINIT || second == HEALTH_UNINIT)
+    {
+        return HEALTH_UNINIT;
+    }
+    if (first == HEALTH_STARTING || second == HEALTH_STARTING)
+    {
+        return HEALTH_STARTING;
+    }
+    return first > second ? first : second;
+}
+
+static Struct_Sys_Health_Item Health_Init_Item(uint32_t error_bit, bool initialized,
+                                              Enum_Sys_Health_State ready_state)
+{
+    if ((Health_Next.Init_Errors & error_bit) != 0U)
+    {
+        return {HEALTH_FAULT, HEALTH_REASON_INIT_FAILED, UINT32_MAX};
+    }
+    return {initialized ? ready_state : HEALTH_UNINIT, HEALTH_REASON_NONE, UINT32_MAX};
+}
+
+static void Health_Update_Board_Init(void)
+{
+    Health_Next.Init_Errors = System_Get_Init_Errors();
+    Health_Next.IMU = Health_Init_Item(SYSTEM_INIT_ERROR_BMI088, BSP_BMI088.Is_Initialized(), HEALTH_STARTING);
+    Health_Next.Power = Health_Init_Item(SYSTEM_INIT_ERROR_ADC1, BSP_Power.Is_Initialized(), HEALTH_STARTING);
+    Health_Next.Flash = Health_Init_Item(SYSTEM_INIT_ERROR_FLASH, BSP_W25Q64JV.Is_Initialized(), HEALTH_OK);
+}
+
+static Enum_Sys_Health_State Health_Board_State(void)
+{
+    if (Health_Next.Init_Errors != 0U)
+    {
+        return HEALTH_FAULT;
+    }
+    return Health_Worse_State(Health_Worse_State(Health_Next.IMU.State, Health_Next.Power.State),
+                              Health_Next.Flash.State);
 }
 
 static uint32_t Health_IMU_Reasons(const Sys_Debug_IMU_Data_t *imu)
@@ -121,55 +180,214 @@ static uint32_t Health_IMU_Reasons(const Sys_Debug_IMU_Data_t *imu)
     return reason;
 }
 
-void Sys_Health_Update(void)
+static void Health_Update_IMU(void)
 {
-    Health_Next.Update_Count++;
-    Health_Next.Motor_Count = 0;
+    if (Health_Next.IMU.State != HEALTH_STARTING)
+    {
+        Health_IMU = {};
+        Previous_IMU_Valid = false;
+        return;
+    }
+
     Sys_Debug_IMU_Data_t imu;
-    uint32_t interrupt_state = SYS_Enter_Critical();
+    const uint32_t primask = SYS_Enter_Critical();
     memcpy(&imu, (const void *)&Debug_IMU_Data, sizeof(imu));
-    uint64_t sample_us = BSP_BMI088.Get_Last_Sample_Timestamp_Us();
-    SYS_Exit_Critical(interrupt_state);
-    uint64_t now = SYS_Timestamp.Get_Now_Microsecond();
-    bool received = sample_us != 0 && imu.Debug_ABI_Size == sizeof(imu) &&
-                    imu.sequence == imu.sequence_end && (imu.sequence & 1) == 0;
-    uint64_t timestamp = sample_us < imu.timestamp_us ? sample_us : imu.timestamp_us;
-    Health_Next.IMU.Data_Age_ms = received ? Health_Age_ms(now, timestamp) : UINT32_MAX;
-    uint32_t reason = received ? Health_IMU_Reasons(&imu) : 0;
-    Enum_Sys_Health_State state = Health_Data_State(0, &Health_Next.IMU, received, timestamp,
-        (uint64_t)SYS_HEALTH_IMU_TIMEOUT_MS * 1000, now, &reason);
-    if (received && (sample_us > now || imu.timestamp_us > now))
+    const uint64_t sample_us = BSP_BMI088.Get_Last_Sample_Timestamp_Us();
+    SYS_Exit_Critical(primask);
+
+    const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+    const bool received = sample_us != 0U && imu.Debug_ABI_Size == sizeof(imu) &&
+                          imu.sequence == imu.sequence_end && (imu.sequence & 1U) == 0U;
+    const uint64_t timestamp_us = sample_us < imu.timestamp_us ? sample_us : imu.timestamp_us;
+    Health_IMU.Item.Data_Age_ms = received ? Health_Age_ms(now_us, timestamp_us) : UINT32_MAX;
+    uint32_t reason = received ? Health_IMU_Reasons(&imu) : 0U;
+    Enum_Sys_Health_State state = Health_Data_State(&Health_IMU, received, timestamp_us,
+        SYS_HEALTH_IMU_TIMEOUT_MS * 1000ULL, now_us, &reason);
+    if (received && (sample_us > now_us || imu.timestamp_us > now_us))
     {
         state = HEALTH_FAULT;
         reason |= HEALTH_REASON_TIMESTAMP;
     }
-    Health_Set_State(0, &Health_Next.IMU, state, reason);
-    for (uint32_t i = 0; i < DJI_MOTOR_MAX_MOTORS; ++i)
+    Health_Set_State(&Health_IMU, state, reason);
+    Health_Next.IMU = Health_IMU.Item;
+}
+
+static void Health_Update_Power(void)
+{
+    if (Health_Next.Power.State != HEALTH_STARTING)
+    {
+        Health_Power = {};
+        Health_Next.Power_Voltage_V = 0.0f;
+        return;
+    }
+
+    uint64_t sample_us;
+    const bool valid = BSP_Power.Get_Power_Voltage(&Health_Next.Power_Voltage_V, &sample_us);
+    const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+    Health_Power.Item.Data_Age_ms = valid ? Health_Age_ms(now_us, sample_us) : UINT32_MAX;
+
+    uint32_t reason = HEALTH_REASON_NONE;
+    Enum_Sys_Health_State state = HEALTH_OK;
+    if (valid)
+    {
+        if (Health_Next.Power_Voltage_V < SYS_HEALTH_MIN_POWER_V)
+        {
+            reason |= HEALTH_REASON_UNDERVOLTAGE;
+            state = HEALTH_FAULT;
+        }
+    }
+    else
+    {
+        reason = HEALTH_REASON_ADC;
+        state = Health_Data_State(&Health_Power, false, 0U, 0U, now_us, &reason);
+        if (Health_Power.Item.State >= HEALTH_OK || state == HEALTH_OFFLINE)
+        {
+            state = HEALTH_FAULT;
+        }
+    }
+    Health_Set_State(&Health_Power, state, reason);
+    Health_Next.Power = Health_Power.Item;
+}
+
+static void Health_Add_Motor(uint8_t slot, Enum_Sys_Health_Motor_Type type, FDCAN_HandleTypeDef *bus,
+                             uint32_t id, bool enabled, bool received, uint64_t sample_us,
+                             uint64_t timeout_us, bool drive_fault)
+{
+    // 用固定注册槽保存历史，发布时压紧有效电机，避免新增电机导致已有历史错位。
+    Health_Motor_Tracking *tracking = &Health_Motors[slot];
+    if (tracking->Bus != bus || tracking->Feedback_Id != id ||
+        (tracking->Feedback_Received && !received))
+    {
+        tracking->Link = {};
+        tracking->Bus = bus;
+        tracking->Feedback_Id = id;
+    }
+    tracking->Feedback_Received = received;
+    const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+    tracking->Link.Item.Data_Age_ms = received ? Health_Age_ms(now_us, sample_us) : UINT32_MAX;
+    uint32_t reason = HEALTH_REASON_NONE;
+    Enum_Sys_Health_State state = Health_Data_State(&tracking->Link, received, sample_us,
+                                                    timeout_us, now_us, &reason);
+    if (state == HEALTH_OK)
+    {
+        Health_Next.Online_Motor_Count++;
+        if (drive_fault)
+        {
+            reason |= HEALTH_REASON_MOTOR_FAULT;
+            state = HEALTH_FAULT;
+        }
+    }
+    else if (state >= HEALTH_OFFLINE)
+    {
+        Health_Next.Offline_Motor_Count++;
+    }
+    Health_Set_State(&tracking->Link, state, reason);
+
+    Struct_Sys_Health_Motor *out = &Health_Next.Motor[Health_Next.Motor_Count++];
+    out->Health = tracking->Link.Item;
+    out->Bus = bus;
+    out->Feedback_Id = id;
+    out->Enabled = enabled;
+    out->Type = type;
+    Health_Next.Overall_State = Health_Worse_State(Health_Next.Overall_State, out->Health.State);
+}
+
+static void Health_Update_Motors(void)
+{
+    const uint32_t previous_count = Health_Next.Motor_Count;
+    Health_Next.Motor_Count = 0U;
+    Health_Next.Online_Motor_Count = 0U;
+    Health_Next.Offline_Motor_Count = 0U;
+
+    for (uint8_t i = 0; i < DJI_MOTOR_MAX_MOTORS; ++i)
     {
         Struct_DJIMotor_Health motor;
-        if (!Class_DJIMotor::Get_Health(i, &motor))
-            continue;
-        now = SYS_Timestamp.Get_Now_Microsecond();
-        Struct_Sys_Health_Motor *out = &Health_Next.Motor[i];
-        out->Bus = motor.hfdcan;
-        out->Feedback_Id = motor.rx_id;
-        out->Enabled = motor.enabled;
-        out->Health.Data_Age_ms = motor.feedback_received ? Health_Age_ms(now, motor.last_feedback_us) : UINT32_MAX;
-        Health_Next.Motor_Count++;
-        reason = 0;
-        state = Health_Data_State(i + 1, &out->Health, motor.feedback_received,
-            motor.last_feedback_us, motor.feedback_timeout_us, now, &reason);
-        Health_Set_State(i + 1, &out->Health, state, reason);
+        if (Class_DJIMotor::Get_Health(i, &motor))
+        {
+            Health_Add_Motor(i, HEALTH_MOTOR_DJI, motor.hfdcan, motor.rx_id, motor.enabled,
+                             motor.feedback_received, motor.last_feedback_us, motor.feedback_timeout_us, false);
+        }
     }
+    for (uint8_t i = 0; i < DM_MOTOR_MAX_MOTORS; ++i)
+    {
+        Struct_DMMotor_Health motor;
+        if (Class_DMMotor::Get_Health(i, &motor))
+        {
+            // 达妙反馈状态 0 为失能，1 为使能，其余按驱动故障处理。
+            Health_Add_Motor(DJI_MOTOR_MAX_MOTORS + i, HEALTH_MOTOR_DM, motor.hfdcan, motor.rx_id,
+                             motor.enabled, motor.feedback_received, motor.last_feedback_us,
+                             motor.feedback_timeout_us, motor.state > 1U);
+        }
+    }
+    for (uint8_t i = 0; i < QD4310_MAX_MOTORS; ++i)
+    {
+        QD4310_Health_t motor;
+        if (QD4310_GetHealth(i, &motor))
+        {
+            Health_Add_Motor(DJI_MOTOR_MAX_MOTORS + DM_MOTOR_MAX_MOTORS + i, HEALTH_MOTOR_QD4310,
+                             motor.hfdcan, motor.rx_id, motor.enabled, motor.feedback_received,
+                             motor.last_feedback_us, motor.feedback_timeout_us, false);
+        }
+    }
+
+    for (uint32_t i = Health_Next.Motor_Count; i < previous_count; ++i)
+    {
+        Health_Next.Motor[i] = {};
+    }
+}
+
+void Sys_Health_Init(void)
+{
+    Health_Next = {};
+    Health_Next.ABI_Version = SYS_HEALTH_ABI_VERSION;
+    Health_Next.ABI_Size = sizeof(Struct_Sys_Health);
+    Health_IMU = {};
+    Health_Power = {};
+    memset(Health_Motors, 0, sizeof(Health_Motors));
+    Previous_IMU_Valid = false;
+    Health_Update_Board_Init();
+    Health_Next.Overall_State = Health_Board_State();
+    Health_Publish();
+}
+
+void Sys_Health_Update(void)
+{
+    Health_Next.Update_Count++;
+    Health_Update_Board_Init();
+    Health_Update_IMU();
+    Health_Update_Power();
+    Health_Next.Overall_State = Health_Board_State();
+    Health_Update_Motors();
+    Health_Next.Safe_To_Run = Health_Next.Power.State == HEALTH_OK &&
+                              (Health_Next.Overall_State == HEALTH_OK ||
+                               Health_Next.Overall_State == HEALTH_WARN);
     Health_Publish();
 }
 
 bool Sys_Health_GetSnapshot(Struct_Sys_Health *snapshot)
 {
     if (snapshot == nullptr)
+    {
         return false;
-    uint32_t interrupt_state = SYS_Enter_Critical();
+    }
+    const uint32_t primask = SYS_Enter_Critical();
     memcpy(snapshot, (const void *)&SYS_Health, sizeof(*snapshot));
-    SYS_Exit_Critical(interrupt_state);
-    return snapshot->ABI_Version == 2 && snapshot->Sequence == snapshot->Sequence_End && (snapshot->Sequence & 1) == 0;
+    SYS_Exit_Critical(primask);
+    return snapshot->ABI_Version == SYS_HEALTH_ABI_VERSION && snapshot->ABI_Size == sizeof(*snapshot) &&
+           snapshot->Sequence == snapshot->Sequence_End && (snapshot->Sequence & 1U) == 0U;
+}
+
+bool Sys_Health_Is_Safe(void)
+{
+    return SYS_Health.Safe_To_Run != 0U;
+}
+
+Enum_Sys_Health_State Sys_Health_Get_Overall_State(void)
+{
+    return SYS_Health.Overall_State;
+}
+
+void Sys_Health_Set_Buzzer_Mute(bool mute)
+{
+    SYS_Health_Buzzer_Mute = mute;
 }

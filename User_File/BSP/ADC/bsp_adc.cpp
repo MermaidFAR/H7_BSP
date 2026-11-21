@@ -22,11 +22,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 __attribute__((section(".dma_buffer"), aligned(32)))
-Struct_ADC_Manage_Object ADC1_Manage_Object = {nullptr};
+Struct_ADC_Manage_Object ADC1_Manage_Object = {};
 __attribute__((section(".dma_buffer"), aligned(32)))
-Struct_ADC_Manage_Object ADC2_Manage_Object = {nullptr};
+Struct_ADC_Manage_Object ADC2_Manage_Object = {};
 __attribute__((section(".dma_buffer"), aligned(32)))
-Struct_ADC_Manage_Object ADC3_Manage_Object = {nullptr};
+Struct_ADC_Manage_Object ADC3_Manage_Object = {};
 
 /* Private function declarations ---------------------------------------------*/
 

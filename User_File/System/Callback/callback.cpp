@@ -88,8 +88,7 @@ extern "C" void TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     }
 }
 
-extern "C" void SPI2_Callback(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length,
-                              uint16_t Rx_Length) {
+extern "C" void SPI2_Callback(uint8_t *, uint8_t *, uint16_t, uint16_t) {
   if ((SPI2_Manage_Object.Activate_GPIOx == BMI088_ACCEL__SPI_CS_GPIO_Port &&
        SPI2_Manage_Object.Activate_GPIO_Pin == BMI088_ACCEL__SPI_CS_Pin) ||
       (SPI2_Manage_Object.Activate_GPIOx == BMI088_GYRO__SPI_CS_GPIO_Port &&
@@ -103,12 +102,12 @@ void OSPI2_Polling_Callback()
     BSP_W25Q64JV.OSPI_StatusMatchCallback();
 }
 
-void OSPI2_Rx_Callback(uint8_t *Buffer)
+void OSPI2_Rx_Callback(uint8_t *)
 {
     BSP_W25Q64JV.OSPI_RxCallback();
 }
 
-void OSPI2_Tx_Callback(uint8_t *Buffer)
+void OSPI2_Tx_Callback(uint8_t *)
 {
     BSP_W25Q64JV.OSPI_TxCallback();
 }

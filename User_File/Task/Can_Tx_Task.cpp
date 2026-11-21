@@ -1,5 +1,5 @@
 /**
- * @file    CanTxTask.cpp
+ * @file    Can_Tx_Task.cpp
  * @brief   CAN 发送任务骨架
  * @author  zzm
  * @version 1.0
@@ -22,7 +22,7 @@
 
 /* Function prototypes -------------------------------------------------------*/
 
-extern "C" void Can_Tx_Task(void *argument)
+extern "C" void Can_Tx_Task(void *)
 {
     for (;;)
     {
