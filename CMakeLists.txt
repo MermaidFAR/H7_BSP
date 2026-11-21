@@ -105,6 +105,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/DOB/alg_dob.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/ESO/alg_eso.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/ESO/alg_eso.h
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/AlphaBeta/alg_filter_alpha_beta.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Fuzzy/alg_fuzzy.cpp
@@ -186,6 +187,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Complex
         User_File/Middleware/Algorithm/DOB
         User_File/Middleware/Algorithm/ESO
+        User_File/Middleware/Algorithm/Filter/AlphaBeta
         User_File/Middleware/Algorithm/Filter/EKF
         User_File/Middleware/Algorithm/Filter/Frequency
         User_File/Middleware/Algorithm/Filter/IIR
