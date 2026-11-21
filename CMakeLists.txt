@@ -99,8 +99,12 @@ endif()
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/ADRC/alg_adrc.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/ADRC/alg_adrc.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Basic/alg_basic.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/DOB/alg_dob.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/ESO/alg_eso.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/ESO/alg_eso.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/EKF/alg_filter_ekf.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/FSM/alg_fsm.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Fuzzy/alg_fuzzy.cpp
@@ -110,7 +114,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/OneEuro/alg_filter_one_euro.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Polynomial/alg_filter_polynomial.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/VQF/alg_filter_vqf.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/LQR/alg_lqr.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/MPC/alg_mpc.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/PID/alg_pid.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Complex/alg_complex.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Quaternion/alg_quaternion.cpp
@@ -175,9 +181,11 @@ set_property(SOURCE ${H7_BSP_USER_SOURCES} APPEND PROPERTY
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+        User_File/Middleware/Algorithm/ADRC
         User_File/Middleware/Algorithm/Basic
         User_File/Middleware/Algorithm/Complex
         User_File/Middleware/Algorithm/DOB
+        User_File/Middleware/Algorithm/ESO
         User_File/Middleware/Algorithm/Filter/EKF
         User_File/Middleware/Algorithm/Filter/Frequency
         User_File/Middleware/Algorithm/Filter/IIR
@@ -187,7 +195,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Filter/VQF
         User_File/Middleware/Algorithm/FSM
         User_File/Middleware/Algorithm/Fuzzy
+        User_File/Middleware/Algorithm/LQR
         User_File/Middleware/Algorithm/Matrix
+        User_File/Middleware/Algorithm/MPC
         User_File/Middleware/Algorithm/PID
         User_File/Middleware/Algorithm/Quaternion
         User_File/Middleware/Algorithm/Queue
