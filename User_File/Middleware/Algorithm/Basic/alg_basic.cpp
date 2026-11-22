@@ -233,13 +233,18 @@ int32_t Basic_Math_Float_To_Int(float x, float Float_1, float Float_2, int32_t I
  * @param Int_2 整型2
  * @param Float_1 浮点数1
  * @param Float_2 浮点数2
- * @return float 浮点数
+ * @return 映射后的浮点数，区间为空或输出端点无效时返回 0。
  */
 float Basic_Math_Int_To_Float(int32_t x, int32_t Int_1, int32_t Int_2, float Float_1, float Float_2)
 {
-    float tmp = (float) (x - Int_1) / (float) (Int_2 - Int_1);
-    float out = tmp * (Float_2 - Float_1) + Float_1;
-    return (out);
+    if (Int_2 == Int_1 || Basic_Math_Is_Invalid_Float(Float_1) || Basic_Math_Is_Invalid_Float(Float_2))
+    {
+        return 0.0f;
+    }
+
+    const double ratio = ((double)x - (double)Int_1) / ((double)Int_2 - (double)Int_1);
+    const double out = ratio * ((double)Float_2 - (double)Float_1) + (double)Float_1;
+    return (float)Basic_Math_Constrain(out, -(double)FLT_MAX, (double)FLT_MAX);
 }
 
 /**

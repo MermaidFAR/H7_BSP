@@ -155,6 +155,10 @@ inline bool Class_Filter_IIR_First_Order::Get_Initialized_Flag() const
 
 inline void Class_Filter_IIR_First_Order::Set_Now(float now)
 {
+    if (Basic_Math_Is_Invalid_Float(now))
+    {
+        return;
+    }
     Now = now;
 
     // 首帧直接对齐输入, 避免滤波输出从0缓慢爬升造成启动冲击。

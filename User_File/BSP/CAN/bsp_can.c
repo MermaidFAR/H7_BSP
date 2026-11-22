@@ -53,6 +53,7 @@ typedef struct
     uint32_t version;          /*!< 发布版本；每次更新消息时递增。 */
     uint32_t sent_version;     /*!< 最近一次已发送或已作废的版本。 */
     uint32_t motion_generation; /*!< 指定 ID 被停用时递增。 */
+    bool safe_stop;            /*!< 当前版本为全零停机帧。 */
 } Struct_CAN_Tx_Slot;
 
 typedef struct
@@ -96,6 +97,7 @@ static volatile uint16_t Can_TxSlotCount;
 static uint16_t Can_TxRoundRobin;
 static uint32_t Can_StopGeneration;
 static uint64_t Can_StopTimestampUs;
+static bool Can_MotionAllowed = true;
 
 static CAN_Bus_t *BSP_CAN_GetBus(FDCAN_HandleTypeDef *hfdcan)
 {
@@ -329,6 +331,11 @@ static bool BSP_CAN_Submit(const Struct_CAN_Tx_Msg *tx_msg, bool motion)
         return false;
     }
     const uint32_t primask = SYS_Enter_Critical();
+    if (motion && !Can_MotionAllowed)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
     const Struct_CAN_Tx_Slot *slot = motion ? BSP_CAN_GetTxSlot(tx_msg) : NULL;
     if (motion && slot == NULL)
     {
@@ -371,7 +378,8 @@ bool CAN_Tx_SubmitMotion(const Struct_CAN_Tx_Msg *tx_msg)
  *          对同一键再次调用会覆盖旧数据并递增版本号，因此发送任务取到的
  *          总是该键尚未发送的最新完整消息，不需要设备层管理槽号。
  */
-static bool BSP_CAN_Publish(const Struct_CAN_Tx_Msg *tx_msg, bool stamped, uint64_t timestamp_us)
+static bool BSP_CAN_Publish(const Struct_CAN_Tx_Msg *tx_msg, bool safe_stop,
+                            bool stamped, uint64_t timestamp_us)
 {
     if (!BSP_CAN_MessageIsValid(tx_msg))
     {
@@ -384,11 +392,24 @@ static bool BSP_CAN_Publish(const Struct_CAN_Tx_Msg *tx_msg, bool stamped, uint6
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    if (stamped && ((Can_StopGeneration != 0U && timestamp_us <= Can_StopTimestampUs) ||
-                    (bus->last_recovery != 0U && timestamp_us <= bus->last_recovery)))
+    if ((!safe_stop && !Can_MotionAllowed) ||
+        (stamped && ((Can_StopGeneration != 0U && timestamp_us <= Can_StopTimestampUs) ||
+                     (bus->last_recovery != 0U && timestamp_us <= bus->last_recovery))))
     {
         SYS_Exit_Critical(primask);
         return false;
+    }
+    const Struct_CAN_Tx_Msg message = BSP_CAN_CopyMessage(tx_msg);
+    if (safe_stop)
+    {
+        for (uint8_t i = 0; i < message.len; i++)
+        {
+            if (message.data[i] != 0U)
+            {
+                SYS_Exit_Critical(primask);
+                return false;
+            }
+        }
     }
     Struct_CAN_Tx_Slot *slot = BSP_CAN_GetTxSlot(tx_msg);
     if (slot == NULL)
@@ -397,7 +418,8 @@ static bool BSP_CAN_Publish(const Struct_CAN_Tx_Msg *tx_msg, bool stamped, uint6
         return false;
     }
 
-    slot->message = BSP_CAN_CopyMessage(tx_msg);
+    slot->message = message;
+    slot->safe_stop = safe_stop;
     slot->timestamp_us = stamped ? timestamp_us : SYS_Timestamp_Get_Microsecond();
     slot->version++;
 
@@ -408,12 +430,17 @@ static bool BSP_CAN_Publish(const Struct_CAN_Tx_Msg *tx_msg, bool stamped, uint6
 
 bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg)
 {
-    return BSP_CAN_Publish(tx_msg, false, 0U);
+    return BSP_CAN_Publish(tx_msg, false, false, 0U);
 }
 
 bool CAN_Tx_PerformStamped(const Struct_CAN_Tx_Msg *tx_msg, uint64_t timestamp_us)
 {
-    return BSP_CAN_Publish(tx_msg, true, timestamp_us);
+    return BSP_CAN_Publish(tx_msg, false, true, timestamp_us);
+}
+
+bool CAN_Tx_PerformSafe(const Struct_CAN_Tx_Msg *tx_msg)
+{
+    return BSP_CAN_Publish(tx_msg, true, false, 0U);
 }
 
 /**
@@ -427,7 +454,8 @@ static bool BSP_CAN_SendMsg(CAN_Bus_t *bus, const Struct_CAN_Tx_Msg *message,
 {
     FDCAN_TxHeaderTypeDef tx_header = {0};
 
-    if ((message->hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0 ||
+    if ((motion && !Can_MotionAllowed) ||
+        (message->hfdcan->Instance->PSR & FDCAN_PSR_BO) != 0 ||
         (message->hfdcan->Instance->CCCR & FDCAN_CCCR_INIT) != 0 ||
         HAL_FDCAN_GetTxFifoFreeLevel(message->hfdcan) == 0)
     {
@@ -450,23 +478,33 @@ static bool BSP_CAN_SendMsg(CAN_Bus_t *bus, const Struct_CAN_Tx_Msg *message,
     }
 
     const uint32_t buffer = HAL_FDCAN_GetLatestTxFifoQRequestBuffer(bus->handle);
-    const uint32_t index = POSITION_VAL(buffer);
-    bus->tx_timestamp_us[index] = timestamp_us;
-    bus->motion_buffers &= ~buffer;
-    if (motion)
+    if (buffer != 0U)
     {
-        bus->motion_id[index] = (uint16_t)message->id;
-        bus->motion_buffers |= buffer;
+        const uint32_t index = POSITION_VAL(buffer);
+        if (index < CAN_TX_HW_BUFFER_COUNT)
+        {
+            bus->tx_timestamp_us[index] = timestamp_us;
+            bus->motion_buffers &= ~buffer;
+            if (motion)
+            {
+                bus->motion_id[index] = (uint16_t)message->id;
+                bus->motion_buffers |= buffer;
+            }
+        }
     }
     return true;
 }
 
 /* 调用方持有临界区，作废版本与写硬件 FIFO 使用同一把锁。 */
-static void BSP_CAN_DiscardSlots(FDCAN_HandleTypeDef *hfdcan, uint32_t id)
+static void BSP_CAN_DiscardSlots(FDCAN_HandleTypeDef *hfdcan, uint32_t id, bool motion_only)
 {
     for (uint16_t i = 0; i < Can_TxSlotCount; i++)
     {
         Struct_CAN_Tx_Slot *slot = &Can_TxSlots[i];
+        if (motion_only && slot->safe_stop)
+        {
+            continue;
+        }
         if (hfdcan == NULL || (slot->message.hfdcan == hfdcan &&
                               (id == CAN_ALL_IDS || slot->message.id == id)))
         {
@@ -486,10 +524,10 @@ static uint32_t BSP_CAN_GetHardwareRequests(const FDCAN_GlobalTypeDef *instance)
     return added | instance->TXBRP;
 }
 
-void BSP_CAN_DiscardPendingSlots(void)
+/* 调用方持有临界区，保留已发布的全零停机帧。 */
+static void BSP_CAN_DiscardMotion(void)
 {
-    const uint32_t primask = SYS_Enter_Critical();
-    BSP_CAN_DiscardSlots(NULL, CAN_ALL_IDS);
+    BSP_CAN_DiscardSlots(NULL, CAN_ALL_IDS, true);
     Can_StopGeneration++;
     Can_StopTimestampUs = SYS_Timestamp_Get_Microsecond();
     for (size_t i = 0; i < CAN_BUS_COUNT; i++)
@@ -501,6 +539,23 @@ void BSP_CAN_DiscardPendingSlots(void)
             bus->handle->Instance->TXBCR = pending;
         }
     }
+}
+
+void BSP_CAN_SetMotionAllowed(bool allowed)
+{
+    const uint32_t primask = SYS_Enter_Critical();
+    if (Can_MotionAllowed && !allowed)
+    {
+        BSP_CAN_DiscardMotion();
+    }
+    Can_MotionAllowed = allowed;
+    SYS_Exit_Critical(primask);
+}
+
+void BSP_CAN_DiscardPendingSlots(void)
+{
+    const uint32_t primask = SYS_Enter_Critical();
+    BSP_CAN_DiscardMotion();
     SYS_Exit_Critical(primask);
 }
 
@@ -513,7 +568,7 @@ void BSP_CAN_DiscardPendingSlot(FDCAN_HandleTypeDef *hfdcan, uint32_t id)
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    BSP_CAN_DiscardSlots(hfdcan, id);
+    BSP_CAN_DiscardSlots(hfdcan, id, false);
     uint32_t pending = BSP_CAN_GetHardwareRequests(hfdcan->Instance) & bus->motion_buffers;
     uint32_t cancel = 0U;
     while (pending != 0U)
@@ -575,7 +630,7 @@ void BSP_CAN_Recover(void)
             }
             else
             {
-                BSP_CAN_DiscardSlots(bus->handle, CAN_ALL_IDS);
+                BSP_CAN_DiscardSlots(bus->handle, CAN_ALL_IDS, false);
                 bus->generation++;
                 bus->has_pending = false;
                 bus->motion_buffers = 0U;
@@ -613,7 +668,7 @@ void BSP_CAN_SendAsync(void)
             const CAN_Queued_Tx_t *pending = &bus->pending_message;
             const Struct_CAN_Tx_Slot *slot = pending->motion_slot;
             if (pending->bus_generation != bus->generation ||
-                (slot != NULL && (pending->stop_generation != Can_StopGeneration ||
+                (slot != NULL && (!Can_MotionAllowed || pending->stop_generation != Can_StopGeneration ||
                                   pending->motion_generation != slot->motion_generation)) ||
                 SYS_Timestamp_Get_Microsecond() - pending->timestamp_us > CAN_TX_SLOT_MAX_AGE_US ||
                 BSP_CAN_SendMsg(bus, &pending->message, pending->timestamp_us, slot != NULL))
@@ -660,8 +715,10 @@ bool BSP_CAN_SendPer(void)
             continue;
         }
         CAN_Bus_t *bus = BSP_CAN_GetBus(slot->message.hfdcan);
-        if (SYS_Timestamp_Get_Microsecond() - slot->timestamp_us > CAN_TX_SLOT_MAX_AGE_US ||
-            BSP_CAN_SendMsg(bus, &slot->message, slot->timestamp_us, true))
+        const bool motion = !slot->safe_stop;
+        if ((motion && !Can_MotionAllowed) ||
+            SYS_Timestamp_Get_Microsecond() - slot->timestamp_us > CAN_TX_SLOT_MAX_AGE_US ||
+            BSP_CAN_SendMsg(bus, &slot->message, slot->timestamp_us, motion))
         {
             slot->sent_version = version;
         }

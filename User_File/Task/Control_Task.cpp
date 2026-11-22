@@ -14,10 +14,12 @@ extern "C" void Control_Task(void* argument)
         osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
         if (!Sys_Health_Is_Safe())
         {
+            BSP_CAN_SetMotionAllowed(false);
             BSP_CAN_DiscardPendingSlots();
             // 应用在此接入零力矩、失能和安全反馈查询。
             continue;
         }
+        BSP_CAN_SetMotionAllowed(true);
         // 在此计算并更新本周期的控制输出。
     }
 }

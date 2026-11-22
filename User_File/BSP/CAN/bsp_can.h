@@ -71,7 +71,10 @@ void BSP_CAN_ConfigInit(void);
 
 void BSP_CAN_Recover(void);
 
-/** @brief 作废待发周期帧和异步运动帧，并请求取消硬件中的运动帧。 */
+/** @brief 设置运动帧门控，关闭时立即作废待发运动帧。 */
+void BSP_CAN_SetMotionAllowed(bool allowed);
+
+/** @brief 作废待发运动帧并请求硬件取消，保留全零停机帧和非运动管理帧。 */
 void BSP_CAN_DiscardPendingSlots(void);
 
 /** @brief 作废指定总线和 ID 的周期帧和异步运动帧，取消对应的硬件运动帧。 */
@@ -103,13 +106,13 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
  */
 bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg);
 
-/** @brief 提交有序运动或使能命令，共用同一 ID 的周期槽进行失效管理。 */
+/** @brief 提交有序运动或使能命令，门控关闭时拒绝。 */
 bool CAN_Tx_SubmitMotion(const Struct_CAN_Tx_Msg *tx_msg);
 
 /**
  * @brief 更新周期发送缓冲。
  * @param tx_msg 要发布的最新周期消息。
- * @return true 已更新或分配周期槽；false 参数无效或周期槽已满。
+ * @return true 已更新或分配周期槽；false 参数无效、周期槽已满或运动门控关闭。
  * @note BSP 自动按 (hfdcan, id) 查找或分配槽，不需要设备层保存槽号。
  * @note 相同键只保留最新数据；不同总线或不同 ID 使用不同槽。
  * @note 发布超过 CAN_TX_SLOT_MAX_AGE_US 的周期帧将直接作废。
@@ -120,6 +123,9 @@ bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg);
 
 /** @brief 带原计算时间发布周期帧，拒绝清槽或总线恢复前生成的帧。 */
 bool CAN_Tx_PerformStamped(const Struct_CAN_Tx_Msg *tx_msg, uint64_t timestamp_us);
+
+/** @brief 发布协议规定的全零停机帧，门控关闭时仍可发送。 */
+bool CAN_Tx_PerformSafe(const Struct_CAN_Tx_Msg *tx_msg);
 
 /**
  * @brief 按总线分别处理插入发送队列。

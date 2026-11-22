@@ -379,7 +379,16 @@ bool Sys_Health_GetSnapshot(Struct_Sys_Health *snapshot)
 
 bool Sys_Health_Is_Safe(void)
 {
-    return SYS_Health.Safe_To_Run != 0U;
+    const uint32_t primask = SYS_Enter_Critical();
+    bool safe = SYS_Health.Safe_To_Run != 0U;
+    if (safe)
+    {
+        const uint64_t updated_at_us = SYS_Health.Updated_At_us;
+        const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+        safe = now_us >= updated_at_us && now_us - updated_at_us <= SYS_HEALTH_STALE_TIMEOUT_US;
+    }
+    SYS_Exit_Critical(primask);
+    return safe;
 }
 
 Enum_Sys_Health_State Sys_Health_Get_Overall_State(void)

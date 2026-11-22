@@ -455,12 +455,12 @@ inline Class_Matrix_f32<4, 1> Class_Quaternion_f32::Get_Axis_Angle() const
         return (result);
     }
     float modulus = 1.0f / sqrtf(modulus_square);
-    float q0 = Data[0] * modulus;
+    const float q0 = Basic_Math_Constrain(Data[0] * modulus, -1.0f, 1.0f);
     float q1 = Data[1] * modulus;
     float q2 = Data[2] * modulus;
     float q3 = Data[3] * modulus;
     result[3][0] = 2.0f * acosf(q0);
-    float sin_half_angle = sqrtf(1.0f - q0 * q0);
+    const float sin_half_angle = sqrtf(fmaxf(0.0f, 1.0f - q0 * q0));
     if (sin_half_angle <= Matrix_Compare_Epsilon)
     {
         result[0][0] = 1.0f;

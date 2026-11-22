@@ -44,99 +44,42 @@ void Class_Slope::Init(float increase_value, float decrease_value, Enum_Slope_Fi
  */
 void Class_Slope::TIM_Calculate_PeriodElapsedCallback()
 {
-    // 规划为当前真实值优先的额外逻辑
-    if (Slope_First == Slope_First_REAL)
+    if (Basic_Math_Is_Invalid_Float(Target) || Basic_Math_Is_Invalid_Float(Now_Real))
     {
-        if ((Target >= Now_Real && Now_Real >= Now_Planning) || (Target <= Now_Real && Now_Real <= Now_Planning))
+        return;
+    }
+
+    float start = Now_Planning;
+    if (Slope_First == Slope_First_REAL &&
+        ((Target >= Now_Real && Now_Real >= start) || (Target <= Now_Real && Now_Real <= start)))
+    {
+        start = Now_Real;
+    }
+
+    const float remaining = Target - start;
+    float next_out = Target;
+    if (remaining > 0.0f)
+    {
+        const float step = start < 0.0f ? Decrease_Value : Increase_Value;
+        if (remaining > step)
         {
-            Out = Now_Real;
+            next_out = start + step;
+        }
+    }
+    else if (remaining < 0.0f)
+    {
+        const float step = start > 0.0f ? Decrease_Value : Increase_Value;
+        if (-remaining > step)
+        {
+            next_out = start - step;
         }
     }
 
-    if (Now_Planning > 0.0f)
+    if (isfinite(next_out))
     {
-        if (Target > Now_Planning)
-        {
-            // 正值加速
-            if (Basic_Math_Abs(Now_Planning - Target) > Increase_Value)
-            {
-                Out += Increase_Value;
-            }
-            else
-            {
-                Out = Target;
-            }
-        }
-        else if (Target < Now_Planning)
-        {
-            // 正值减速
-            if (Basic_Math_Abs(Now_Planning - Target) > Decrease_Value)
-            {
-                Out -= Decrease_Value;
-            }
-            else
-            {
-                Out = Target;
-            }
-        }
+        Out = next_out;
+        Now_Planning = next_out;
     }
-    else if (Now_Planning < 0.0f)
-    {
-        if (Target < Now_Planning)
-        {
-            // 负值加速
-            if (Basic_Math_Abs(Now_Planning - Target) > Increase_Value)
-            {
-                Out -= Increase_Value;
-            }
-            else
-            {
-                Out = Target;
-            }
-        }
-        else if (Target > Now_Planning)
-        {
-            // 负值减速
-            if (Basic_Math_Abs(Now_Planning - Target) > Decrease_Value)
-            {
-                Out += Decrease_Value;
-            }
-            else
-            {
-                Out = Target;
-            }
-        }
-    }
-    else
-    {
-        if (Target > Now_Planning)
-        {
-            // 0值正加速
-            if (Basic_Math_Abs(Now_Planning - Target) > Increase_Value)
-            {
-                Out += Increase_Value;
-            }
-            else
-            {
-                Out = Target;
-            }
-        }
-        else if (Target < Now_Planning)
-        {
-            // 0值负加速
-            if (Basic_Math_Abs(Now_Planning - Target) > Increase_Value)
-            {
-                Out -= Increase_Value;
-            }
-            else
-            {
-                Out = Target;
-            }
-        }
-    }
-
-    // 善后工作
-    Now_Planning = Out;
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

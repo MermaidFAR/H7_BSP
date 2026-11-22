@@ -70,6 +70,10 @@ inline bool Class_Filter_One_Euro::Get_Initialized_Flag() const
 
 inline void Class_Filter_One_Euro::Set_Now(float now)
 {
+    if (Basic_Math_Is_Invalid_Float(now))
+    {
+        return;
+    }
     Now = now;
     if (!Initialized_Flag)
     {

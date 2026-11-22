@@ -40,7 +40,8 @@ static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8]);
 static void QDrive_Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *data, uint32_t len, void *context)
 {
     QD4310_t *motor = (QD4310_t *)context;
-    if (len >= 8 && motor->hfdcan == hfdcan && id == 0x500U + motor->id)
+    if (motor != NULL && data != NULL && len >= 8 &&
+        motor->hfdcan == hfdcan && id == 0x500U + motor->id)
     {
         QD4310_DecodeFeedback(motor, data);
     }

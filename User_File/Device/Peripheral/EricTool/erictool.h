@@ -161,7 +161,7 @@ inline float Class_EricTool_UART::Get_Variable_Value() const
  * @brief 设置需要发送的变量数据（可变参数，传指针）
  *
  * @param Number 数据数量
- * @param ...    各变量的指针（float*）
+ * @param ...    各变量的指针（const volatile float *）
  */
 inline void Class_EricTool_UART::Set_Data(int Number, ...)
 {
@@ -173,7 +173,7 @@ inline void Class_EricTool_UART::Set_Data(int Number, ...)
     va_start(data_ptr, Number);
     for (int i = 0; i < Number; i++)
     {
-        Data[i] = (const volatile float *)(uintptr_t)va_arg(data_ptr, int);
+        Data[i] = va_arg(data_ptr, const volatile float *);
     }
     va_end(data_ptr);
     Data_Number = (uint8_t)Number;
@@ -199,7 +199,7 @@ inline float Class_EricTool_USB::Get_Variable_Value() const
     return (Variable_Value);
 }
 
-// 兼容使用 STM32 32 位地址参数的旧调用。
+// 变参必须传入 const volatile float *，也可使用数组重载。
 inline void Class_EricTool_USB::Set_Data(int Number, ...)
 {
     if (Number < 0 || (unsigned int)Number > sizeof(Data) / sizeof(Data[0]))
@@ -210,7 +210,7 @@ inline void Class_EricTool_USB::Set_Data(int Number, ...)
     va_start(data_ptr, Number);
     for (int i = 0; i < Number; i++)
     {
-        Data[i] = (const volatile float *)(uintptr_t)va_arg(data_ptr, int);
+        Data[i] = va_arg(data_ptr, const volatile float *);
     }
     va_end(data_ptr);
     Data_Number = (uint8_t)Number;

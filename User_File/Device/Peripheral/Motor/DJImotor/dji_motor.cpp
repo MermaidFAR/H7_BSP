@@ -9,6 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "dji_motor.h"
+#include <string.h>
 #include "sys_critical.h"
 #include "sys_timestamp.h"
 
@@ -587,7 +588,6 @@ bool Class_DJIMotor::Publish_Group()
     Struct_DJIMotor_Tx_Group *sender = &DJI_Motor_Tx_Groups[group];
     const uint64_t now_us = SYS_Timestamp.Get_Now_Microsecond();
     uint64_t oldest_command_us = now_us;
-    bool has_command = false;
     for (uint8_t i = 0; i < 4; i++)
     {
         Class_DJIMotor *motor = sender->slot_owner[i];
@@ -600,17 +600,18 @@ bool Class_DJIMotor::Publish_Group()
         {
             motor->Clear_Command();
         }
-        else if (sender->message.data[2 * i] != 0U || sender->message.data[2 * i + 1] != 0U)
+        else if (command_us < oldest_command_us &&
+                 (sender->message.data[2 * i] != 0U || sender->message.data[2 * i + 1] != 0U))
         {
-            has_command = true;
-            if (command_us < oldest_command_us)
-            {
-                oldest_command_us = command_us;
-            }
+            oldest_command_us = command_us;
         }
     }
-    return has_command ? CAN_Tx_PerformStamped(&sender->message, oldest_command_us) :
-                         CAN_Tx_Perform(&sender->message);
+    const uint8_t stop_data[FDCAN_MAX_PAYLOAD] = {};
+    if (memcmp(sender->message.data, stop_data, sizeof(stop_data)) == 0)
+    {
+        return CAN_Tx_PerformSafe(&sender->message);
+    }
+    return CAN_Tx_PerformStamped(&sender->message, oldest_command_us);
 }
 
 /**

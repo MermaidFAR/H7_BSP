@@ -92,23 +92,17 @@ float Class_PID::Get_Error() const
  */
 void Class_PID::TIM_Calculate_PeriodElapsedCallback()
 {
-    // P输出
-    float p_out = 0.0f;
-    // I输出
-    float i_out = 0.0f;
-    // D输出
-    float d_out = 0.0f;
-    // F输出
-    float f_out = 0.0f;
-    // 误差
-    float error;
-    // 绝对值误差
-    float abs_error;
-    // 线性变速积分
-    float speed_ratio = 0.0f;
+    if (Basic_Math_Is_Invalid_Float(Target) || Basic_Math_Is_Invalid_Float(Now))
+    {
+        return;
+    }
 
-    error = Target - Now;
-    abs_error = Basic_Math_Abs(error);
+    float error = Target - Now;
+    if (Basic_Math_Is_Invalid_Float(error))
+    {
+        return;
+    }
+    float abs_error = Basic_Math_Abs(error);
 
     // 死区只处理局部误差，不改写调用者目标；正负边界均连续。
     if (abs_error <= Dead_Zone)
@@ -125,12 +119,10 @@ void Class_PID::TIM_Calculate_PeriodElapsedCallback()
         error += Dead_Zone;
     }
 
-    // 计算p项
-
-    p_out = K_P * error;
+    const float p_out = K_P * error;
 
     // 计算i项；为保留阈值调参语义，abs_error 在死区内为零、区外仍为原始误差幅值。
-
+    float speed_ratio = 0.0f;
     if (I_Variable_Speed_A == 0.0f && I_Variable_Speed_B == 0.0f)
     {
         // 非变速积分
@@ -153,32 +145,44 @@ void Class_PID::TIM_Calculate_PeriodElapsedCallback()
         }
     }
     // Ki 为零或进入分离区间时清空积分，避免重新启用时带入旧累积量。
-    if (K_I == 0.0f || (I_Separate_Threshold != 0.0f && abs_error >= I_Separate_Threshold))
+    float next_integral = 0.0f;
+    float i_out = 0.0f;
+    const bool separate_integral = I_Separate_Threshold != 0.0f && abs_error >= I_Separate_Threshold;
+    if (K_I != 0.0f && !separate_integral)
     {
-        Integral_Error = 0.0f;
-    }
-    else
-    {
-        Integral_Error += speed_ratio * D_T * error;
+        next_integral = Integral_Error + speed_ratio * D_T * error;
+        if (!isfinite(next_integral))
+        {
+            return;
+        }
         // 累加后限幅，保证本周期的积分输出也不越界；兼容负 Ki。
         if (I_Out_Max != 0.0f)
         {
             const float integral_max = Basic_Math_Abs(I_Out_Max / K_I);
-            Basic_Math_Constrain(&Integral_Error, -integral_max, integral_max);
+            Basic_Math_Constrain(&next_integral, -integral_max, integral_max);
         }
-        i_out = K_I * Integral_Error;
+        i_out = K_I * next_integral;
     }
 
     // 计算d项
 
     const float d_delta = D_First == PID_D_First_DISABLE
                               ? error - Pre_Error : Pre_Now - Now;
-    if (D_Filter_Cutoff > 0.0f)
+    const bool filter_d = D_Filter_Cutoff > 0.0f;
+    Class_Filter_IIR_First_Order next_filter;
+    float d_out;
+    if (filter_d)
     {
         // 先滤波差分速率，再施加 K_D；K_D 为零时仍跟踪速率，但 D 输出为零。
-        D_Filter.Set_Now(d_delta / D_T);
-        D_Filter.TIM_Calculate_PeriodElapsedCallback();
-        d_out = K_D * D_Filter.Get_Out();
+        const float rate = d_delta / D_T;
+        if (!isfinite(rate))
+        {
+            return;
+        }
+        next_filter = D_Filter;
+        next_filter.Set_Now(rate);
+        next_filter.TIM_Calculate_PeriodElapsedCallback();
+        d_out = K_D * next_filter.Get_Out();
     }
     else
     {
@@ -186,21 +190,26 @@ void Class_PID::TIM_Calculate_PeriodElapsedCallback()
         d_out = K_D * d_delta / D_T;
     }
 
-    // 计算前馈
-
-    f_out = K_F * (Target - Pre_Target);
-
-    // 计算输出
-
-    Out = p_out + i_out + d_out + f_out;
+    const float f_out = K_F * (Target - Pre_Target);
+    float next_out = p_out + i_out + d_out + f_out;
+    if (!isfinite(error) || !isfinite(next_out))
+    {
+        return;
+    }
 
     // 输出限幅
     if (Out_Max != 0.0f)
     {
-        Basic_Math_Constrain(&Out, -Out_Max, Out_Max);
+        Basic_Math_Constrain(&next_out, -Out_Max, Out_Max);
     }
 
-    // 善后工作
+    // 所有候选值有效后再提交本周期状态。
+    if (filter_d)
+    {
+        D_Filter = next_filter;
+    }
+    Integral_Error = next_integral;
+    Out = next_out;
     Pre_Now = Now;
     Pre_Target = Target;
     Pre_Out = Out;

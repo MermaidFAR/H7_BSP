@@ -173,6 +173,20 @@ public:
     }
 
     bool Auto_Polling_With_Timeout();
+
+    bool Wait_Ready()
+    {
+        const uint32_t timeout_ticks = (uint32_t)((500ULL * osKernelGetTickFreq() + 999ULL) / 1000ULL);
+        const uint32_t start_tick = osKernelGetTickCount();
+        while (!Is_Ready())
+        {
+            if (osKernelGetTickCount() - start_tick >= timeout_ticks || osDelay(1U) != osOK)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 /* Exported variables ---------------------------------------------------------*/
@@ -277,7 +291,7 @@ inline bool Class_W25Q64JV::Set_Sector_Erased(uint32_t Address)
  */
 inline void Class_W25Q64JV::Set_Bolck_Erased_32K(uint32_t Address)
 {
-    if (!Initialized || Is_Busy())
+    if (!Initialized || Address >= W25Q64JV_FLASH_SIZE || (Address % 32768U) != 0U || Is_Busy())
     {
         return;
     }
@@ -285,12 +299,6 @@ inline void Class_W25Q64JV::Set_Bolck_Erased_32K(uint32_t Address)
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
     if (!Write_Enable_Activated_Flag)
-    {
-        Busy_Flag = false;
-        return;
-    }
-
-    if (Address % 32768)
     {
         Busy_Flag = false;
         return;
@@ -316,7 +324,7 @@ inline void Class_W25Q64JV::Set_Bolck_Erased_32K(uint32_t Address)
  */
 inline void Class_W25Q64JV::Set_Bolck_Erased_64K(uint32_t Address)
 {
-    if (!Initialized || Is_Busy())
+    if (!Initialized || Address >= W25Q64JV_FLASH_SIZE || (Address % 65536U) != 0U || Is_Busy())
     {
         return;
     }
@@ -324,12 +332,6 @@ inline void Class_W25Q64JV::Set_Bolck_Erased_64K(uint32_t Address)
     Busy_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
     if (!Write_Enable_Activated_Flag)
-    {
-        Busy_Flag = false;
-        return;
-    }
-
-    if (Address % 65536)
     {
         Busy_Flag = false;
         return;
@@ -452,8 +454,7 @@ inline bool Class_W25Q64JV::Read_Data(void *Dest, uint32_t Address, uint32_t Len
         {
             return false;
         }
-        while (!Is_Ready()) { osDelay(1); }
-        if (Get_Auto_Polling_Error_Count() != error_count)
+        if (!Wait_Ready() || Get_Auto_Polling_Error_Count() != error_count)
         {
             return false;
         }
@@ -497,8 +498,7 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, uint32_t Address, uint32
         {
             return false;
         }
-        while (!Is_Ready()) { osDelay(1); }
-        if (Get_Auto_Polling_Error_Count() != error_count)
+        if (!Wait_Ready() || Get_Auto_Polling_Error_Count() != error_count)
         {
             return false;
         }
@@ -507,8 +507,7 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, uint32_t Address, uint32
         {
             return false;
         }
-        while (!Is_Ready()) { osDelay(1); }
-        if (Get_Auto_Polling_Error_Count() != error_count)
+        if (!Wait_Ready() || Get_Auto_Polling_Error_Count() != error_count)
         {
             return false;
         }
