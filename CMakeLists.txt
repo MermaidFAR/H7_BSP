@@ -115,6 +115,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/OneEuro/alg_filter_one_euro.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/Polynomial/alg_filter_polynomial.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Filter/VQF/alg_filter_vqf.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/CBF/alg_cbf.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/LQR/alg_lqr.h
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/Matrix/alg_matrix.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Middleware/Algorithm/MPC/alg_mpc.h
@@ -197,6 +198,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Filter/VQF
         User_File/Middleware/Algorithm/FSM
         User_File/Middleware/Algorithm/Fuzzy
+        User_File/Middleware/Algorithm/CBF
         User_File/Middleware/Algorithm/LQR
         User_File/Middleware/Algorithm/Matrix
         User_File/Middleware/Algorithm/MPC

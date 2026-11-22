@@ -128,7 +128,8 @@ cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 | **板载器件** | W25Q64JV 外部 Flash、24 V/5 V 电源输出与电压采样、WS2812、蜂鸣器、按键 | [Onboard](User_File/Device/Onboard) |
 | **控制与轨迹** | PID（微分先行 / D 支路 IIR / 变速分离积分）、SMC 滑模、DOB 扰动观测、三阶 S 曲线、Sugeno 模糊推理 | [Algorithm](User_File/Middleware/Algorithm) |
 | **LQR** | 定长全状态反馈，支持在线更新离线求得的增益，适合平衡底盘和轮腿控制 | [LQR](User_File/Middleware/Algorithm/LQR/alg_lqr.h) |
-| **MPC** | 定长线性预测控制，在线迭代有上限，适合执行器输入受幅值约束的控制环 | [MPC](User_File/Middleware/Algorithm/MPC/alg_mpc.h) |
+| **CBF** | 一阶和二阶标量解析限位，以及最多 4 路输入、8 条软约束的安全滤波 QP | [CBF](User_File/Middleware/Algorithm/CBF/alg_cbf.h) |
+| **MPC** | 稀疏 Riccati 预分解与有界 ADMM，支持输入盒、按分量启用的状态盒及在线限幅更新，最大 6 状态、2 输入、25 步 | [MPC](User_File/Middleware/Algorithm/MPC/alg_mpc.h) |
 | **ESO** | 独立的一阶和二阶扩张状态观测器，可为速度环或位置环估计总扰动并提供补偿量 | [ESO](User_File/Middleware/Algorithm/ESO/alg_eso.h) |
 | **ADRC** | 复用二阶 ESO 的线性自抗扰控制，支持搭配跟踪微分器，用于受外扰的位置或角度跟踪 | [ADRC](User_File/Middleware/Algorithm/ADRC/alg_adrc.h) |
 | **估计与滤波** | Kalman、EKF、VQF、RLS 递推最小二乘、FIR / IIR、One Euro、多项式拟合微分 | [Filter](User_File/Middleware/Algorithm/Filter) · [RLS](User_File/Middleware/Algorithm/RLS) |
