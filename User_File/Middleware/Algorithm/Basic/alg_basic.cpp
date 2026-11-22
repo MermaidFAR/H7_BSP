@@ -209,13 +209,20 @@ float Basic_Math_Sinc(float x)
  * @param Float_2 浮点数2
  * @param Int_1 整型1
  * @param Int_2 整型2
- * @return int32_t 整型
+ * @return 限幅后的整数，浮点输入无效或输入区间为空时返回 0。
  */
 int32_t Basic_Math_Float_To_Int(float x, float Float_1, float Float_2, int32_t Int_1, int32_t Int_2)
 {
-    float tmp = (x - Float_1) / (Float_2 - Float_1);
-    int32_t out = (int32_t)(tmp * (float) (Int_2 - Int_1) + (float) (Int_1));
-    return (out);
+    if (Basic_Math_Is_Invalid_Float(x) || Basic_Math_Is_Invalid_Float(Float_1) ||
+        Basic_Math_Is_Invalid_Float(Float_2) || Float_2 == Float_1)
+    {
+        return 0;
+    }
+
+    // 双精度容纳完整 float 输入跨度和完整 int32_t 输出跨度。
+    const double ratio = ((double)x - (double)Float_1) / ((double)Float_2 - (double)Float_1);
+    const double clamped = Basic_Math_Constrain(ratio, 0.0, 1.0);
+    return (int32_t)((double)Int_1 + clamped * ((double)Int_2 - (double)Int_1));
 }
 
 /**

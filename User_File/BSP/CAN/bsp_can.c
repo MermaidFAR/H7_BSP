@@ -25,6 +25,9 @@
 
 /** 每条总线的插入发送队列深度。 */
 #define CAN_TX_QUEUE_DEPTH (16)
+#define CAN_TX_HW_BUFFER_COUNT (32U)
+#define CAN_BUS_RECOVERY_INTERVAL_US (100000U)
+#define CAN_ALL_IDS (0x800U)
 
 /* Private types -------------------------------------------------------------*/
 
@@ -46,17 +49,33 @@ typedef struct
 typedef struct
 {
     Struct_CAN_Tx_Msg message; /*!< 当前键最近一次发布的完整消息。 */
+    uint64_t timestamp_us;     /*!< 最近一次发布时间。 */
     uint32_t version;          /*!< 发布版本；每次更新消息时递增。 */
-    uint32_t sent_version;     /*!< 最近一次成功写入硬件 FIFO 的版本。 */
+    uint32_t sent_version;     /*!< 最近一次已发送或已作废的版本。 */
+    uint32_t motion_generation; /*!< 指定 ID 被停用时递增。 */
 } Struct_CAN_Tx_Slot;
+
+typedef struct
+{
+    Struct_CAN_Tx_Msg message;
+    uint64_t timestamp_us;
+    uint32_t bus_generation;
+    uint32_t stop_generation;
+    const Struct_CAN_Tx_Slot *motion_slot;
+    uint32_t motion_generation;
+} CAN_Queued_Tx_t;
 
 typedef struct
 {
     FDCAN_HandleTypeDef *handle;
     osMessageQueueId_t tx_queue;
-    Struct_CAN_Tx_Msg pending_message;
+    CAN_Queued_Tx_t pending_message;
     bool has_pending;
+    uint32_t generation;
     uint64_t last_recovery;
+    uint32_t motion_buffers;
+    uint64_t tx_timestamp_us[CAN_TX_HW_BUFFER_COUNT];
+    uint16_t motion_id[CAN_TX_HW_BUFFER_COUNT];
 } CAN_Bus_t;
 
 /* Private variables ---------------------------------------------------------*/
@@ -75,6 +94,8 @@ static volatile uint32_t Can_RxCallbackCount;
 static Struct_CAN_Tx_Slot Can_TxSlots[CAN_TX_SLOT_COUNT];
 static volatile uint16_t Can_TxSlotCount;
 static uint16_t Can_TxRoundRobin;
+static uint32_t Can_StopGeneration;
+static uint64_t Can_StopTimestampUs;
 
 static CAN_Bus_t *BSP_CAN_GetBus(FDCAN_HandleTypeDef *hfdcan)
 {
@@ -156,10 +177,12 @@ void BSP_CAN_ConfigInit(void)
     {
         CAN_Bus_t *bus = &Can_Buses[i];
         bus->has_pending = false;
+        bus->generation++;
         bus->last_recovery = 0;
+        bus->motion_buffers = 0;
         if (bus->tx_queue == NULL)
         {
-            bus->tx_queue = osMessageQueueNew(CAN_TX_QUEUE_DEPTH, sizeof(Struct_CAN_Tx_Msg), NULL);
+            bus->tx_queue = osMessageQueueNew(CAN_TX_QUEUE_DEPTH, sizeof(CAN_Queued_Tx_t), NULL);
             if (bus->tx_queue == NULL)
             {
                 Error_Handler();
@@ -270,13 +293,31 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
     }
 }
 
-/**
- * @brief 将一帧消息复制到插入发送队列。
- * @param tx_msg 要提交的完整 CAN 消息。
- * @return true 入队成功；false 消息无效、队列未创建或队列已满。
- * @note 超时时间为零，本函数不会等待空闲队列位置。
- */
-bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg)
+/* 调用方持有临界区，槽地址在 CAN BSP 初始化后保持稳定。 */
+static Struct_CAN_Tx_Slot *BSP_CAN_GetTxSlot(const Struct_CAN_Tx_Msg *message)
+{
+    for (uint16_t i = 0; i < Can_TxSlotCount; i++)
+    {
+        Struct_CAN_Tx_Slot *slot = &Can_TxSlots[i];
+        if (slot->message.hfdcan == message->hfdcan && slot->message.id == message->id)
+        {
+            return slot;
+        }
+    }
+    if (Can_TxSlotCount == CAN_TX_SLOT_COUNT)
+    {
+        return NULL;
+    }
+
+    Struct_CAN_Tx_Slot *slot = &Can_TxSlots[Can_TxSlotCount];
+    memset(slot, 0, sizeof(*slot));
+    slot->message.hfdcan = message->hfdcan;
+    slot->message.id = message->id;
+    Can_TxSlotCount++;
+    return slot;
+}
+
+static bool BSP_CAN_Submit(const Struct_CAN_Tx_Msg *tx_msg, bool motion)
 {
     if (!BSP_CAN_MessageIsValid(tx_msg) || __get_PRIMASK() != 0U)
     {
@@ -287,14 +328,39 @@ bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg)
     {
         return false;
     }
-    const Struct_CAN_Tx_Msg message = BSP_CAN_CopyMessage(tx_msg);
-    if (osMessageQueuePut(bus->tx_queue, &message, 0, 0) != osOK)
+    const uint32_t primask = SYS_Enter_Critical();
+    const Struct_CAN_Tx_Slot *slot = motion ? BSP_CAN_GetTxSlot(tx_msg) : NULL;
+    if (motion && slot == NULL)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
+    const CAN_Queued_Tx_t queued = {
+        .message = BSP_CAN_CopyMessage(tx_msg),
+        .timestamp_us = SYS_Timestamp_Get_Microsecond(),
+        .bus_generation = bus->generation,
+        .stop_generation = Can_StopGeneration,
+        .motion_slot = slot,
+        .motion_generation = motion ? slot->motion_generation : 0U,
+    };
+    SYS_Exit_Critical(primask);
+    if (osMessageQueuePut(bus->tx_queue, &queued, 0, 0) != osOK)
     {
         return false;
     }
 
     BSP_CAN_WakeTxTask();
     return true;
+}
+
+bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg)
+{
+    return BSP_CAN_Submit(tx_msg, false);
+}
+
+bool CAN_Tx_SubmitMotion(const Struct_CAN_Tx_Msg *tx_msg)
+{
+    return BSP_CAN_Submit(tx_msg, true);
 }
 
 /**
@@ -305,47 +371,49 @@ bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg)
  *          对同一键再次调用会覆盖旧数据并递增版本号，因此发送任务取到的
  *          总是该键尚未发送的最新完整消息，不需要设备层管理槽号。
  */
-bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg)
+static bool BSP_CAN_Publish(const Struct_CAN_Tx_Msg *tx_msg, bool stamped, uint64_t timestamp_us)
 {
-    if (!BSP_CAN_MessageIsValid(tx_msg) || BSP_CAN_GetBus(tx_msg->hfdcan) == NULL)
+    if (!BSP_CAN_MessageIsValid(tx_msg))
+    {
+        return false;
+    }
+    const CAN_Bus_t *bus = BSP_CAN_GetBus(tx_msg->hfdcan);
+    if (bus == NULL)
     {
         return false;
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    const uint16_t count = Can_TxSlotCount;
-    uint16_t index = 0;
-    for (; index < count; index++)
+    if (stamped && ((Can_StopGeneration != 0U && timestamp_us <= Can_StopTimestampUs) ||
+                    (bus->last_recovery != 0U && timestamp_us <= bus->last_recovery)))
     {
-        const Struct_CAN_Tx_Msg *existing = &Can_TxSlots[index].message;
-        if (existing->hfdcan == tx_msg->hfdcan && existing->id == tx_msg->id)
-        {
-            break;
-        }
+        SYS_Exit_Critical(primask);
+        return false;
     }
-
-    if (index == CAN_TX_SLOT_COUNT)
+    Struct_CAN_Tx_Slot *slot = BSP_CAN_GetTxSlot(tx_msg);
+    if (slot == NULL)
     {
         SYS_Exit_Critical(primask);
         return false;
     }
 
-    Struct_CAN_Tx_Slot *slot = &Can_TxSlots[index];
-    if (index == count)
-    {
-        memset(slot, 0, sizeof(*slot));
-    }
-
     slot->message = BSP_CAN_CopyMessage(tx_msg);
+    slot->timestamp_us = stamped ? timestamp_us : SYS_Timestamp_Get_Microsecond();
     slot->version++;
-    if (index == count)
-    {
-        Can_TxSlotCount = count + 1;
-    }
 
     SYS_Exit_Critical(primask);
     BSP_CAN_WakeTxTask();
     return true;
+}
+
+bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg)
+{
+    return BSP_CAN_Publish(tx_msg, false, 0U);
+}
+
+bool CAN_Tx_PerformStamped(const Struct_CAN_Tx_Msg *tx_msg, uint64_t timestamp_us)
+{
+    return BSP_CAN_Publish(tx_msg, true, timestamp_us);
 }
 
 /**
@@ -354,7 +422,8 @@ bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg)
  * @return true HAL 已接受该消息；false 总线不可用、FIFO 已满或 HAL 写入失败。
  * @note 返回 true 表示消息已经进入硬件发送 FIFO，不表示对端已经收到。
  */
-static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message)
+static bool BSP_CAN_SendMsg(CAN_Bus_t *bus, const Struct_CAN_Tx_Msg *message,
+                            uint64_t timestamp_us, bool motion)
 {
     FDCAN_TxHeaderTypeDef tx_header = {0};
 
@@ -375,9 +444,115 @@ static bool BSP_CAN_SendMsg(const Struct_CAN_Tx_Msg *message)
     tx_header.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
     tx_header.MessageMarker = 0;
 
-    return HAL_FDCAN_AddMessageToTxFifoQ(message->hfdcan,
-                                         &tx_header,
-                                         message->data) == HAL_OK;
+    if (HAL_FDCAN_AddMessageToTxFifoQ(message->hfdcan, &tx_header, message->data) != HAL_OK)
+    {
+        return false;
+    }
+
+    const uint32_t buffer = HAL_FDCAN_GetLatestTxFifoQRequestBuffer(bus->handle);
+    const uint32_t index = POSITION_VAL(buffer);
+    bus->tx_timestamp_us[index] = timestamp_us;
+    bus->motion_buffers &= ~buffer;
+    if (motion)
+    {
+        bus->motion_id[index] = (uint16_t)message->id;
+        bus->motion_buffers |= buffer;
+    }
+    return true;
+}
+
+/* 调用方持有临界区，作废版本与写硬件 FIFO 使用同一把锁。 */
+static void BSP_CAN_DiscardSlots(FDCAN_HandleTypeDef *hfdcan, uint32_t id)
+{
+    for (uint16_t i = 0; i < Can_TxSlotCount; i++)
+    {
+        Struct_CAN_Tx_Slot *slot = &Can_TxSlots[i];
+        if (hfdcan == NULL || (slot->message.hfdcan == hfdcan &&
+                              (id == CAN_ALL_IDS || slot->message.id == id)))
+        {
+            slot->sent_version = slot->version;
+            if (id != CAN_ALL_IDS)
+            {
+                slot->motion_generation++;
+            }
+        }
+    }
+}
+
+static uint32_t BSP_CAN_GetHardwareRequests(const FDCAN_GlobalTypeDef *instance)
+{
+    // 扫描期间，新写入的请求可能仍在 TXBAR，随后才进入 TXBRP。
+    const uint32_t added = instance->TXBAR;
+    return added | instance->TXBRP;
+}
+
+void BSP_CAN_DiscardPendingSlots(void)
+{
+    const uint32_t primask = SYS_Enter_Critical();
+    BSP_CAN_DiscardSlots(NULL, CAN_ALL_IDS);
+    Can_StopGeneration++;
+    Can_StopTimestampUs = SYS_Timestamp_Get_Microsecond();
+    for (size_t i = 0; i < CAN_BUS_COUNT; i++)
+    {
+        CAN_Bus_t *bus = &Can_Buses[i];
+        const uint32_t pending = BSP_CAN_GetHardwareRequests(bus->handle->Instance) & bus->motion_buffers;
+        if (pending != 0U)
+        {
+            bus->handle->Instance->TXBCR = pending;
+        }
+    }
+    SYS_Exit_Critical(primask);
+}
+
+void BSP_CAN_DiscardPendingSlot(FDCAN_HandleTypeDef *hfdcan, uint32_t id)
+{
+    CAN_Bus_t *bus = BSP_CAN_GetBus(hfdcan);
+    if (bus == NULL || id > 0x7FFU)
+    {
+        return;
+    }
+
+    const uint32_t primask = SYS_Enter_Critical();
+    BSP_CAN_DiscardSlots(hfdcan, id);
+    uint32_t pending = BSP_CAN_GetHardwareRequests(hfdcan->Instance) & bus->motion_buffers;
+    uint32_t cancel = 0U;
+    while (pending != 0U)
+    {
+        const uint32_t index = POSITION_VAL(pending);
+        const uint32_t buffer = 1UL << index;
+        if (bus->motion_id[index] == id)
+        {
+            cancel |= buffer;
+        }
+        pending &= ~buffer;
+    }
+    if (cancel != 0U)
+    {
+        hfdcan->Instance->TXBCR = cancel;
+    }
+    SYS_Exit_Critical(primask);
+}
+
+static void BSP_CAN_ExpireHardwareRequests(CAN_Bus_t *bus, uint64_t now)
+{
+    FDCAN_GlobalTypeDef *instance = bus->handle->Instance;
+    uint32_t pending = BSP_CAN_GetHardwareRequests(instance);
+    bus->motion_buffers &= pending;
+    uint32_t cancel = 0U;
+    while (pending != 0U)
+    {
+        const uint32_t index = POSITION_VAL(pending);
+        const uint32_t buffer = 1UL << index;
+        if (now - bus->tx_timestamp_us[index] > CAN_TX_SLOT_MAX_AGE_US)
+        {
+            cancel |= buffer;
+        }
+        pending &= ~buffer;
+    }
+    if (cancel != 0U)
+    {
+        instance->TXBCR = cancel;
+    }
 }
 
 void BSP_CAN_Recover(void)
@@ -387,13 +562,32 @@ void BSP_CAN_Recover(void)
     {
         CAN_Bus_t *bus = &Can_Buses[i];
         FDCAN_GlobalTypeDef *instance = bus->handle->Instance;
+        const uint32_t primask = SYS_Enter_Critical();
         if ((instance->PSR & FDCAN_PSR_BO) != 0 &&
             (instance->CCCR & FDCAN_CCCR_INIT) != 0 &&
-            now - bus->last_recovery >= 100000)
+            now - bus->last_recovery >= CAN_BUS_RECOVERY_INTERVAL_US)
         {
-            bus->last_recovery = now;
-            CLEAR_BIT(instance->CCCR, FDCAN_CCCR_INIT);
+            const uint32_t pending = BSP_CAN_GetHardwareRequests(instance);
+            if (pending != 0U)
+            {
+                // 等下次任务轮询确认取消完成，再允许硬件恢复发送。
+                instance->TXBCR = pending;
+            }
+            else
+            {
+                BSP_CAN_DiscardSlots(bus->handle, CAN_ALL_IDS);
+                bus->generation++;
+                bus->has_pending = false;
+                bus->motion_buffers = 0U;
+                bus->last_recovery = now;
+                CLEAR_BIT(instance->CCCR, FDCAN_CCCR_INIT);
+            }
         }
+        else
+        {
+            BSP_CAN_ExpireHardwareRequests(bus, now);
+        }
+        SYS_Exit_Critical(primask);
     }
 }
 
@@ -415,11 +609,22 @@ void BSP_CAN_SendAsync(void)
                 bus->has_pending = true;
             }
 
-            if (!BSP_CAN_SendMsg(&bus->pending_message))
+            const uint32_t primask = SYS_Enter_Critical();
+            const CAN_Queued_Tx_t *pending = &bus->pending_message;
+            const Struct_CAN_Tx_Slot *slot = pending->motion_slot;
+            if (pending->bus_generation != bus->generation ||
+                (slot != NULL && (pending->stop_generation != Can_StopGeneration ||
+                                  pending->motion_generation != slot->motion_generation)) ||
+                SYS_Timestamp_Get_Microsecond() - pending->timestamp_us > CAN_TX_SLOT_MAX_AGE_US ||
+                BSP_CAN_SendMsg(bus, &pending->message, pending->timestamp_us, slot != NULL))
+            {
+                bus->has_pending = false;
+            }
+            SYS_Exit_Critical(primask);
+            if (bus->has_pending)
             {
                 break;
             }
-            bus->has_pending = false;
         }
     }
 }
@@ -428,9 +633,8 @@ void BSP_CAN_SendAsync(void)
  * @brief 轮询周期槽，并发送每个槽尚未处理的最新版本。
  * @return true 所有待处理槽均已成功写入硬件 FIFO，或没有待处理数据；
  *         false 至少有一个待处理槽本轮发送失败。
- * @details 每轮轮换起始槽，只扫描已分配的槽。发送前在临界区
- *          内复制消息和版本，实际 HAL 发送在临界区外完成。发送成功后只确认本次
- *          快照的版本；若生产者在发送期间发布了新版本，新版本会保留到下一轮。
+ * @details 每轮轮换起始槽，只扫描已分配的槽。版本、数据龄期和有界的 HAL
+ *          FIFO 写入在同一临界区内处理，防止清槽后仍发出旧快照。
  */
 bool BSP_CAN_SendPer(void)
 {
@@ -455,18 +659,17 @@ bool BSP_CAN_SendPer(void)
             SYS_Exit_Critical(primask);
             continue;
         }
-        const Struct_CAN_Tx_Msg message = slot->message;
-        SYS_Exit_Critical(primask);
-
-        if (BSP_CAN_SendMsg(&message))
+        CAN_Bus_t *bus = BSP_CAN_GetBus(slot->message.hfdcan);
+        if (SYS_Timestamp_Get_Microsecond() - slot->timestamp_us > CAN_TX_SLOT_MAX_AGE_US ||
+            BSP_CAN_SendMsg(bus, &slot->message, slot->timestamp_us, true))
         {
-            // 只有发送任务更新 sent_version；发送期间发布的新版本继续等待。
             slot->sent_version = version;
         }
         else
         {
             result = false;
         }
+        SYS_Exit_Critical(primask);
     }
 
     return result;

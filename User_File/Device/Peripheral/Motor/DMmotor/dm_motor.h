@@ -96,6 +96,7 @@ private:
                                  uint32_t len,
                                  void *context);
     bool SendModeCommand(uint8_t command);
+    void DiscardMotion();
     void Publish(const Struct_CAN_Tx_Msg &message);
     uint32_t ControlId() const;
 

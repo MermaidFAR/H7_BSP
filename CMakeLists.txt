@@ -238,7 +238,6 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Application/SpinMode/
         User_File/Application/PowerControl/
         User_File/Application/Communication/
-        User_File/Application/Balance/
 )
 
 # Add project symbols (macros)

@@ -14,6 +14,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "alg_basic.h"
 #include "bsp_spi.h"
 #include "sys_critical.h"
 
@@ -155,6 +156,8 @@ inline void Class_WS2812::Set_RGB(uint8_t red, uint8_t green, uint8_t blue)
  */
 inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &color, float brightness)
 {
+    brightness = Basic_Math_Is_Invalid_Float(brightness) ? 0.0f :
+                 Basic_Math_Constrain(brightness, 0.0f, 1.0f);
     const Struct_WS2812_Color scaled_color = {
         (uint8_t)((float)color.Red * brightness),
         (uint8_t)((float)color.Green * brightness),

@@ -165,6 +165,7 @@ protected:
     static void PID_Init(Class_PID *pid, const PID_InitTypeDef *config);
     bool Check_Feedback_Timeout();
     void Clear_Command();
+    bool Publish_Group();
     void Apply_PID_Debug_Gains();
     void Update_PID_Debug();
 
@@ -183,6 +184,7 @@ protected:
     float pid_debug_gains[3][3]{}; // current/speed/angle 上次同步的 kp/ki/kd
     float reference = 0.0f;
     float command_limit = 0.0f;
+    uint64_t command_timestamp_us = 0;
     float gear_ratio = 1.0f;
     uint64_t feedback_timeout_us = 20000;
     bool has_temperature = false;

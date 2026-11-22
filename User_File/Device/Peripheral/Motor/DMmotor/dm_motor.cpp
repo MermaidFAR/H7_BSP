@@ -150,7 +150,7 @@ bool Class_DMMotor::SendModeCommand(uint8_t command)
     message.len = 8U;
     memset(message.data, 0xFF, 7U);
     message.data[7] = command;
-    return CAN_Tx_Submit(&message);
+    return command == DM_CMD_ENABLE ? CAN_Tx_SubmitMotion(&message) : CAN_Tx_Submit(&message);
 }
 
 /**
@@ -261,12 +261,22 @@ uint32_t Class_DMMotor::ControlId() const
 
 bool Class_DMMotor::Enable()
 {
+    DiscardMotion();
     return SendModeCommand(DM_CMD_ENABLE);
 }
 
 bool Class_DMMotor::Disable()
 {
+    DiscardMotion();
     return SendModeCommand(DM_CMD_DISABLE);
+}
+
+void Class_DMMotor::DiscardMotion()
+{
+    BSP_CAN_DiscardPendingSlot(hfdcan, can_id);
+    BSP_CAN_DiscardPendingSlot(hfdcan, DM_POSITION_SPEED_MODE_ID_OFFSET + can_id);
+    BSP_CAN_DiscardPendingSlot(hfdcan, DM_SPEED_MODE_ID_OFFSET + can_id);
+    BSP_CAN_DiscardPendingSlot(hfdcan, DM_FORCE_POSITION_MODE_ID_OFFSET + can_id);
 }
 
 bool Class_DMMotor::ClearError()
@@ -380,6 +390,12 @@ void Class_DMMotor::SetMIT(float position_rad,
                            float kd,
                            float torque_nm)
 {
+    if (Basic_Math_Is_Invalid_Float(position_rad) || Basic_Math_Is_Invalid_Float(velocity_rad_s) ||
+        Basic_Math_Is_Invalid_Float(kp) || Basic_Math_Is_Invalid_Float(kd) ||
+        Basic_Math_Is_Invalid_Float(torque_nm))
+    {
+        return;
+    }
     const float direction = reverse ? -1.0f : 1.0f;
     /** 位置量化为 16 位，速度、kp、kd、转矩各量化为 12 位，总计 64 位。 */
     const uint16_t position = (uint16_t)Basic_Math_Float_To_Int(
@@ -418,6 +434,10 @@ void Class_DMMotor::SetMIT(float position_rad,
  */
 void Class_DMMotor::SetPositionSpeed(float position_rad, float velocity_rad_s)
 {
+    if (Basic_Math_Is_Invalid_Float(position_rad) || Basic_Math_Is_Invalid_Float(velocity_rad_s))
+    {
+        return;
+    }
     const float direction = reverse ? -1.0f : 1.0f;
     position_rad *= direction;
     velocity_rad_s *= direction;
@@ -434,6 +454,10 @@ void Class_DMMotor::SetPositionSpeed(float position_rad, float velocity_rad_s)
 /** @brief 发布速度模式目标：4 字节小端 float，单位 rad/s；不自动切换模式。 */
 void Class_DMMotor::SetSpeed(float speed_rad_s)
 {
+    if (Basic_Math_Is_Invalid_Float(speed_rad_s))
+    {
+        return;
+    }
     if (reverse)
     {
         speed_rad_s = -speed_rad_s;
@@ -458,6 +482,12 @@ void Class_DMMotor::SetForcePosition(float position_rad,
                                      float velocity_limit_rad_s,
                                      float current_limit_ratio)
 {
+    if (Basic_Math_Is_Invalid_Float(position_rad) ||
+        Basic_Math_Is_Invalid_Float(velocity_limit_rad_s) ||
+        Basic_Math_Is_Invalid_Float(current_limit_ratio))
+    {
+        return;
+    }
     const float direction = reverse ? -1.0f : 1.0f;
     position_rad *= direction;
     const uint16_t velocity_limit = (uint16_t)(

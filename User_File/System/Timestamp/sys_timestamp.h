@@ -28,6 +28,8 @@
 
 #ifdef __cplusplus
 
+#include <math.h>
+
 /**
  * @brief Specialized, 系统时间戳
  *
@@ -137,17 +139,18 @@ public:
 
     inline Class_Time operator*(float value) const
     {
-        return (Class_Time((int64_t)((float) (Microsecond) * value)));
+        return Class_Time(isfinite(value) ? Saturate_Microseconds((float)Microsecond * value) : 0);
     }
 
     inline friend Class_Time operator*(float value, const Class_Time &Time)
     {
-        return (Class_Time((int64_t)((float) (Time.Get_Microsecond()) * value)));
+        return Time * value;
     }
 
     inline Class_Time operator/(float value) const
     {
-        return (Class_Time((int64_t)((float) (Microsecond) / value)));
+        return Class_Time(isfinite(value) && value != 0.0f ?
+                          Saturate_Microseconds((float)Microsecond / value) : 0);
     }
 
     inline Class_Time &operator+=(const Class_Time &Time)
@@ -164,13 +167,13 @@ public:
 
     inline Class_Time &operator*=(float value)
     {
-        Microsecond = (int64_t)((float) (Microsecond) * value);
+        Microsecond = (*this * value).Microsecond;
         return (*this);
     }
 
     inline Class_Time &operator/=(float value)
     {
-        Microsecond = (int64_t)((float) (Microsecond) / value);
+        Microsecond = (*this / value).Microsecond;
         return (*this);
     }
 
@@ -227,6 +230,18 @@ protected:
     // 读写变量
 
     // 内部函数
+    static int64_t Saturate_Microseconds(float value)
+    {
+        if (value >= 0x1p63f)
+        {
+            return INT64_MAX;
+        }
+        if (value <= -0x1p63f)
+        {
+            return INT64_MIN;
+        }
+        return (int64_t)value;
+    }
 };
 
 /* Exported variables --------------------------------------------------------*/

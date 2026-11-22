@@ -33,6 +33,7 @@ extern "C"
 #endif
 
 #define BSP_CAN_TX_READY_FLAG (1U << 0)
+#define CAN_TX_SLOT_MAX_AGE_US 20000U
 
 /**
  * @brief CAN 接收回调类型。
@@ -70,6 +71,12 @@ void BSP_CAN_ConfigInit(void);
 
 void BSP_CAN_Recover(void);
 
+/** @brief 作废待发周期帧和异步运动帧，并请求取消硬件中的运动帧。 */
+void BSP_CAN_DiscardPendingSlots(void);
+
+/** @brief 作废指定总线和 ID 的周期帧和异步运动帧，取消对应的硬件运动帧。 */
+void BSP_CAN_DiscardPendingSlot(FDCAN_HandleTypeDef *hfdcan, uint32_t id);
+
 /**
  * @brief 注册一个接收回调。
  * @param can_id 要监听的标准帧 ID。
@@ -89,11 +96,15 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
  * @brief 把一帧消息插入发送队列。
  * @param tx_msg 要插入队列的完整 CAN 消息。
  * @return true 已成功复制到队列；false 参数无效、队列未创建或队列已满。
- * @note 每次提交都会按队列顺序处理，适合使能、失能、复位、回零等命令。
+ * @note 每次提交都会按队列顺序处理，适合失能、复位、回零等命令。
+ * @note 等待超过 20 ms 或跨越 Bus-Off 恢复的消息作废。
  * @note 函数会复制消息内容，返回后调用者可以继续修改或释放原变量。
  * @note 可在任务或允许调用 RTOS API 的 ISR 内使用，调用时应保持全局中断开启。
  */
 bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg);
+
+/** @brief 提交有序运动或使能命令，共用同一 ID 的周期槽进行失效管理。 */
+bool CAN_Tx_SubmitMotion(const Struct_CAN_Tx_Msg *tx_msg);
 
 /**
  * @brief 更新周期发送缓冲。
@@ -101,10 +112,14 @@ bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg);
  * @return true 已更新或分配周期槽；false 参数无效或周期槽已满。
  * @note BSP 自动按 (hfdcan, id) 查找或分配槽，不需要设备层保存槽号。
  * @note 相同键只保留最新数据；不同总线或不同 ID 使用不同槽。
+ * @note 发布超过 CAN_TX_SLOT_MAX_AGE_US 的周期帧将直接作废。
  * @note 更新周期槽后唤醒发送任务。若调用者关闭了全局中断，发送任务通过超时兜底读取周期槽。
  * @note 从 ISR 调用时须满足 RTOS 中断优先级要求。
  */
 bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg);
+
+/** @brief 带原计算时间发布周期帧，拒绝清槽或总线恢复前生成的帧。 */
+bool CAN_Tx_PerformStamped(const Struct_CAN_Tx_Msg *tx_msg, uint64_t timestamp_us);
 
 /**
  * @brief 按总线分别处理插入发送队列。
@@ -115,7 +130,7 @@ void BSP_CAN_SendAsync(void);
 
 /**
  * @brief 周期检查所有发送槽，并发送尚未处理的最新数据。
- * @return true 所有待处理槽均已写入硬件 FIFO，或当前没有待处理数据；
+ * @return true 所有待处理槽均已写入硬件 FIFO 或已作废；
  *         false 至少有一个待处理槽暂时未能写入硬件 FIFO。
  * @note 通常由 CAN 发送任务周期调用。
  */

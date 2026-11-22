@@ -164,119 +164,26 @@ class Class_Buzzer
 public:
     void Init(float frequency = 4000.0f, float loudness = 0.0f);
 
-    inline void Set_Frequency(float frequency);
+    /** @brief 设置频率 (Hz)，无效值保留当前设置。 */
+    void Set_Frequency(float frequency);
 
-    inline void Set_Loudness(float loudness);
+    /** @brief 设置响度 [0, 1]，无效值保留当前设置。 */
+    void Set_Loudness(float loudness);
 
-    inline void Set_Sound(float frequency, float loudness);
+    /** @brief 同时设置频率 (Hz) 与响度 [0, 1]。 */
+    void Set_Sound(float frequency, float loudness);
 
-protected:
-    // 初始化相关常量
-
-    // 绑定的定时器
-    TIM_HandleTypeDef *htim;
-    // 绑定的定时器通道
-    uint32_t TIM_Channel;
-
-    // 常量
-
-    // 内部变量
-
-    // 读变量
-
-    // 写变量
-
-    // 蜂鸣器频率
-    float Frequency = 4000;
-    // 蜂鸣器响度
+private:
+    TIM_HandleTypeDef *htim = nullptr;
+    uint32_t TIM_Channel = TIM_CHANNEL_2;
+    float Frequency = 4000.0f;
     float Loudness = 0.0f;
 
-
-    // 读写变量
-
-    // 内部函数
+    void Apply_PWM();
 };
 
 /* Exported variables --------------------------------------------------------*/
 
 extern Class_Buzzer BSP_Buzzer;
 
-/* Exported function declarations --------------------------------------------*/
-
-/**
- * @brief 设置蜂鸣器频率
- * @param frequency 蜂鸣器频率, 单位Hz
- */
-inline void Class_Buzzer::Set_Frequency(float frequency)
-{
-    Frequency = Basic_Math_Constrain(frequency, 0.0f, 20000.0f);
-
-    float arr;
-    if (Frequency == 0.0f)
-    {
-        arr = 0.0f;
-    }
-    else
-    {
-        arr = 1000000.0f / Frequency;
-    }
-    __HAL_TIM_SetAutoreload(htim, arr);
-
-    float ccr = arr * Loudness * 0.5f;
-    __HAL_TIM_SetCompare(htim, TIM_Channel, ccr);
-}
-
-/**
- * @brief 设置蜂鸣器响度
- *
- * @param loudness 蜂鸣器响度，范围 [0, 1]。
- */
-inline void Class_Buzzer::Set_Loudness(float loudness)
-{
-    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
-
-    float arr;
-    if (Frequency == 0.0f)
-    {
-        arr = 0.0f;
-    }
-    else
-    {
-        arr = 1000000.0f / Frequency;
-    }
-    __HAL_TIM_SetAutoreload(htim, arr);
-
-    float ccr = arr * Loudness * 0.5f;
-    __HAL_TIM_SetCompare(htim, TIM_Channel, ccr);
-    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
-}
-
-/**
- * @brief 设置蜂鸣器声音
- *
- * @param frequency 蜂鸣器频率，单位 Hz。
- * @param loudness 蜂鸣器响度，范围 [0, 1]。
- */
-void Class_Buzzer::Set_Sound(float frequency, float loudness)
-{
-    Frequency = Basic_Math_Constrain(frequency, 0.0f, 20000.0f);
-    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
-
-    float arr;
-    if (Frequency == 0.0f)
-    {
-        arr = 0.0f;
-    }
-    else
-    {
-        arr = 1000000.0f / Frequency;
-    }
-    __HAL_TIM_SetAutoreload(htim, arr);
-
-    float ccr = arr * Loudness * 0.5f;
-    __HAL_TIM_SetCompare(htim, TIM_Channel, ccr);
-}
-
 #endif
-
-/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

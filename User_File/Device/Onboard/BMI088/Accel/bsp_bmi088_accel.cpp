@@ -335,7 +335,8 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
             tmp = PID_Temperature.Get_Out();
         }
         float output = tmp / (voltage * voltage) * HEATER_NOMINAL_VOLTAGE * HEATER_NOMINAL_VOLTAGE;
-        Basic_Math_Constrain(&output, 0.0f, 10000.0f);
+        output = Basic_Math_Is_Invalid_Float(output) ? 0.0f :
+                 Basic_Math_Constrain(output, 0.0f, 10000.0f);
         Heater_PWM_Compare = (uint32_t)output;
         __HAL_TIM_SET_COMPARE(htim, TIM_Channel, Heater_PWM_Compare);
     }

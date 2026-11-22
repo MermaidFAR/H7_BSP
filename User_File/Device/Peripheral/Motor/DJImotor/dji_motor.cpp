@@ -577,11 +577,44 @@ void Class_DJIMotor::Control()
     Struct_DJIMotor_Tx_Group *sender = &DJI_Motor_Tx_Groups[group];
     sender->message.data[2 * slot] = (uint8_t)((raw >> 8) & 0xFF);
     sender->message.data[2 * slot + 1] = (uint8_t)(raw & 0xFF);
+    command_timestamp_us = SYS_Timestamp.Get_Now_Microsecond();
     Update_PID_Debug();
 }
 
+/** @brief 检查共享帧各电机的反馈和指令龄期后再发布。 */
+bool Class_DJIMotor::Publish_Group()
+{
+    Struct_DJIMotor_Tx_Group *sender = &DJI_Motor_Tx_Groups[group];
+    const uint64_t now_us = SYS_Timestamp.Get_Now_Microsecond();
+    uint64_t oldest_command_us = now_us;
+    bool has_command = false;
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        Class_DJIMotor *motor = sender->slot_owner[i];
+        if (motor == nullptr || !motor->Check_Feedback_Timeout())
+        {
+            continue;
+        }
+        const uint64_t command_us = motor->command_timestamp_us;
+        if (now_us - command_us > CAN_TX_SLOT_MAX_AGE_US)
+        {
+            motor->Clear_Command();
+        }
+        else if (sender->message.data[2 * i] != 0U || sender->message.data[2 * i + 1] != 0U)
+        {
+            has_command = true;
+            if (command_us < oldest_command_us)
+            {
+                oldest_command_us = command_us;
+            }
+        }
+    }
+    return has_command ? CAN_Tx_PerformStamped(&sender->message, oldest_command_us) :
+                         CAN_Tx_Perform(&sender->message);
+}
+
 /**
- * @brief 失能本电机并发布包含零指令的整组报文，其他槽位保持原值。
+ * @brief 失能本电机并发布整组报文，仅保留其他电机的新鲜指令。
  * @return true 周期发送缓冲已更新，不表示硬件已发送或电机已停止。
  */
 bool Class_DJIMotor::Disable()
@@ -592,7 +625,9 @@ bool Class_DJIMotor::Disable()
         return false;
     }
     Clear_Command();
-    return CAN_Tx_Perform(&DJI_Motor_Tx_Groups[group].message);
+    const Struct_CAN_Tx_Msg *message = &DJI_Motor_Tx_Groups[group].message;
+    BSP_CAN_DiscardPendingSlot(message->hfdcan, message->id);
+    return Publish_Group();
 }
 
 /**
@@ -807,15 +842,7 @@ bool Class_DJIMotor_Group::Send()
     {
         return false;
     }
-    Struct_DJIMotor_Tx_Group *sender = &DJI_Motor_Tx_Groups[physical_group];
-    for (uint8_t slot = 0; slot < 4; ++slot)
-    {
-        if (sender->slot_owner[slot] != nullptr)
-        {
-            sender->slot_owner[slot]->Check_Feedback_Timeout();
-        }
-    }
-    return CAN_Tx_Perform(&sender->message);
+    return motors[0]->Publish_Group();
 }
 
 /** @brief 恢复组内各电机的本地使能标志，后续控制沿用已保存的目标。 */
@@ -843,5 +870,7 @@ bool Class_DJIMotor_Group::Disable()
         motors[i]->enabled = false;
         motors[i]->Clear_Command();
     }
+    const Struct_CAN_Tx_Msg *message = &DJI_Motor_Tx_Groups[physical_group].message;
+    BSP_CAN_DiscardPendingSlot(message->hfdcan, message->id);
     return Send();
 }

@@ -1,4 +1,5 @@
 #include "user_task.h"
+#include "bsp_can.h"
 #include "sys_health.h"
 
 extern "C" void Control_Task(void* argument)
@@ -13,6 +14,7 @@ extern "C" void Control_Task(void* argument)
         osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
         if (!Sys_Health_Is_Safe())
         {
+            BSP_CAN_DiscardPendingSlots();
             // 应用在此接入零力矩、失能和安全反馈查询。
             continue;
         }

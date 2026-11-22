@@ -168,18 +168,58 @@ Class_Buzzer BSP_Buzzer;
 void Class_Buzzer::Init(float frequency, float loudness)
 {
     htim = &htim12;
-    TIM_Channel = TIM_CHANNEL_2;
+    Frequency = 0.0f;
+    Loudness = 0.0f;
+    if (Basic_Math_Is_Invalid_Float(frequency) || Basic_Math_Is_Invalid_Float(loudness))
+    {
+        Apply_PWM();
+    }
+    else
+    {
+        Set_Sound(frequency, loudness);
+    }
+    HAL_TIM_PWM_Start(htim, TIM_Channel);
+}
+
+void Class_Buzzer::Set_Frequency(float frequency)
+{
+    Set_Sound(frequency, Loudness);
+}
+
+void Class_Buzzer::Set_Loudness(float loudness)
+{
+    Set_Sound(Frequency, loudness);
+}
+
+void Class_Buzzer::Set_Sound(float frequency, float loudness)
+{
+    if (Basic_Math_Is_Invalid_Float(frequency) || Basic_Math_Is_Invalid_Float(loudness))
+    {
+        return;
+    }
 
     Frequency = Basic_Math_Constrain(frequency, 0.0f, 20000.0f);
     Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
+    Apply_PWM();
+}
 
-    float arr = 1000000.0f / Frequency;
-    __HAL_TIM_SetAutoreload(htim, arr);
+void Class_Buzzer::Apply_PWM()
+{
+    if (htim == nullptr)
+    {
+        return;
+    }
 
-    float ccr = arr * Loudness * 0.5f;
-    __HAL_TIM_SetCompare(htim, TIM_Channel, ccr);
-
-    HAL_TIM_PWM_Start(htim, TIM_Channel);
+    const float timer_hz = 1000000.0f;
+    const float arr_max = 65535.0f;
+    float arr = 0.0f;
+    if (Frequency > 0.0f)
+    {
+        arr = Frequency <= timer_hz / arr_max ? arr_max : timer_hz / Frequency;
+    }
+    const float ccr = arr * Loudness * 0.5f;
+    __HAL_TIM_SetAutoreload(htim, (uint32_t)arr);
+    __HAL_TIM_SetCompare(htim, TIM_Channel, (uint32_t)ccr);
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

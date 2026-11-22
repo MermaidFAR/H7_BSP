@@ -148,6 +148,14 @@ bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value) {
         return CAN_Tx_Perform(&message);
     }
 
+    if (cmd == QD4310_CMD_ENABLE || cmd == QD4310_CMD_DISABLE || cmd == QD4310_CMD_RESET)
+    {
+        BSP_CAN_DiscardPendingSlot(message.hfdcan, message.id);
+    }
+    if (cmd == QD4310_CMD_ENABLE || cmd == QD4310_CMD_STEP_ANGLE)
+    {
+        return CAN_Tx_SubmitMotion(&message);
+    }
     return CAN_Tx_Submit(&message);
 }
 
