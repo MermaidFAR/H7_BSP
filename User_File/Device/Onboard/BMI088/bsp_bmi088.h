@@ -4,8 +4,8 @@
  * @brief BMI088设备驱动与VQF姿态解算
  */
 
-#ifndef __BSP_BMI088_H
-#define __BSP_BMI088_H
+#ifndef BSP_BMI088_H
+#define BSP_BMI088_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -59,19 +59,19 @@ public:
 
     /**
      * @brief 设置BMI088内部VQF的初始化配置
-     * @param __Config VQF参数和传感器名义更新周期
+     * @param config VQF参数和传感器名义更新周期
      * @note 必须在Init()之前调用；初始化完成后的设置不会生效。
      */
-    void Set_VQF_Config(const Struct_BMI088_VQF_Config &__Config);
+    void Set_VQF_Config(const Struct_BMI088_VQF_Config &config);
     bool Init();
     bool Is_Initialized() const { return Init_Finished_Flag; }
     void Calculate();
 
     void SPI_RxCpltCallback();
-    void EXTI_Flag_Callback(uint16_t __GPIO_Pin);
+    void EXTI_Flag_Callback(uint16_t gpio_pin);
     void TIM_128ms_Calculate_PeriodElapsedCallback();
     void TIM_1ms_Service_PeriodElapsedCallback();
-    void BMI088_Service_Transfer(const bool &__Allow_Recovery = false);
+    void BMI088_Service_Transfer(bool allow_recovery = false);
 
     inline Class_Matrix_f32<3, 1> Get_Original_Accel() const;
     inline Class_Matrix_f32<3, 1> Get_Original_Gyro() const;
@@ -111,7 +111,7 @@ public:
 
 protected:
     template<typename Data_Type>
-    inline Data_Type Get_Atomic_Copy(const Data_Type &__Data) const;
+    inline Data_Type Get_Atomic_Copy(const Data_Type &source) const;
 
     Struct_SPI_Manage_Object *SPI_Manage_Object = nullptr;
 
@@ -197,10 +197,10 @@ protected:
     uint32_t Timestamp_Anomaly_Counter = 0U;
     uint64_t Calculating_Time = 0U;
 
-    void BMI088_Recover_SPI(uint8_t __Reason);
+    void BMI088_Recover_SPI(uint8_t reason);
     void Mark_Ready(Enum_BMI088_Sensor sensor, uint64_t timestamp, bool replace = true);
-    void Set_Accel_Update_Result(const bool &__Accepted,
-                                 const uint8_t &__Reject_Reason);
+    void Set_Accel_Update_Result(bool accepted,
+                                 uint8_t reject_reason);
 };
 
 extern Class_BMI088 BSP_BMI088;
@@ -208,10 +208,10 @@ extern Class_BMI088 BSP_BMI088;
 /* Exported functions --------------------------------------------------------*/
 
 template<typename Data_Type>
-inline Data_Type Class_BMI088::Get_Atomic_Copy(const Data_Type &__Data) const
+inline Data_Type Class_BMI088::Get_Atomic_Copy(const Data_Type &source) const
 {
     const uint32_t primask = SYS_Enter_Critical();
-    const Data_Type data = __Data;
+    const Data_Type data = source;
     SYS_Exit_Critical(primask);
     return data;
 }

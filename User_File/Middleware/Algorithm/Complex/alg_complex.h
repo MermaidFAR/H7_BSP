@@ -48,7 +48,7 @@ public:
     // 赋值函数
     using Class_Matrix_f32<2, 1>::operator=;
 
-    inline float &operator[](const int &Index)
+    inline float &operator[](int Index)
     {
         return (Data[Index]);
     }
@@ -57,7 +57,7 @@ public:
 
     using Class_Matrix_f32<2, 1>::operator-;
 
-    inline Class_Complex_f32 operator*(const float &Value) const
+    inline Class_Complex_f32 operator*(float Value) const
     {
         Class_Complex_f32 result;
         result.Data[0] = Data[0] * Value;
@@ -65,7 +65,7 @@ public:
         return (result);
     }
 
-    inline friend Class_Complex_f32 operator*(const float &Value, const Class_Complex_f32 &Complex)
+    inline friend Class_Complex_f32 operator*(float Value, const Class_Complex_f32 &Complex)
     {
         Class_Complex_f32 result;
         result.Data[0] = Complex.Data[0] * Value;
@@ -110,7 +110,7 @@ public:
 
     using Class_Matrix_f32<2, 1>::operator-=;
 
-    inline Class_Complex_f32 &operator*=(const float &Value)
+    inline Class_Complex_f32 &operator*=(float Value)
     {
         Data[0] *= Value;
         Data[1] *= Value;
@@ -196,9 +196,9 @@ namespace Namespace_ALG_Complex
 
     Class_Complex_f32 Unit_Imaginary();
 
-    Class_Complex_f32 Angle_Unit(const float &Angle);
+    Class_Complex_f32 Angle_Unit(float Angle);
 
-    Class_Complex_f32 Polar(const float &Modulus, const float &Angle);
+    Class_Complex_f32 Polar(float Modulus, float Angle);
 }
 
 /* Exported function declarations --------------------------------------------*/

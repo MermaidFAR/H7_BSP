@@ -24,16 +24,13 @@
 /* Function prototypes -------------------------------------------------------*/
 /**
  * @brief 执行 BMI088 FIFO 样本的高优先级姿态解算任务。
- * @param argument CMSIS-RTOS 任务入口参数，当前未使用。
  * @details
  * 任务阻塞等待 SPI 接收回调发出的续传或样本就绪标志。每次唤醒后先继续传输，
  * 再持续解算直到陀螺仪单生产者/单消费者队列为空；由此将中断中的短时数据接收
  * 与任务中的VQF运算分离。
  */
 extern "C" void BMI088_Task(void *) {
-  // 姿态解算依赖高频陀螺仪数据，提升任务优先级以降低 FIFO 排队延迟。
-  osThreadSetPriority(osThreadGetId(), osPriorityHigh2);
-
+  // RTOS 以 osPriorityHigh2 创建本任务，降低陀螺仪 FIFO 排队延迟。
   for (;;) {
     const uint32_t flags =
         osThreadFlagsWait(0x0003, osFlagsWaitAny, osWaitForever);

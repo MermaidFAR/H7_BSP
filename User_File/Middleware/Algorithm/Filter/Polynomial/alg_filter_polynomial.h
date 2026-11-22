@@ -4,8 +4,8 @@
  * @brief 固定周期标量多项式滤波与微分
  */
 
-#ifndef __ALG_FILTER_POLYNOMIAL_H
-#define __ALG_FILTER_POLYNOMIAL_H
+#ifndef ALG_FILTER_POLYNOMIAL_H
+#define ALG_FILTER_POLYNOMIAL_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -29,12 +29,12 @@
 class Class_Filter_Polynomial
 {
 public:
-    bool Init(uint32_t __Window_Size, float __D_T = 0.001f,
-              uint32_t __Polynomial_Order = 2);
+    bool Init(uint32_t window_size, float d_t = 0.001f,
+              uint32_t polynomial_order = 2);
 
-    void Reset(float __Value = 0.0f);
+    void Reset(float value = 0.0f);
 
-    inline void Set_Now(float __Now);
+    inline void Set_Now(float now);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -59,9 +59,9 @@ protected:
 
 /* Exported function declarations --------------------------------------------*/
 
-inline void Class_Filter_Polynomial::Set_Now(float __Now)
+inline void Class_Filter_Polynomial::Set_Now(float now)
 {
-    Now = __Now;
+    Now = now;
 }
 
 inline float Class_Filter_Polynomial::Get_Out() const

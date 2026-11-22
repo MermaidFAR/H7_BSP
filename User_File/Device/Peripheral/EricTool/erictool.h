@@ -1,5 +1,5 @@
 /**
- * @file dvc_erictool.h
+ * @file erictool.h
  * @author yssickjgd (1345578933@qq.com)
  * @brief EricTool justfloat 调试工具（UART / USB CDC）
  * @version 0.2
@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef __DVC_ERICTOOL_H
-#define __DVC_ERICTOOL_H
+#ifndef ERICTOOL_H
+#define ERICTOOL_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@
      */
     class Class_EricTool_UART {
 public:
-    void Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num = 0, const char **__Rx_Variable_Assignment_List = nullptr, const uint32_t &__Frame_Tail = 0x7f800000);
+    void Init(const UART_HandleTypeDef *huart, uint8_t rx_variable_assignment_num = 0, const char **rx_variable_assignment_list = nullptr, uint32_t frame_tail = 0x7f800000);
 
     inline int32_t Get_Variable_Index() const;
 
@@ -44,7 +44,7 @@ public:
     void Set_Data(const volatile float *const *Channels, uint8_t Count);
     inline void Set_Data(int Number, ...);
 
-    void UART_RxCpltCallback(const uint8_t *Rx_Data, const uint16_t &Length);
+    void UART_RxCpltCallback(const uint8_t *Rx_Data, uint16_t Length);
 
     uint8_t TIM_1ms_Write_PeriodElapsedCallback();
 
@@ -95,7 +95,7 @@ protected:
 class Class_EricTool_USB
 {
 public:
-    void Init(const uint8_t &__Rx_Variable_Assignment_Num = 0, const char **__Rx_Variable_Assignment_List = nullptr, const uint32_t &__Frame_Tail = 0x7f800000);
+    void Init(uint8_t rx_variable_assignment_num = 0, const char **rx_variable_assignment_list = nullptr, uint32_t frame_tail = 0x7f800000);
 
     inline int32_t Get_Variable_Index() const;
 
@@ -104,7 +104,7 @@ public:
     void Set_Data(const volatile float *const *Channels, uint8_t Count);
     inline void Set_Data(int Number, ...);
 
-    void USB_RxCallback(const uint8_t *Rx_Data, const uint16_t &Length);
+    void USB_RxCallback(const uint8_t *Rx_Data, uint16_t Length);
 
     void TIM_1ms_Write_PeriodElapsedCallback();
 
@@ -219,6 +219,6 @@ inline void Class_EricTool_USB::Set_Data(int Number, ...)
 extern Class_EricTool_USB EricTool_USB;
 extern Class_EricTool_UART EricTool_UART;
 void EricTool_Send_Telemetry(void);
-#endif // !__DVC_ERICTOOL_H
+#endif // !ERICTOOL_H
 
     /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

@@ -91,7 +91,7 @@ Class_Matrix_f32<3, 1> Namespace_ALG_Matrix::Axis_Z_3d()
  * @param Angle 旋转角度, 单位弧度
  * @return Class_Matrix_f32<2, 2> 旋转矩阵
  */
-Class_Matrix_f32<2, 2> Namespace_ALG_Matrix::From_Angle(const float &Angle)
+Class_Matrix_f32<2, 2> Namespace_ALG_Matrix::From_Angle(float Angle)
 {
     Class_Matrix_f32<2, 2> result;
     float tmp_cos, tmp_sin;
@@ -111,7 +111,7 @@ Class_Matrix_f32<2, 2> Namespace_ALG_Matrix::From_Angle(const float &Angle)
  * @param Axis 旋转轴, 单位向量
  * @return Class_Matrix_f32<3, 3> 旋转矩阵
  */
-Class_Matrix_f32<3, 3> Namespace_ALG_Matrix::From_Axis_Angle(const float &Angle, const Class_Matrix_f32<3, 1> &Axis)
+Class_Matrix_f32<3, 3> Namespace_ALG_Matrix::From_Axis_Angle(float Angle, const Class_Matrix_f32<3, 1> &Axis)
 {
     Class_Matrix_f32<3, 3> result;
     float tmp_cos, tmp_sin;
@@ -137,7 +137,7 @@ Class_Matrix_f32<3, 3> Namespace_ALG_Matrix::From_Axis_Angle(const float &Angle,
  * @param Roll 横滚角, 单位弧度
  * @return Class_Matrix_f32<3, 3> 旋转矩阵
  */
-Class_Matrix_f32<3, 3> Namespace_ALG_Matrix::From_Euler_Angle(const float &Yaw, const float &Pitch, const float &Roll)
+Class_Matrix_f32<3, 3> Namespace_ALG_Matrix::From_Euler_Angle(float Yaw, float Pitch, float Roll)
 {
     Class_Matrix_f32<3, 3> result;
     float cy = arm_cos_f32(Yaw);

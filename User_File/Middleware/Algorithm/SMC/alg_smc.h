@@ -4,8 +4,8 @@
  * @brief 线性滑模面与饱和边界层滑模控制
  */
 
-#ifndef __ALG_SMC_H
-#define __ALG_SMC_H
+#ifndef ALG_SMC_H
+#define ALG_SMC_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -27,7 +27,7 @@
 class Class_SMC
 {
 public:
-    bool Init(float __Lambda, float __K, float __Eta, float __Boundary, float __Gain, float __Out_Max = 0.0f);
+    bool Init(float surface_coefficient, float k, float eta, float boundary, float gain, float out_max = 0.0f);
 
     inline float Get_Out() const;
 
@@ -45,23 +45,23 @@ public:
 
     inline float Get_Out_Max() const;
 
-    inline void Set_Lambda(float __Lambda);
+    inline void Set_Lambda(float surface_coefficient);
 
-    inline void Set_K(float __K);
+    inline void Set_K(float k);
 
-    inline void Set_Eta(float __Eta);
+    inline void Set_Eta(float eta);
 
-    inline void Set_Boundary(float __Boundary);
+    inline void Set_Boundary(float boundary);
 
-    inline void Set_Gain(float __Gain);
+    inline void Set_Gain(float gain);
 
-    inline void Set_Out_Max(float __Out_Max);
+    inline void Set_Out_Max(float out_max);
 
-    inline void Set_Target(float __Target, float __Target_Dot = 0.0f, float __Target_DDot = 0.0f);
+    inline void Set_Target(float target, float target_dot = 0.0f, float target_ddot = 0.0f);
 
-    inline void Set_Now(float __Now, float __Now_Dot);
+    inline void Set_Now(float now, float now_dot);
 
-    inline void Set_Model(float __Model);
+    inline void Set_Model(float model);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -163,91 +163,91 @@ inline float Class_SMC::Get_Out_Max() const
 
 /**
  * @brief 设定滑模面系数
- * @param __Lambda 滑模面系数, 1/s, 大于0
+ * @param surface_coefficient 滑模面系数, 1/s, 大于0
  */
-inline void Class_SMC::Set_Lambda(float __Lambda)
+inline void Class_SMC::Set_Lambda(float surface_coefficient)
 {
-    Lambda = __Lambda;
+    Lambda = surface_coefficient;
 }
 
 /**
  * @brief 设定线性趋近增益
- * @param __K 线性趋近增益, 1/s, 不小于0
+ * @param k 线性趋近增益, 1/s, 不小于0
  */
-inline void Class_SMC::Set_K(float __K)
+inline void Class_SMC::Set_K(float k)
 {
-    K = __K;
+    K = k;
 }
 
 /**
  * @brief 设定切换趋近增益
- * @param __Eta 切换趋近增益, 与测量二阶导数同单位, 大于0
+ * @param eta 切换趋近增益, 与测量二阶导数同单位, 大于0
  */
-inline void Class_SMC::Set_Eta(float __Eta)
+inline void Class_SMC::Set_Eta(float eta)
 {
-    Eta = __Eta;
+    Eta = eta;
 }
 
 /**
  * @brief 设定边界层半宽
- * @param __Boundary 边界层半宽, 与测量一阶导数同单位, 大于0
+ * @param boundary 边界层半宽, 与测量一阶导数同单位, 大于0
  */
-inline void Class_SMC::Set_Boundary(float __Boundary)
+inline void Class_SMC::Set_Boundary(float boundary)
 {
-    Boundary = __Boundary;
+    Boundary = boundary;
 }
 
 /**
  * @brief 设定名义输入增益并更新倒数
- * @param __Gain 名义输入增益, 非零且倒数有效, 允许为负
+ * @param gain 名义输入增益, 非零且倒数有效, 允许为负
  */
-inline void Class_SMC::Set_Gain(float __Gain)
+inline void Class_SMC::Set_Gain(float gain)
 {
-    Gain = __Gain;
-    Gain_Inverse = 1.0f / __Gain;
+    Gain = gain;
+    Gain_Inverse = 1.0f / gain;
 }
 
 /**
  * @brief 设定输出限幅
- * @param __Out_Max 输出绝对值上限, 不小于0, 0为不限制
+ * @param out_max 输出绝对值上限, 不小于0, 0为不限制
  */
-inline void Class_SMC::Set_Out_Max(float __Out_Max)
+inline void Class_SMC::Set_Out_Max(float out_max)
 {
-    Out_Max = __Out_Max;
+    Out_Max = out_max;
 }
 
 /**
  * @brief 设置当前时刻的目标轨迹
- * @param __Target 目标值
- * @param __Target_Dot 目标一阶导数, 定点控制时为0
- * @param __Target_DDot 目标二阶导数, 定点控制时为0
+ * @param target 目标值
+ * @param target_dot 目标一阶导数, 定点控制时为0
+ * @param target_ddot 目标二阶导数, 定点控制时为0
  */
-inline void Class_SMC::Set_Target(float __Target, float __Target_Dot, float __Target_DDot)
+inline void Class_SMC::Set_Target(float target, float target_dot, float target_ddot)
 {
-    Target = __Target;
-    Target_Dot = __Target_Dot;
-    Target_DDot = __Target_DDot;
+    Target = target;
+    Target_Dot = target_dot;
+    Target_DDot = target_ddot;
 }
 
 /**
  * @brief 设置同一时刻的测量状态
- * @param __Now 当前测量值
- * @param __Now_Dot 当前测量一阶导数, 由传感器或外部估计器提供
+ * @param now 当前测量值
+ * @param now_dot 当前测量一阶导数, 由传感器或外部估计器提供
  */
-inline void Class_SMC::Set_Now(float __Now, float __Now_Dot)
+inline void Class_SMC::Set_Now(float now, float now_dot)
 {
-    Now = __Now;
-    Now_Dot = __Now_Dot;
+    Now = now;
+    Now_Dot = now_dot;
 }
 
 /**
  * @brief 设置当前名义模型项
- * @param __Model 模型中的f(y, dy/dt, t), 与测量二阶导数同单位
+ * @param model 模型中的f(y, dy/dt, t), 与测量二阶导数同单位
  * @note 例如含粘性阻尼的转动模型, 此项可取-阻尼系数/惯量*角速度。
  */
-inline void Class_SMC::Set_Model(float __Model)
+inline void Class_SMC::Set_Model(float model)
 {
-    Model = __Model;
+    Model = model;
 }
 
 #endif

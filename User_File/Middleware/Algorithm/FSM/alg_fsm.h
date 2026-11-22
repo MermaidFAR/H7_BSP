@@ -52,11 +52,11 @@ class Class_FSM
 public:
     Struct_Status Status[Status_Max];
 
-    void Init(const uint8_t &__Now_Status_Serial = 0);
+    void Init(uint8_t now_status_serial = 0);
 
     inline uint8_t Get_Now_Status_Serial() const;
 
-    inline void Set_Status(const uint8_t &Next_Status_serial);
+    inline void Set_Status(uint8_t Next_Status_serial);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -87,12 +87,12 @@ protected:
  * @brief 状态机初始化
  *
  * @tparam Status_Max 状态机最大状态数量
- * @param __Now_Status_Serial 当前指定状态机初始编号
+ * @param now_status_serial 当前指定状态机初始编号
  */
 template<uint8_t Status_Max>
-void Class_FSM<Status_Max>::Init(const uint8_t &__Now_Status_Serial)
+void Class_FSM<Status_Max>::Init(uint8_t now_status_serial)
 {
-    Now_Status_Serial = __Now_Status_Serial;
+    Now_Status_Serial = now_status_serial;
 
     // 所有状态全刷0
     for (int i = 0; i < Status_Max; i++)
@@ -102,7 +102,7 @@ void Class_FSM<Status_Max>::Init(const uint8_t &__Now_Status_Serial)
     }
 
     // 使能初始状态
-    Status[__Now_Status_Serial].Status_Stage = Status_Stage_ENABLE;
+    Status[now_status_serial].Status_Stage = Status_Stage_ENABLE;
 }
 
 /**
@@ -138,7 +138,7 @@ inline uint8_t Class_FSM<Status_Max>::Get_Now_Status_Serial() const
  * @param Next_Status_serial 下一个状态
  */
 template<uint8_t Status_Max>
-inline void Class_FSM<Status_Max>::Set_Status(const uint8_t &Next_Status_serial)
+inline void Class_FSM<Status_Max>::Set_Status(uint8_t Next_Status_serial)
 {
     // 失能当前状态, 计数器清零
     Status[Now_Status_Serial].Status_Stage = Status_Stage_DISABLE;

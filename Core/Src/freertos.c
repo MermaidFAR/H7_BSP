@@ -46,12 +46,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-osThreadId_t StorageTaskHandle;
-const osThreadAttr_t StorageTask_attributes = {
-  .name = "StorageTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 
 /* USER CODE END Variables */
 /* Definitions for TransportTask */
@@ -65,8 +59,8 @@ const osThreadAttr_t TransportTask_attributes = {
 osThreadId_t InsTaskHandle;
 const osThreadAttr_t InsTask_attributes = {
   .name = "InsTask",
-  .stack_size = 2048 * 4,
-  .priority = (osPriority_t) osPriorityHigh1,
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for CanTxTask */
 osThreadId_t CanTxTaskHandle;
@@ -94,19 +88,25 @@ osThreadId_t BMI088TaskHandle;
 const osThreadAttr_t BMI088Task_attributes = {
   .name = "BMI088Task",
   .stack_size = 2048 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityHigh2,
 };
-/* Definitions for GimbalTask */
-osThreadId_t GimbalTaskHandle;
-const osThreadAttr_t GimbalTask_attributes = {
-  .name = "GimbalTask",
+/* Definitions for ControlTask */
+osThreadId_t ControlTaskHandle;
+const osThreadAttr_t ControlTask_attributes = {
+  .name = "ControlTask",
   .stack_size = 2048 * 4,
+  .priority = (osPriority_t) osPriorityHigh1,
+};
+/* Definitions for StorageTask */
+osThreadId_t StorageTaskHandle;
+const osThreadAttr_t StorageTask_attributes = {
+  .name = "StorageTask",
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-void Storage_Task(void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -117,6 +117,7 @@ void Status_Task(void *argument);
 void TIM1msTask(void *argument);
 void BMI088_Task(void *argument);
 void Control_Task(void *argument);
+void Storage_Task(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -184,15 +185,17 @@ void MX_FREERTOS_Init(void) {
   /* creation of BMI088Task */
   BMI088TaskHandle = osThreadNew(BMI088_Task, NULL, &BMI088Task_attributes);
 
-  /* creation of GimbalTask */
-  GimbalTaskHandle = osThreadNew(Control_Task, NULL, &GimbalTask_attributes);
+  /* creation of ControlTask */
+  ControlTaskHandle = osThreadNew(Control_Task, NULL, &ControlTask_attributes);
+
+  /* creation of StorageTask */
+  StorageTaskHandle = osThreadNew(Storage_Task, NULL, &StorageTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  StorageTaskHandle = osThreadNew(Storage_Task, NULL, &StorageTask_attributes);
   if (TransportTaskHandle == NULL || InsTaskHandle == NULL ||
       CanTxTaskHandle == NULL || StatusTaskHandle == NULL ||
       TIM_1ms_TaskHandle == NULL || BMI088TaskHandle == NULL ||
-      StorageTaskHandle == NULL)
+      ControlTaskHandle == NULL || StorageTaskHandle == NULL)
   {
     Error_Handler();
   }
@@ -316,7 +319,7 @@ __weak void BMI088_Task(void *argument)
 
 /* USER CODE BEGIN Header_Control_Task */
 /**
-* @brief Function implementing the GimbalTask thread.
+* @brief Function implementing the ControlTask thread.
 * @param argument: Not used
 * @retval None
 */
@@ -330,6 +333,25 @@ __weak void Control_Task(void *argument)
     osDelay(1);
   }
   /* USER CODE END Control_Task */
+}
+
+/* USER CODE BEGIN Header_Storage_Task */
+/**
+* @brief Function implementing the StorageTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Storage_Task */
+__weak void Storage_Task(void *argument)
+{
+  /* USER CODE BEGIN Storage_Task */
+  (void)argument;
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END Storage_Task */
 }
 
 /* Private application code --------------------------------------------------*/

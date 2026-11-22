@@ -143,7 +143,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/SEGGER_SYSVIEW_FreeRTOS.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/FreeRTOS/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
         ${CMAKE_CURRENT_LIST_DIR}/SystemView/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Init/Init.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/System/Init/sys_init.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Ins_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Transport_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Can_Tx_Task.cpp
@@ -157,7 +157,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Buzzer/bsp_buzzer.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/Key/bsp_key.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Onboard/WS2812/bsp_ws2812.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/dvc_erictool.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/User_File/Device/Peripheral/EricTool/erictool.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/TIM_1ms_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/BMI088_Task.cpp
         ${CMAKE_CURRENT_LIST_DIR}/User_File/Task/Storage_Task.cpp

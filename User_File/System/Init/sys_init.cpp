@@ -1,6 +1,6 @@
-#include "Init.h"
+#include "sys_init.h"
 
-#include "Com.h"
+#include "com.h"
 #include "SEGGER_SYSVIEW.h"
 #include "bsp_adc.h"
 #include "bsp_bmi088.h"
@@ -14,7 +14,7 @@
 #include "bsp_w25q64jv.h"
 #include "bsp_ws2812.h"
 #include "callback.h"
-#include "dvc_erictool.h"
+#include "erictool.h"
 #include "sys_debug.h"
 #include "sys_imu.h"
 #include "sys_timestamp.h"

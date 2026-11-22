@@ -4,8 +4,8 @@
  * @brief 一阶名义模型的Q滤波扰动观测器
  */
 
-#ifndef __ALG_DOB_H
-#define __ALG_DOB_H
+#ifndef ALG_DOB_H
+#define ALG_DOB_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -26,15 +26,15 @@
 class Class_DOB_First_Order
 {
 public:
-    bool Init(float __Gain, float __Time_Constant, float __Filter_Frequency, float __D_T = 0.001f);
+    bool Init(float gain, float time_constant, float filter_frequency, float d_t = 0.001f);
 
-    void Reset(float __Now = 0.0f);
+    void Reset(float now = 0.0f);
 
     inline float Get_Out() const;
 
-    inline void Set_Now(float __Now);
+    inline void Set_Now(float now);
 
-    inline void Set_Input(float __Input);
+    inline void Set_Input(float input);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -65,20 +65,20 @@ inline float Class_DOB_First_Order::Get_Out() const
 
 /**
  * @brief 设置本次观测使用的测量值
- * @param __Now 当前采样时刻的测量y[k]
+ * @param now 当前采样时刻的测量y[k]
  */
-inline void Class_DOB_First_Order::Set_Now(float __Now)
+inline void Class_DOB_First_Order::Set_Now(float now)
 {
-    Now = __Now;
+    Now = now;
 }
 
 /**
  * @brief 设置产生当前测量的上一周期输入
- * @param __Input 上一采样周期限幅后实际施加的输入, 与名义模型输入同单位
+ * @param input 上一采样周期限幅后实际施加的输入, 与名义模型输入同单位
  */
-inline void Class_DOB_First_Order::Set_Input(float __Input)
+inline void Class_DOB_First_Order::Set_Input(float input)
 {
-    Input = __Input;
+    Input = input;
 }
 
 #endif

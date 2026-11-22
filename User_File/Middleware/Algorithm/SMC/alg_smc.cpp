@@ -20,43 +20,43 @@
 
 /**
  * @brief 初始化滑模控制器, 成功后清零输入与输出
- * @param __Lambda 滑模面系数, 1/s, 大于0
- * @param __K 线性趋近增益, 1/s, 不小于0; 取0时为等速趋近律
- * @param __Eta 切换趋近增益, 与测量二阶导数同单位, 大于0
- * @param __Boundary 边界层半宽, 与测量一阶导数同单位, 大于0
- * @param __Gain 名义输入增益, 单位为测量二阶导数/控制输入, 非零, 允许为负
- * @param __Out_Max 输出绝对值上限, 不小于0, 0为不限制
+ * @param surface_coefficient 滑模面系数, 1/s, 大于0
+ * @param k 线性趋近增益, 1/s, 不小于0; 取0时为等速趋近律
+ * @param eta 切换趋近增益, 与测量二阶导数同单位, 大于0
+ * @param boundary 边界层半宽, 与测量一阶导数同单位, 大于0
+ * @param gain 名义输入增益, 单位为测量二阶导数/控制输入, 非零, 允许为负
+ * @param out_max 输出绝对值上限, 不小于0, 0为不限制
  * @return 参数有效时返回true, 否则保留原配置和输入输出并返回false
  * @note 理想模型且未饱和时, Eta大于匹配扰动上界可保证边界层外趋近。
  * 边界层内允许存在稳态误差; 采样周期需足够小, 连续趋近条件不等于离散稳定保证。
  */
-bool Class_SMC::Init(float __Lambda, float __K, float __Eta, float __Boundary, float __Gain, float __Out_Max)
+bool Class_SMC::Init(float surface_coefficient, float k, float eta, float boundary, float gain, float out_max)
 {
-    if (Basic_Math_Is_Invalid_Float(__Lambda) ||
-        Basic_Math_Is_Invalid_Float(__K) ||
-        Basic_Math_Is_Invalid_Float(__Eta) ||
-        Basic_Math_Is_Invalid_Float(__Boundary) ||
-        Basic_Math_Is_Invalid_Float(__Gain) ||
-        Basic_Math_Is_Invalid_Float(__Out_Max) ||
-        __Lambda <= 0.0f || __K < 0.0f || __Eta <= 0.0f ||
-        __Boundary <= 0.0f || __Gain == 0.0f || __Out_Max < 0.0f)
+    if (Basic_Math_Is_Invalid_Float(surface_coefficient) ||
+        Basic_Math_Is_Invalid_Float(k) ||
+        Basic_Math_Is_Invalid_Float(eta) ||
+        Basic_Math_Is_Invalid_Float(boundary) ||
+        Basic_Math_Is_Invalid_Float(gain) ||
+        Basic_Math_Is_Invalid_Float(out_max) ||
+        surface_coefficient <= 0.0f || k < 0.0f || eta <= 0.0f ||
+        boundary <= 0.0f || gain == 0.0f || out_max < 0.0f)
     {
         return (false);
     }
 
-    float gain_inverse = 1.0f / __Gain;
+    float gain_inverse = 1.0f / gain;
     if (Basic_Math_Is_Invalid_Float(gain_inverse))
     {
         return (false);
     }
 
-    Lambda = __Lambda;
-    K = __K;
-    Eta = __Eta;
-    Boundary = __Boundary;
-    Gain = __Gain;
+    Lambda = surface_coefficient;
+    K = k;
+    Eta = eta;
+    Boundary = boundary;
+    Gain = gain;
     Gain_Inverse = gain_inverse;
-    Out_Max = __Out_Max;
+    Out_Max = out_max;
 
     Target = 0.0f;
     Target_Dot = 0.0f;

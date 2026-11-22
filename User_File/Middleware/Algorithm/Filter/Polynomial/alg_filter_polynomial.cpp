@@ -12,24 +12,24 @@
 
 /**
  * @brief 生成窗口末端的等权最小二乘系数, 成功后清空历史
- * @param __Window_Size 样本数, 大于拟合阶数且不超过33
- * @param __D_T 采样周期, 单位s, 正常有限正数
- * @param __Polynomial_Order 拟合阶数, 0~3
+ * @param window_size 样本数, 大于拟合阶数且不超过33
+ * @param d_t 采样周期, 单位s, 正常有限正数
+ * @param polynomial_order 拟合阶数, 0~3
  * @return 参数及有效导数系数可由float表示时为true; 失败保留原状态
  */
-bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
-                                   uint32_t __Polynomial_Order)
+bool Class_Filter_Polynomial::Init(uint32_t window_size, float d_t,
+                                   uint32_t polynomial_order)
 {
-    if (__Polynomial_Order > 3 || __Window_Size <= __Polynomial_Order ||
-        __Window_Size > FILTER_POLYNOMIAL_MAX_WINDOW_SIZE ||
-        Basic_Math_Is_Invalid_Float(__D_T) || __D_T <= 0.0f)
+    if (polynomial_order > 3 || window_size <= polynomial_order ||
+        window_size > FILTER_POLYNOMIAL_MAX_WINDOW_SIZE ||
+        Basic_Math_Is_Invalid_Float(d_t) || d_t <= 0.0f)
     {
         return (false);
     }
 
     float coefficient[4][FILTER_POLYNOMIAL_MAX_WINDOW_SIZE] = {};
     float coefficient_max[4] = {};
-    double n = __Window_Size;
+    double n = window_size;
     double half = (n - 1.0) / 2.0;
     double n_squared = n * n;
     double norm_1 = n * (n_squared - 1.0) / 12.0;
@@ -38,27 +38,27 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
     double projection_3 = (3.0 * n_squared - 7.0) / 20.0;
     double norm_3 = n * (n_squared - 1.0) * (n_squared - 4.0) *
                     (n_squared - 9.0) / 2800.0;
-    double sampling_frequency = 1.0 / (double)__D_T;
+    double sampling_frequency = 1.0 / (double)d_t;
 
-    for (uint32_t i = 0; i < __Window_Size; i++)
+    for (uint32_t i = 0; i < window_size; i++)
     {
         // 对称采样坐标上的离散正交基, 在窗口末端half处求值及求导。
         double u = (double)i - half;
         double value[4] = {1.0 / n, 0.0, 0.0, 0.0};
-        if (__Polynomial_Order >= 1)
+        if (polynomial_order >= 1)
         {
             double basis = u / norm_1;
             value[0] += half * basis;
             value[1] += basis;
         }
-        if (__Polynomial_Order >= 2)
+        if (polynomial_order >= 2)
         {
             double basis = (u * u - mean_2) / norm_2;
             value[0] += (half * half - mean_2) * basis;
             value[1] += 2.0 * half * basis;
             value[2] += 2.0 * basis;
         }
-        if (__Polynomial_Order >= 3)
+        if (polynomial_order >= 3)
         {
             double basis = (u * u * u - projection_3 * u) / norm_3;
             value[0] += (half * half * half - projection_3 * half) * basis;
@@ -68,7 +68,7 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
         }
 
         double scale = 1.0;
-        for (uint32_t derivative = 0; derivative <= __Polynomial_Order; derivative++)
+        for (uint32_t derivative = 0; derivative <= polynomial_order; derivative++)
         {
             double scaled = value[derivative] * scale;
             if (fabs(scaled) > (double)FLT_MAX)
@@ -89,7 +89,7 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
         }
     }
 
-    for (uint32_t derivative = 0; derivative <= __Polynomial_Order; derivative++)
+    for (uint32_t derivative = 0; derivative <= polynomial_order; derivative++)
     {
         if (coefficient_max[derivative] == 0.0f)
         {
@@ -98,8 +98,8 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
     }
 
     memcpy(Coefficient, coefficient, sizeof(Coefficient));
-    Window_Size = __Window_Size;
-    Polynomial_Order = __Polynomial_Order;
+    Window_Size = window_size;
+    Polynomial_Order = polynomial_order;
     Reset();
     return (true);
 }
@@ -107,10 +107,10 @@ bool Class_Filter_Polynomial::Init(uint32_t __Window_Size, float __D_T,
 /**
  * @brief 清空窗口计数, 原量对齐到给定值, 导数清零; 不创建虚构历史样本
  */
-void Class_Filter_Polynomial::Reset(float __Value)
+void Class_Filter_Polynomial::Reset(float value)
 {
-    Now = __Value;
-    Out[0] = __Value;
+    Now = value;
+    Out[0] = value;
     Out[1] = 0.0f;
     Out[2] = 0.0f;
     Out[3] = 0.0f;

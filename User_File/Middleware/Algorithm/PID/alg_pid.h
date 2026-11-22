@@ -65,7 +65,7 @@ public:
     // D_Filter_Cutoff: Hz，0 关闭；非正/非有限值按关闭处理，上限由 IIR 限为采样频率的一半。
     // 首次启用或切换 D_First 时滤波状态从 0 开始；持续启用且 D_First 不变时保留滤波值。
     // 低通不对齐 Pre_Now/Pre_Error，不能替代停机恢复时的历史对齐。
-    void Init(const float &__K_P, const float &__K_I, const float &__K_D, const float &__K_F = 0.0f, const float &__I_Out_Max = 0.0f, const float &__Out_Max = 0.0f, const float &__D_T = 0.001f, const float &__Dead_Zone = 0.0f, const float &__I_Variable_Speed_A = 0.0f, const float &__I_Variable_Speed_B = 0.0f, const float &__I_Separate_Threshold = 0.0f, const Enum_PID_D_First &__D_First = PID_D_First_DISABLE, const float &__D_Filter_Cutoff = 0.0f);
+    void Init(float k_p, float k_i, float k_d, float k_f = 0.0f, float i_out_max = 0.0f, float out_max = 0.0f, float d_t = 0.001f, float dead_zone = 0.0f, float i_variable_speed_a = 0.0f, float i_variable_speed_b = 0.0f, float i_separate_threshold = 0.0f, Enum_PID_D_First d_first = PID_D_First_DISABLE, float d_filter_cutoff = 0.0f);
 
     float Get_Target() const;
     float Get_Now() const;
@@ -99,29 +99,29 @@ public:
 
     inline float Get_D_Filter_Cutoff() const;
 
-    inline void Set_K_P(const float &__K_P);
+    inline void Set_K_P(float k_p);
 
-    inline void Set_K_I(const float &__K_I);
+    inline void Set_K_I(float k_i);
 
-    inline void Set_K_D(const float &__K_D);
+    inline void Set_K_D(float k_d);
 
-    inline void Set_K_F(const float &__K_F);
+    inline void Set_K_F(float k_f);
 
-    inline void Set_I_Out_Max(const float &__I_Out_Max);
+    inline void Set_I_Out_Max(float i_out_max);
 
-    inline void Set_Out_Max(const float &__Out_Max);
+    inline void Set_Out_Max(float out_max);
 
-    inline void Set_I_Variable_Speed_A(const float &__I_Variable_Speed_A);
+    inline void Set_I_Variable_Speed_A(float i_variable_speed_a);
 
-    inline void Set_I_Variable_Speed_B(const float &__I_Variable_Speed_B);
+    inline void Set_I_Variable_Speed_B(float i_variable_speed_b);
 
-    inline void Set_I_Separate_Threshold(const float &__I_Separate_Threshold);
+    inline void Set_I_Separate_Threshold(float i_separate_threshold);
 
-    inline void Set_Target(const float &__Target);
+    inline void Set_Target(float target);
 
-    inline void Set_Now(const float &__Now);
+    inline void Set_Now(float now);
 
-    inline void Set_Integral_Error(const float &__Integral_Error);
+    inline void Set_Integral_Error(float integral_error);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -220,121 +220,121 @@ inline float Class_PID::Get_Out() const
 /**
  * @brief 设定PID的P
  *
- * @param __K_P PID的P
+ * @param k_p PID的P
  */
-inline void Class_PID::Set_K_P(const float &__K_P)
+inline void Class_PID::Set_K_P(float k_p)
 {
-    K_P = __K_P;
+    K_P = k_p;
 }
 
 /**
  * @brief 设定PID的I
  *
- * @param __K_I PID的I
+ * @param k_i PID的I
  */
-inline void Class_PID::Set_K_I(const float &__K_I)
+inline void Class_PID::Set_K_I(float k_i)
 {
-    K_I = __K_I;
+    K_I = k_i;
 }
 
 /**
  * @brief 设定PID的D
  *
- * @param __K_D PID的D
+ * @param k_d PID的D
  */
-inline void Class_PID::Set_K_D(const float &__K_D)
+inline void Class_PID::Set_K_D(float k_d)
 {
-    K_D = __K_D;
+    K_D = k_d;
 }
 
 /**
  * @brief 设定每周期目标增量前馈系数
  *
- * @param __K_F 前馈系数，不除以 D_T
+ * @param k_f 前馈系数，不除以 D_T
  */
-inline void Class_PID::Set_K_F(const float &__K_F)
+inline void Class_PID::Set_K_F(float k_f)
 {
-    K_F = __K_F;
+    K_F = k_f;
 }
 
 /**
  * @brief 设定积分限幅, 0为不限制
  *
- * @param __I_Out_Max 积分限幅, 0为不限制
+ * @param i_out_max 积分限幅, 0为不限制
  */
-inline void Class_PID::Set_I_Out_Max(const float &__I_Out_Max)
+inline void Class_PID::Set_I_Out_Max(float i_out_max)
 {
-    I_Out_Max = __I_Out_Max;
+    I_Out_Max = i_out_max;
 }
 
 /**
  * @brief 设定输出限幅, 0为不限制
  *
- * @param __Out_Max 输出限幅, 0为不限制
+ * @param out_max 输出限幅, 0为不限制
  */
-inline void Class_PID::Set_Out_Max(const float &__Out_Max)
+inline void Class_PID::Set_Out_Max(float out_max)
 {
-    Out_Max = __Out_Max;
+    Out_Max = out_max;
 }
 
 /**
  * @brief 设定变速积分内段阈值 A
  *
- * @param __I_Variable_Speed_A 与 B 均为零时关闭；启用线性段时要求 0 <= A < B
+ * @param i_variable_speed_a 与 B 均为零时关闭；启用线性段时要求 0 <= A < B
  */
-inline void Class_PID::Set_I_Variable_Speed_A(const float &__I_Variable_Speed_A)
+inline void Class_PID::Set_I_Variable_Speed_A(float i_variable_speed_a)
 {
-    I_Variable_Speed_A = __I_Variable_Speed_A;
+    I_Variable_Speed_A = i_variable_speed_a;
 }
 
 /**
  * @brief 设定变速积分外段阈值 B，不是区间宽度
  *
- * @param __I_Variable_Speed_B 与 A 均为零时关闭；启用线性段时要求 0 <= A < B
+ * @param i_variable_speed_b 与 A 均为零时关闭；启用线性段时要求 0 <= A < B
  */
-inline void Class_PID::Set_I_Variable_Speed_B(const float &__I_Variable_Speed_B)
+inline void Class_PID::Set_I_Variable_Speed_B(float i_variable_speed_b)
 {
-    I_Variable_Speed_B = __I_Variable_Speed_B;
+    I_Variable_Speed_B = i_variable_speed_b;
 }
 
 /**
  * @brief 设定积分分离阈值，达到时清空积分，不是冻结积分
  *
- * @param __I_Separate_Threshold 积分分离阈值，需为正数, 0为不限制
+ * @param i_separate_threshold 积分分离阈值，需为正数, 0为不限制
  */
-inline void Class_PID::Set_I_Separate_Threshold(const float &__I_Separate_Threshold)
+inline void Class_PID::Set_I_Separate_Threshold(float i_separate_threshold)
 {
-    I_Separate_Threshold = __I_Separate_Threshold;
+    I_Separate_Threshold = i_separate_threshold;
 }
 
 /**
  * @brief 设定目标值
  *
- * @param __Target 目标值
+ * @param target 目标值
  */
-inline void Class_PID::Set_Target(const float &__Target)
+inline void Class_PID::Set_Target(float target)
 {
-    Target = __Target;
+    Target = target;
 }
 
 /**
  * @brief 设定当前值
  *
- * @param __Now 当前值
+ * @param now 当前值
  */
-inline void Class_PID::Set_Now(const float &__Now)
+inline void Class_PID::Set_Now(float now)
 {
-    Now = __Now;
+    Now = now;
 }
 
 /**
  * @brief 设定积分, 一般用于积分清零
  *
- * @param __Set_Integral_Error 积分值
+ * @param integral_error 积分值
  */
-inline void Class_PID::Set_Integral_Error(const float &__Integral_Error)
+inline void Class_PID::Set_Integral_Error(float integral_error)
 {
-    Integral_Error = __Integral_Error;
+    Integral_Error = integral_error;
 }
 
 inline float Class_PID::Get_K_P() const { return K_P; }

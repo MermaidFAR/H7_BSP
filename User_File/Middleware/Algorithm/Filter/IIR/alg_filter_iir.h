@@ -6,8 +6,8 @@
  * @date 2026-07-31
  */
 
-#ifndef __ALG_FILTER_IIR_H
-#define __ALG_FILTER_IIR_H
+#ifndef ALG_FILTER_IIR_H
+#define ALG_FILTER_IIR_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -27,8 +27,8 @@
 class Class_Filter_IIR_First_Order
 {
 public:
-    void Init(const float &__Cutoff_Frequency,
-              const float &__Sampling_Frequency);
+    void Init(float cutoff_frequency,
+              float sampling_frequency);
 
     inline float Get_Out() const;
 
@@ -36,9 +36,9 @@ public:
 
     inline bool Get_Initialized_Flag() const;
 
-    inline void Set_Now(const float &__Now);
+    inline void Set_Now(float now);
 
-    inline void Reset(const float &__Value);
+    inline void Reset(float value);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -64,17 +64,17 @@ protected:
 class Class_Filter_IIR_Second_Order_Notch
 {
 public:
-    void Init(const float &__Center_Frequency,
-              const float &__Sampling_Frequency,
-              const float &__Quality_Factor);
+    void Init(float center_frequency,
+              float sampling_frequency,
+              float quality_factor);
 
     inline float Get_Out() const;
 
     inline bool Get_Initialized_Flag() const;
 
-    inline void Set_Now(const float &__Now);
+    inline void Set_Now(float now);
 
-    inline void Reset(const float &__Value);
+    inline void Reset(float value);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -104,17 +104,17 @@ protected:
 class Class_Filter_IIR_Second_Order_Low_Pass
 {
 public:
-    void Init(const float &__Cutoff_Frequency,
-              const float &__Sampling_Frequency,
-              const float &__Quality_Factor);
+    void Init(float cutoff_frequency,
+              float sampling_frequency,
+              float quality_factor);
 
     inline float Get_Out() const;
 
     inline bool Get_Initialized_Flag() const;
 
-    inline void Set_Now(const float &__Now);
+    inline void Set_Now(float now);
 
-    inline void Reset(const float &__Value);
+    inline void Reset(float value);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -153,9 +153,9 @@ inline bool Class_Filter_IIR_First_Order::Get_Initialized_Flag() const
     return Initialized_Flag;
 }
 
-inline void Class_Filter_IIR_First_Order::Set_Now(const float &__Now)
+inline void Class_Filter_IIR_First_Order::Set_Now(float now)
 {
-    Now = __Now;
+    Now = now;
 
     // 首帧直接对齐输入, 避免滤波输出从0缓慢爬升造成启动冲击。
     if (!Initialized_Flag)
@@ -165,10 +165,10 @@ inline void Class_Filter_IIR_First_Order::Set_Now(const float &__Now)
     }
 }
 
-inline void Class_Filter_IIR_First_Order::Reset(const float &__Value)
+inline void Class_Filter_IIR_First_Order::Reset(float value)
 {
-    Now = __Value;
-    Out = __Value;
+    Now = value;
+    Out = value;
     Initialized_Flag = true;
 }
 
@@ -182,28 +182,28 @@ inline bool Class_Filter_IIR_Second_Order_Notch::Get_Initialized_Flag() const
     return Initialized_Flag;
 }
 
-inline void Class_Filter_IIR_Second_Order_Notch::Set_Now(const float &__Now)
+inline void Class_Filter_IIR_Second_Order_Notch::Set_Now(float now)
 {
-    if (Basic_Math_Is_Invalid_Float(__Now))
+    if (Basic_Math_Is_Invalid_Float(now))
     {
         return;
     }
 
-    Now = __Now;
+    Now = now;
     if (!Initialized_Flag)
     {
         Reset(Now);
     }
 }
 
-inline void Class_Filter_IIR_Second_Order_Notch::Reset(const float &__Value)
+inline void Class_Filter_IIR_Second_Order_Notch::Reset(float value)
 {
-    Now = __Value;
-    Input_1 = __Value;
-    Input_2 = __Value;
-    Output_1 = __Value;
-    Output_2 = __Value;
-    Out = __Value;
+    Now = value;
+    Input_1 = value;
+    Input_2 = value;
+    Output_1 = value;
+    Output_2 = value;
+    Out = value;
     Initialized_Flag = true;
 }
 
@@ -217,28 +217,28 @@ inline bool Class_Filter_IIR_Second_Order_Low_Pass::Get_Initialized_Flag() const
     return Initialized_Flag;
 }
 
-inline void Class_Filter_IIR_Second_Order_Low_Pass::Set_Now(const float &__Now)
+inline void Class_Filter_IIR_Second_Order_Low_Pass::Set_Now(float now)
 {
-    if (Basic_Math_Is_Invalid_Float(__Now))
+    if (Basic_Math_Is_Invalid_Float(now))
     {
         return;
     }
 
-    Now = __Now;
+    Now = now;
     if (!Initialized_Flag)
     {
         Reset(Now);
     }
 }
 
-inline void Class_Filter_IIR_Second_Order_Low_Pass::Reset(const float &__Value)
+inline void Class_Filter_IIR_Second_Order_Low_Pass::Reset(float value)
 {
-    Now = __Value;
-    Input_1 = __Value;
-    Input_2 = __Value;
-    Output_1 = __Value;
-    Output_2 = __Value;
-    Out = __Value;
+    Now = value;
+    Input_1 = value;
+    Input_2 = value;
+    Output_1 = value;
+    Output_2 = value;
+    Out = value;
     Initialized_Flag = true;
 }
 

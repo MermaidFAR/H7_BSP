@@ -27,15 +27,15 @@
 /**
  * @brief 初始化
  *
- * @param __Increase_Value 增长最大幅度
- * @param __Decrease_Value 降低最大幅度
- * @param __Slope_First 规划优先类型, 分为目标值优先和真实值优先
+ * @param increase_value 增长最大幅度
+ * @param decrease_value 降低最大幅度
+ * @param slope_first 规划优先类型, 分为目标值优先和真实值优先
  */
-void Class_Slope::Init(const float &__Increase_Value, const float &__Decrease_Value, const Enum_Slope_First &__Slope_First)
+void Class_Slope::Init(float increase_value, float decrease_value, Enum_Slope_First slope_first)
 {
-    Increase_Value = __Increase_Value;
-    Decrease_Value = __Decrease_Value;
-    Slope_First = __Slope_First;
+    Increase_Value = increase_value;
+    Decrease_Value = decrease_value;
+    Slope_First = slope_first;
 }
 
 /**

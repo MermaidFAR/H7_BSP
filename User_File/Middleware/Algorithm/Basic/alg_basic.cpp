@@ -15,7 +15,7 @@
 
 #include "alg_basic.h"
 
-#include <cstring>
+#include <string.h>
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -244,7 +244,7 @@ float Basic_Math_Int_To_Float(int32_t x, int32_t Int_1, int32_t Int_2, float Flo
 bool Basic_Math_Is_Invalid_Float(float x)
 {
     uint32_t bits;
-    std::memcpy(&bits, &x, sizeof(bits));
+    memcpy(&bits, &x, sizeof(bits));
 
     uint32_t exp = (bits >> 23) & 0xff;
     uint32_t frac = bits & 0x7fffff;
@@ -278,7 +278,7 @@ float Basic_Math_Modulus_Normalization(float x, float modulus)
 {
     float tmp;
 
-    tmp = fmod(x + modulus / 2.0f, modulus);
+    tmp = fmodf(x + modulus / 2.0f, modulus);
 
     if (tmp < 0.0f)
     {

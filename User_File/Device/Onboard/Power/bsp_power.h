@@ -31,7 +31,7 @@
 class Class_Power
 {
 public:
-    void Init(const bool &__DC24_0_Status = false, const bool &__DC24_1_Status = false, const bool &__DC5_Status = false);
+    void Init(bool dc24_0_status = false, bool dc24_1_status = false, bool dc5_status = false);
 
     bool Is_Initialized() const
     {
@@ -43,11 +43,11 @@ public:
     /** 获取有效电压及采样时间；失效时电压和采样时间均为零。 */
     bool Get_Power_Voltage(float *voltage, uint64_t *sample_timestamp_us = nullptr) const;
 
-    inline void Set_DC24_0(const bool &__Status);
+    inline void Set_DC24_0(bool status);
 
-    inline void Set_DC24_1(const bool &__Status);
+    inline void Set_DC24_1(bool status);
 
-    inline void Set_DC5(const bool &__Status);
+    inline void Set_DC5(bool status);
 
 protected:
     // 初始化相关常量
@@ -91,31 +91,31 @@ inline float Class_Power::Get_Power_Voltage() const
 /**
  * @brief 设置DC24V_0输出
  *
- * @param __DC24_0 true: 输出, false: 不输出
+ * @param status 为 true 时启用输出，为 false 时关闭输出。
  */
-inline void Class_Power::Set_DC24_0(const bool &__Status)
+inline void Class_Power::Set_DC24_0(bool status)
 {
-    HAL_GPIO_WritePin(DC24_0__OUTPUT_GPIO_Port, DC24_0__OUTPUT_Pin, __Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DC24_0__OUTPUT_GPIO_Port, DC24_0__OUTPUT_Pin, status ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 /**
  * @brief 设置DC24V_1输出
  *
- * @param __DC24_1 true: 输出, false: 不输出
+ * @param status 为 true 时启用输出，为 false 时关闭输出。
  */
-inline void Class_Power::Set_DC24_1(const bool &__Status)
+inline void Class_Power::Set_DC24_1(bool status)
 {
-    HAL_GPIO_WritePin(DC24_1__OUTPUT_GPIO_Port, DC24_1__OUTPUT_Pin, __Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DC24_1__OUTPUT_GPIO_Port, DC24_1__OUTPUT_Pin, status ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 /**
  * @brief 设置DC5V输出
  *
- * @param __DC5 true: 输出, false: 不输出
+ * @param status 为 true 时启用输出，为 false 时关闭输出。
  */
-inline void Class_Power::Set_DC5(const bool &__Status)
+inline void Class_Power::Set_DC5(bool status)
 {
-    HAL_GPIO_WritePin(DC5__OUTPUT_GPIO_Port, DC5__OUTPUT_Pin, __Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DC5__OUTPUT_GPIO_Port, DC5__OUTPUT_Pin, status ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 #endif

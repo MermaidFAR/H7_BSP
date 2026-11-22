@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef __BSP_W25Q64JV_REGISTER_H
-#define __BSP_W25Q64JV_REGISTER_H
+#ifndef BSP_W25Q64JV_REGISTER_H
+#define BSP_W25Q64JV_REGISTER_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -104,6 +104,6 @@ enum Enum_W25Q64JV_Command : uint8_t
     W25Q64JV_Command_MFTR_DEVICE_ID_QUAD_IO = 0x94,
 };
 
-#endif /* __BSP_W25Q64JV_REGISTER_H */
+#endif /* BSP_W25Q64JV_REGISTER_H */
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

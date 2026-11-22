@@ -47,13 +47,12 @@ cmake --build --preset Release --parallel
 
 ### 3. Minimal Control Task Example
 
-`TIM4` wakes [Control_Task.cpp](User_File/Task/Control_Task.cpp) at 1 kHz. An application can use the health query, IMU attitude, and motor APIs in this task. Send the appropriate disable or zero-torque command for each actuator from the safety branch.
+`TIM4` wakes [Control_Task.cpp](User_File/Task/Control_Task.cpp) at 1 kHz. The RTOS creates `ControlTask` at `osPriorityHigh1` as configured in `H7_BSP.ioc`. An application can use the health query, IMU attitude, and motor APIs in this task. Send the appropriate disable or zero-torque command for each actuator from the safety branch.
 
 ```cpp
 extern "C" void Control_Task(void *argument)
 {
     (void)argument;
-    osThreadSetPriority(osThreadGetId(), osPriorityHigh1);
 
     // Initialize application modules and motors here.
 
@@ -129,7 +128,12 @@ cmake/                      GNU Arm and Clang toolchains and CubeMX build integr
 | **Inertial sensing** | BMI088 FIFO and SPI DMA capture, supply-voltage compensation for the PWM heater, VQF attitude and bias estimation | [BMI088](User_File/Device/Onboard/BMI088) · [sys_imu](User_File/System/IMU) |
 | **Onboard devices** | W25Q64JV external flash, 24 V and 5 V outputs and voltage sampling, WS2812, buzzer, and keys | [Onboard](User_File/Device/Onboard) |
 | **Control and trajectories** | PID with derivative on measurement, D-term IIR filtering, and variable-rate integral separation. Sliding-mode control, disturbance observer, third-order S-curves, and Sugeno fuzzy inference. | [Algorithm](User_File/Middleware/Algorithm) |
+| **LQR** | Fixed-size full-state feedback with runtime updates to gains computed offline, suited to balancing chassis and wheel-legged control | [LQR](User_File/Middleware/Algorithm/LQR/alg_lqr.h) |
+| **MPC** | Fixed-size linear predictive control with bounded online iterations for control loops with actuator input limits | [MPC](User_File/Middleware/Algorithm/MPC/alg_mpc.h) |
+| **ESO** | Standalone first- and second-order extended state observers that estimate total disturbance and provide compensation for velocity or position loops | [ESO](User_File/Middleware/Algorithm/ESO/alg_eso.h) |
+| **ADRC** | Linear active disturbance rejection control that reuses the second-order ESO and can use a tracking differentiator for position or angle tracking under disturbances | [ADRC](User_File/Middleware/Algorithm/ADRC/alg_adrc.h) |
 | **Estimation and filtering** | Kalman, EKF, VQF, recursive least squares, FIR/IIR, One Euro, and polynomial-fit differentiation | [Filter](User_File/Middleware/Algorithm/Filter) · [RLS](User_File/Middleware/Algorithm/RLS) |
+| **Alpha-Beta** | Constant-velocity estimation of scalar position and velocity with fixed or variable sampling intervals and read-only prediction, suited to vision updates and brief frame gaps | [Alpha-Beta](User_File/Middleware/Algorithm/Filter/AlphaBeta/alg_filter_alpha_beta.h) |
 | **Math and utilities** | Basic math, complex numbers, fixed-size matrices, quaternions, slew limiting, finite-state machines, queues, and pulse frequency division | [Algorithm](User_File/Middleware/Algorithm) |
 | **Application control** | SpinMode for gimbal/chassis coordinate transforms and spin-speed feedforward. PowerControl for chassis power limiting and RLS identification. | [SpinMode](User_File/Application/SpinMode) · [PowerControl](User_File/Application/PowerControl) |
 | **System and debugging** | Initialization, critical sections, callback dispatch, microsecond timestamps, system health snapshots, and EricTool over USB or UART | [System](User_File/System) · [EricTool](User_File/Device/Peripheral/EricTool) |
@@ -175,6 +179,21 @@ Lower numbers take precedence. Each interrupt below has subpriority `0`. See [H7
 
 - **Mute for debugging** — Set `SYS_Health_Buzzer_Mute` to `1` in the Ozone or GDB Watch window, or call `Sys_Health_Set_Buzzer_Mute(true)`. The LED and safety decision keep operating independently of the mute setting.
 - **Telemetry channels** — Both `EricTool_USB` and `EricTool_UART` accept arrays of float pointers via `Set_Data(channels, count)`. For example, bind `&SYS_Health.Power_Voltage_V` or `&Debug_IMU_Data.Euler_Yaw_rad` as a channel.
+
+### 4. FreeRTOS Task Responsibilities
+
+FreeRTOS creates the application tasks with the priorities and stack sizes set in CubeMX under `FREERTOS.Tasks01`. See [H7_BSP.ioc](H7_BSP.ioc) and [freertos.c](Core/Src/freertos.c).
+
+| Task | CMSIS Priority | Stack Size | Responsibility |
+| :--- | :--- | ---: | :--- |
+| [`BMI088Task`](User_File/Task/BMI088_Task.cpp) | `osPriorityHigh2` (42) | 8 KiB | Responds to SPI/FIFO events, processes gyro samples, runs VQF attitude estimation, and publishes the IMU debug snapshot |
+| [`ControlTask`](User_File/Task/Control_Task.cpp) | `osPriorityHigh1` (41) | 8 KiB | Wakes from TIM4 at 1 kHz, checks system safety, and provides hooks for application control and actuator disable |
+| [`CanTxTask`](User_File/Task/Can_Tx_Task.cpp) | `osPriorityHigh` (40) | 4 KiB | Handles asynchronous queues, periodic frames, and recovery on all three CAN buses, with event-driven wakeups and a 1 ms retry timeout |
+| [`TransportTask`](User_File/Task/Transport_Task.cpp) | `osPriorityNormal` (24) | 8 KiB | Initializes USB CDC and sends IMU telemetry through EricTool |
+| [`TIM_1ms_Task`](User_File/Task/TIM_1ms_Task.cpp) | `osPriorityLow` (8) | 4 KiB | Dispatches background callbacks for flash timeouts, keys, UART recovery, SPI service, ADC, LEDs, and BMI088 temperature reads and heater control every 128 ms |
+| [`StatusTask`](User_File/Task/Status_Task.cpp) | `osPriorityLow` (8) | 2 KiB | Aggregates system health at 20 Hz and drives the status LED and buzzer |
+| [`InsTask`](User_File/Task/Ins_Task.cpp) | `osPriorityLow` (8) | 1 KiB | Reserved inertial navigation extension that currently blocks while waiting for application events |
+| [`StorageTask`](User_File/Task/Storage_Task.cpp) | `osPriorityLow` (8) | 4 KiB | Reserved storage extension that currently exits after startup |
 
 ## Development Conventions
 

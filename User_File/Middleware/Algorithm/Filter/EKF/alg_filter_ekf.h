@@ -41,22 +41,22 @@ class Class_Filter_EKF
 public:
     // 随着系统确定的
     // 系统状态函数
-    Class_Matrix_f32<State_Dimension, 1> (*Function_F)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T) = nullptr;
+    Class_Matrix_f32<State_Dimension, 1> (*Function_F)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T) = nullptr;
 
     // 系统状态函数对状态的雅可比矩阵
-    Class_Matrix_f32<State_Dimension, State_Dimension> (*Function_Jacobian_F_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T) = nullptr;
+    Class_Matrix_f32<State_Dimension, State_Dimension> (*Function_Jacobian_F_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T) = nullptr;
 
     // 系统状态函数对过程噪声的雅可比矩阵
-    Class_Matrix_f32<State_Dimension, Input_Dimension> (*Function_Jacobian_F_W)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T) = nullptr;
+    Class_Matrix_f32<State_Dimension, Input_Dimension> (*Function_Jacobian_F_W)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T) = nullptr;
 
     // 系统测量函数
-    Class_Matrix_f32<Measurement_Dimension, 1> (*Function_H)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const float &D_T) = nullptr;
+    Class_Matrix_f32<Measurement_Dimension, 1> (*Function_H)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T) = nullptr;
 
     // 系统测量函数对状态的雅可比矩阵
-    Class_Matrix_f32<Measurement_Dimension, State_Dimension> (*Function_Jacobian_H_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const float &D_T) = nullptr;
+    Class_Matrix_f32<Measurement_Dimension, State_Dimension> (*Function_Jacobian_H_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T) = nullptr;
 
     // 系统测量函数对测量噪声的雅可比矩阵
-    Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> (*Function_Jacobian_H_V)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const float &D_T) = nullptr;
+    Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> (*Function_Jacobian_H_V)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T) = nullptr;
 
     // 需要自己调参的
     // 过程噪声协方差矩阵
@@ -82,13 +82,13 @@ public:
     // 测量向量
     Class_Matrix_f32<Measurement_Dimension, 1> Vector_Z;
 
-    void Init(const Class_Matrix_f32<Input_Dimension, Input_Dimension> &__Matrix_Q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &__Matrix_R, const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_P = Namespace_ALG_Matrix::Identity<State_Dimension, State_Dimension>(), const Class_Matrix_f32<State_Dimension, 1> &__Vector_X = Namespace_ALG_Matrix::Zero<State_Dimension, 1>(), const Class_Matrix_f32<Input_Dimension, 1> &__Matrix_U = Namespace_ALG_Matrix::Zero<Input_Dimension, 1>());
+    void Init(const Class_Matrix_f32<Input_Dimension, Input_Dimension> &matrix_q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &matrix_r, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_p = Namespace_ALG_Matrix::Identity<State_Dimension, State_Dimension>(), const Class_Matrix_f32<State_Dimension, 1> &vector_x = Namespace_ALG_Matrix::Zero<State_Dimension, 1>(), const Class_Matrix_f32<Input_Dimension, 1> &matrix_u = Namespace_ALG_Matrix::Zero<Input_Dimension, 1>());
 
-    inline void Config_Nonlinear_State_Model(Class_Matrix_f32<State_Dimension, 1> (*__Function_F)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T), Class_Matrix_f32<State_Dimension, State_Dimension> (*__Function_Jacobian_F_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T), Class_Matrix_f32<State_Dimension, Input_Dimension> (*__Function_Jacobian_F_W)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T));
+    inline void Config_Nonlinear_State_Model(Class_Matrix_f32<State_Dimension, 1> (*function_f)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T), Class_Matrix_f32<State_Dimension, State_Dimension> (*function_jacobian_f_x)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T), Class_Matrix_f32<State_Dimension, Input_Dimension> (*function_jacobian_f_w)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T));
 
-    inline void Config_Nonlinear_Measurement_Model(Class_Matrix_f32<Measurement_Dimension, 1> (*__Function_H)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const float &D_T), Class_Matrix_f32<Measurement_Dimension, State_Dimension> (*__Function_Jacobian_H_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const float &D_T), Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> (*__Function_Jacobian_H_V)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const float &D_T));
+    inline void Config_Nonlinear_Measurement_Model(Class_Matrix_f32<Measurement_Dimension, 1> (*function_h)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T), Class_Matrix_f32<Measurement_Dimension, State_Dimension> (*function_jacobian_h_x)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T), Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> (*function_jacobian_h_v)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T));
 
-    void Set_D_T(const float &__D_T);
+    void Set_D_T(float d_t);
 
     void TIM_Predict_PeriodElapsedCallback();
 
@@ -128,20 +128,20 @@ protected:
  * @tparam State_Dimension 状态维度
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
- * @param __Matrix_Q 过程噪声协方差矩阵
- * @param __Matrix_R 测量噪声协方差矩阵
- * @param __Vector_X 初始状态向量
- * @param __Matrix_U 初始输入向量
+ * @param matrix_q 过程噪声协方差矩阵
+ * @param matrix_r 测量噪声协方差矩阵
+ * @param vector_x 初始状态向量
+ * @param matrix_u 初始输入向量
  */
 template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Init(const Class_Matrix_f32<Input_Dimension, Input_Dimension> &__Matrix_Q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &__Matrix_R, const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_P, const Class_Matrix_f32<State_Dimension, 1> &__Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &__Matrix_U)
+void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Init(const Class_Matrix_f32<Input_Dimension, Input_Dimension> &matrix_q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &matrix_r, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_p, const Class_Matrix_f32<State_Dimension, 1> &vector_x, const Class_Matrix_f32<Input_Dimension, 1> &matrix_u)
 {
-    Matrix_Q = __Matrix_Q;
-    Matrix_R = __Matrix_R;
+    Matrix_Q = matrix_q;
+    Matrix_R = matrix_r;
 
-    Matrix_P = __Matrix_P;
-    Vector_X = __Vector_X;
-    Vector_U = __Matrix_U;
+    Matrix_P = matrix_p;
+    Vector_X = vector_x;
+    Vector_U = matrix_u;
 }
 
 /**
@@ -150,26 +150,26 @@ void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::
  * @tparam State_Dimension 状态维度
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
- * @param __Function_F 系统状态函数
- * @param __Function_Jacobian_F_X 系统状态函数对状态的雅可比矩阵
- * @param __Function_Jacobian_F_W 系统状态函数对过程噪声的雅可比矩阵
+ * @param function_f 系统状态函数
+ * @param function_jacobian_f_x 系统状态函数对状态的雅可比矩阵
+ * @param function_jacobian_f_w 系统状态函数对过程噪声的雅可比矩阵
  */
 template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_State_Model(Class_Matrix_f32 < State_Dimension, 1 > (*__Function_F)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, 
+inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_State_Model(Class_Matrix_f32 < State_Dimension, 1 > (*function_f)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X,
 const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, 
-const float &D_T
+float D_T
 )
 ,
-Class_Matrix_f32<State_Dimension, State_Dimension> (*__Function_Jacobian_F_X)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, const float &D_T), Class_Matrix_f32<State_Dimension, Input_Dimension>(*__Function_Jacobian_F_W)(
+Class_Matrix_f32<State_Dimension, State_Dimension> (*function_jacobian_f_x)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T), Class_Matrix_f32<State_Dimension, Input_Dimension>(*function_jacobian_f_w)(
 const Class_Matrix_f32<State_Dimension, 1> &Vector_X, 
 const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, 
-const float &D_T
+float D_T
 )
 )
 {
-    Function_F = __Function_F;
-    Function_Jacobian_F_X = __Function_Jacobian_F_X;
-    Function_Jacobian_F_W = __Function_Jacobian_F_W;
+    Function_F = function_f;
+    Function_Jacobian_F_X = function_jacobian_f_x;
+    Function_Jacobian_F_W = function_jacobian_f_w;
 }
 
 /**
@@ -178,16 +178,16 @@ const float &D_T
  * @tparam State_Dimension 状态维度
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
- * @param __Function_H 系统测量函数
- * @param __Function_Jacobian_H_X 系统测量函数对状态的雅可比矩阵
- * @param __Function_Jacobian_H_V 系统测量函数对测量噪声的雅可比矩阵
+ * @param function_h 系统测量函数
+ * @param function_jacobian_h_x 系统测量函数对状态的雅可比矩阵
+ * @param function_jacobian_h_v 系统测量函数对测量噪声的雅可比矩阵
  */
 template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_Measurement_Model(Class_Matrix_f32 < Measurement_Dimension, 1 > (*__Function_H)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, const float &D_T), Class_Matrix_f32 < Measurement_Dimension, State_Dimension > (*__Function_Jacobian_H_X)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, const float &D_T), Class_Matrix_f32 < Measurement_Dimension, Measurement_Dimension > (*__Function_Jacobian_H_V)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, const float &D_T))
+inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_Measurement_Model(Class_Matrix_f32 < Measurement_Dimension, 1 > (*function_h)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, float D_T), Class_Matrix_f32 < Measurement_Dimension, State_Dimension > (*function_jacobian_h_x)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, float D_T), Class_Matrix_f32 < Measurement_Dimension, Measurement_Dimension > (*function_jacobian_h_v)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, float D_T))
 {
-    Function_H = __Function_H;
-    Function_Jacobian_H_X = __Function_Jacobian_H_X;
-    Function_Jacobian_H_V = __Function_Jacobian_H_V;
+    Function_H = function_h;
+    Function_Jacobian_H_X = function_jacobian_h_x;
+    Function_Jacobian_H_V = function_jacobian_h_v;
 }
 
 /**
@@ -195,9 +195,9 @@ inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimen
  *
  */
 template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Set_D_T(const float &__D_T)
+void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Set_D_T(float d_t)
 {
-    D_T = __D_T;
+    D_T = d_t;
 }
 
 /**

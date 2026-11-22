@@ -162,16 +162,16 @@ Class_Buzzer BSP_Buzzer;
 /**
  * @brief 初始化蜂鸣器
  *
- * @param __Frequency 蜂鸣器频率, 单位Hz, 默认4000Hz
- * @param __Loudness 蜂鸣器响度, 0-1, 默认0
+ * @param frequency 蜂鸣器频率, 单位Hz, 默认4000Hz
+ * @param loudness 蜂鸣器响度, 0-1, 默认0
  */
-void Class_Buzzer::Init(const float &__Frequency, const float &__Loudness)
+void Class_Buzzer::Init(float frequency, float loudness)
 {
     htim = &htim12;
     TIM_Channel = TIM_CHANNEL_2;
 
-    Frequency = Basic_Math_Constrain(__Frequency, 0.0f, 20000.0f);
-    Loudness = Basic_Math_Constrain(__Loudness, 0.0f, 1.0f);
+    Frequency = Basic_Math_Constrain(frequency, 0.0f, 20000.0f);
+    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
 
     float arr = 1000000.0f / Frequency;
     __HAL_TIM_SetAutoreload(htim, arr);

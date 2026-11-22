@@ -39,17 +39,17 @@ struct Struct_WS2812_Color
 class Class_WS2812
 {
 public:
-    void Init(const uint8_t &__Red = 0, const uint8_t &__Green = 0, const uint8_t &__Blue = 0);
+    void Init(uint8_t red = 0, uint8_t green = 0, uint8_t blue = 0);
 
-    inline void Set_Red(const uint8_t &__Red);
+    inline void Set_Red(uint8_t red);
 
-    inline void Set_Green(const uint8_t &__Green);
+    inline void Set_Green(uint8_t green);
 
-    inline void Set_Blue(const uint8_t &__Blue);
+    inline void Set_Blue(uint8_t blue);
 
-    inline void Set_RGB(const uint8_t &__Red, const uint8_t &__Green, const uint8_t &__Blue);
+    inline void Set_RGB(uint8_t red, uint8_t green, uint8_t blue);
 
-    inline void Set_Color(const Struct_WS2812_Color &__Color, const float &__Brightness = 1.0f);
+    inline void Set_Color(const Struct_WS2812_Color &color, float brightness = 1.0f);
 
     void TIM_10ms_Write_PeriodElapsedCallback();
 
@@ -100,11 +100,11 @@ extern Class_WS2812 BSP_WS2812;
 /**
  * @brief 设置红色值
  *
- * @param Red 红色分量
+ * @param red 红色分量
  */
-inline void Class_WS2812::Set_Red(const uint8_t &__Red)
+inline void Class_WS2812::Set_Red(uint8_t red)
 {
-    Color.Red = __Red;
+    Color.Red = red;
     Color.Green = 0;
     Color.Blue = 0;
 }
@@ -112,55 +112,56 @@ inline void Class_WS2812::Set_Red(const uint8_t &__Red)
 /**
  * @brief 设置绿色值
  *
- * @param Green 绿色分量
+ * @param green 绿色分量
  */
-inline void Class_WS2812::Set_Green(const uint8_t &__Green)
+inline void Class_WS2812::Set_Green(uint8_t green)
 {
     Color.Red = 0;
-    Color.Green = __Green;
+    Color.Green = green;
     Color.Blue = 0;
 }
 
 /**
  * @brief 设置蓝色值
  *
- * @param Blue 蓝色分量
+ * @param blue 蓝色分量
  */
-inline void Class_WS2812::Set_Blue(const uint8_t &__Blue)
+inline void Class_WS2812::Set_Blue(uint8_t blue)
 {
     Color.Red = 0;
     Color.Green = 0;
-    Color.Blue = __Blue;
+    Color.Blue = blue;
 }
 
 /**
  * @brief 设置RGB颜色值
  *
- * @param __Red 红色分量
- * @param __Green 绿色分量
- * @param __Blue 蓝色分量
+ * @param red 红色分量
+ * @param green 绿色分量
+ * @param blue 蓝色分量
  */
-inline void Class_WS2812::Set_RGB(const uint8_t &__Red, const uint8_t &__Green, const uint8_t &__Blue)
+inline void Class_WS2812::Set_RGB(uint8_t red, uint8_t green, uint8_t blue)
 {
-    Color.Red = __Red;
-    Color.Green = __Green;
-    Color.Blue = __Blue;
+    Color.Red = red;
+    Color.Green = green;
+    Color.Blue = blue;
 }
 
 /**
  * @brief 设置颜色值
  *
- * @param __Color 颜色值
+ * @param color 颜色值
+ * @param brightness 各颜色通道的亮度比例，范围 [0, 1]。
  */
-inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &__Color, const float &__Brightness)
+inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &color, float brightness)
 {
-    const Struct_WS2812_Color color = {
-        (uint8_t)((float)__Color.Red * __Brightness),
-        (uint8_t)((float)__Color.Green * __Brightness),
-        (uint8_t)((float)__Color.Blue * __Brightness),
+    const Struct_WS2812_Color scaled_color = {
+        (uint8_t)((float)color.Red * brightness),
+        (uint8_t)((float)color.Green * brightness),
+        (uint8_t)((float)color.Blue * brightness),
     };
     const uint32_t primask = SYS_Enter_Critical();
-    Color = color;
+    Color = scaled_color;
     SYS_Exit_Critical(primask);
 }
 

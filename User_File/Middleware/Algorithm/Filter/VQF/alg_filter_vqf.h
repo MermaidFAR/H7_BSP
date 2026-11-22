@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#ifndef __ALG_FILTER_VQF_H
-#define __ALG_FILTER_VQF_H
+#ifndef ALG_FILTER_VQF_H
+#define ALG_FILTER_VQF_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -65,33 +65,33 @@ class Class_Filter_VQF
 public:
     /**
      * @brief 初始化VQF参数和滤波状态
-     * @param __Parameter 姿态修正、零偏估计和静止检测参数
-     * @param __Gyro_D_T 陀螺仪更新周期，单位s
-     * @param __Accel_D_T 加速度计更新周期，单位s
+     * @param parameter 姿态修正、零偏估计和静止检测参数
+     * @param gyro_d_t 陀螺仪更新周期，单位s
+     * @param accel_d_t 加速度计更新周期，单位s
      */
-    void Init(const Struct_VQF_Parameter &__Parameter,
-              const float &__Gyro_D_T,
-              const float &__Accel_D_T);
+    void Init(const Struct_VQF_Parameter &parameter,
+              float gyro_d_t,
+              float accel_d_t);
 
     void Reset();
 
-    void Update_Gyro(const Class_Matrix_f32<3, 1> &__Gyro);
+    void Update_Gyro(const Class_Matrix_f32<3, 1> &gyro);
 
-    void Update_Accel(const Class_Matrix_f32<3, 1> &__Accel);
+    void Update_Accel(const Class_Matrix_f32<3, 1> &accel);
 
     /**
      * @brief 设置外部提供的零偏初值
-     * @param __Bias 陀螺仪零偏，单位rad/s
-     * @param __Sigma 估计标准差，单位rad/s；负值表示保持当前协方差
+     * @param bias 陀螺仪零偏，单位rad/s
+     * @param sigma 估计标准差，单位rad/s；负值表示保持当前协方差
      */
-    void Set_Bias_Estimate(const Class_Matrix_f32<3, 1> &__Bias,
-                           const float &__Sigma = -1.0f);
+    void Set_Bias_Estimate(const Class_Matrix_f32<3, 1> &bias,
+                           float sigma = -1.0f);
 
     /**
      * @brief 独立开关运动状态和静止状态的在线零偏估计
      */
-    void Set_Bias_Estimation_Enable(const bool &__Motion_Enable,
-                                    const bool &__Rest_Enable);
+    void Set_Bias_Estimation_Enable(bool motion_enable,
+                                    bool rest_enable);
 
     inline bool Get_Initialized_Flag() const;
 
@@ -161,32 +161,32 @@ protected:
 
     void Calculate_Coefficient();
 
-    void Update_Bias(const Class_Matrix_f32<3, 1> &__Accel_Earth);
+    void Update_Bias(const Class_Matrix_f32<3, 1> &accel_earth);
 
-    static bool Vector_Is_Valid(const Class_Matrix_f32<3, 1> &__Vector);
+    static bool Vector_Is_Valid(const Class_Matrix_f32<3, 1> &vector);
 
     static Class_Quaternion_f32 Normalize_Quaternion(
-        const Class_Quaternion_f32 &__Quaternion);
+        const Class_Quaternion_f32 &quaternion);
 
-    static void Calculate_Filter_Coefficient(const float &__Tau,
-                                             const float &__D_T,
-                                             double __B[3],
-                                             double __A[2]);
+    static void Calculate_Filter_Coefficient(float tau,
+                                             float d_t,
+                                             double b[3],
+                                             double a[2]);
 
-    static void Reset_Filter_State(const uint32_t &__Length,
-                                   double __State[]);
+    static void Reset_Filter_State(uint32_t length,
+                                   double state[]);
 
-    static void Filter_Vector(const float __Input[],
-                              const uint32_t &__Length,
-                              const float &__Tau,
-                              const float &__D_T,
-                              const double __B[3],
-                              const double __A[2],
-                              double __State[],
-                              float __Output[]);
+    static void Filter_Vector(const float input[],
+                              uint32_t length,
+                              float tau,
+                              float d_t,
+                              const double b[3],
+                              const double a[2],
+                              double state[],
+                              float output[]);
 
-    static bool Inverse_Matrix_3x3(const Class_Matrix_f32<3, 3> &__Input,
-                                   Class_Matrix_f32<3, 3> &__Output);
+    static bool Inverse_Matrix_3x3(const Class_Matrix_f32<3, 3> &input,
+                                   Class_Matrix_f32<3, 3> &output);
 };
 
 /* Exported variables --------------------------------------------------------*/

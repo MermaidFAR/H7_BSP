@@ -4,8 +4,8 @@
  * @brief 单轴三阶在线轨迹生成器
  */
 
-#ifndef __ALG_TRAJECTORY_H
-#define __ALG_TRAJECTORY_H
+#ifndef ALG_TRAJECTORY_H
+#define ALG_TRAJECTORY_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -34,12 +34,12 @@ enum Enum_Trajectory_Status
 class Class_Trajectory
 {
 public:
-    bool Init(float __Velocity_Max, float __Acceleration_Max, float __Jerk_Max,
-              float __D_T = 0.001f);
-    bool Reset(float __Position, float __Velocity = 0.0f, float __Acceleration = 0.0f);
+    bool Init(float velocity_max, float acceleration_max, float jerk_max,
+              float d_t = 0.001f);
+    bool Reset(float position, float velocity = 0.0f, float acceleration = 0.0f);
 
-    bool Set_Target_Position(float __Position);
-    bool Set_Target_Velocity(float __Velocity);
+    bool Set_Target_Position(float position);
+    bool Set_Target_Velocity(float velocity);
 
     Enum_Trajectory_Status TIM_Calculate_PeriodElapsedCallback();
 
@@ -92,15 +92,15 @@ protected:
     bool Target_Changed = false;
     Enum_Trajectory_Status Status = TRAJECTORY_UNINITIALIZED;
 
-    void Build_Velocity(double __Velocity, double __Acceleration, double __Target,
-                        Struct_Segment __Segment[3]) const;
-    double Build_Position(double __Middle_Velocity, double __Cruise_Time,
-                          Struct_Profile *__Profile) const;
-    bool Plan_Position(Struct_Profile *__Profile) const;
-    bool Plan_Velocity(Struct_Profile *__Profile) const;
-    bool Check_Profile(const Struct_Profile *__Profile, double __Distance) const;
+    void Build_Velocity(double velocity, double acceleration, double target,
+                        Struct_Segment segment[3]) const;
+    double Build_Position(double middle_velocity, double cruise_time,
+                          Struct_Profile *profile) const;
+    bool Plan_Position(Struct_Profile *profile) const;
+    bool Plan_Velocity(Struct_Profile *profile) const;
+    bool Check_Profile(const Struct_Profile *profile, double distance) const;
     void Advance();
-    static Struct_State Integrate(const Struct_State *__State, double __Jerk, double __Time);
+    static Struct_State Integrate(const Struct_State *state, double jerk, double time);
 };
 
 /* Exported variables --------------------------------------------------------*/

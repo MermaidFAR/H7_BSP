@@ -70,7 +70,7 @@ public:
     // 测量向量
     Class_Matrix_f32<Measurement_Dimension, 1> Vector_Z;
 
-    void Init(const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_A, const Class_Matrix_f32<State_Dimension, Input_Dimension> &__Matrix_B, const Class_Matrix_f32<Measurement_Dimension, State_Dimension> &__Matrix_H, const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_Q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &__Matrix_R, const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_P = Namespace_ALG_Matrix::Identity<State_Dimension, State_Dimension>(), const Class_Matrix_f32<State_Dimension, 1> &__Vector_X = Namespace_ALG_Matrix::Zero<State_Dimension, 1>(), const Class_Matrix_f32<Input_Dimension, 1> &__Matrix_U = Namespace_ALG_Matrix::Zero<Input_Dimension, 1>());
+    void Init(const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_a, const Class_Matrix_f32<State_Dimension, Input_Dimension> &matrix_b, const Class_Matrix_f32<Measurement_Dimension, State_Dimension> &matrix_h, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &matrix_r, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_p = Namespace_ALG_Matrix::Identity<State_Dimension, State_Dimension>(), const Class_Matrix_f32<State_Dimension, 1> &vector_x = Namespace_ALG_Matrix::Zero<State_Dimension, 1>(), const Class_Matrix_f32<Input_Dimension, 1> &matrix_u = Namespace_ALG_Matrix::Zero<Input_Dimension, 1>());
 
     void TIM_Predict_PeriodElapsedCallback();
 
@@ -105,27 +105,27 @@ protected:
  * @tparam State_Dimension 状态维度
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
- * @param __Matrix_A 系统状态矩阵
- * @param __Matrix_B 控制矩阵
- * @param __Matrix_H 测量矩阵
- * @param __Matrix_Q 过程噪声协方差矩阵
- * @param __Matrix_R 测量噪声协方差矩阵
- * @param __Vector_X 初始状态向量
- * @param __Matrix_U 初始输入向量
+ * @param matrix_a 系统状态矩阵
+ * @param matrix_b 控制矩阵
+ * @param matrix_h 测量矩阵
+ * @param matrix_q 过程噪声协方差矩阵
+ * @param matrix_r 测量噪声协方差矩阵
+ * @param vector_x 初始状态向量
+ * @param matrix_u 初始输入向量
  */
 template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-void Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension>::Init(const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_A, const Class_Matrix_f32<State_Dimension, Input_Dimension> &__Matrix_B, const Class_Matrix_f32<Measurement_Dimension, State_Dimension> &__Matrix_H, const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_Q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &__Matrix_R, const Class_Matrix_f32<State_Dimension, State_Dimension> &__Matrix_P, const Class_Matrix_f32<State_Dimension, 1> &__Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &__Matrix_U)
+void Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension>::Init(const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_a, const Class_Matrix_f32<State_Dimension, Input_Dimension> &matrix_b, const Class_Matrix_f32<Measurement_Dimension, State_Dimension> &matrix_h, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &matrix_r, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_p, const Class_Matrix_f32<State_Dimension, 1> &vector_x, const Class_Matrix_f32<Input_Dimension, 1> &matrix_u)
 {
-    Matrix_A = __Matrix_A;
-    Matrix_B = __Matrix_B;
-    Matrix_H = __Matrix_H;
+    Matrix_A = matrix_a;
+    Matrix_B = matrix_b;
+    Matrix_H = matrix_h;
 
-    Matrix_Q = __Matrix_Q;
-    Matrix_R = __Matrix_R;
+    Matrix_Q = matrix_q;
+    Matrix_R = matrix_r;
 
-    Matrix_P = __Matrix_P;
-    Vector_X = __Vector_X;
-    Vector_U = __Matrix_U;
+    Matrix_P = matrix_p;
+    Vector_X = vector_x;
+    Vector_U = matrix_u;
 }
 
 /**

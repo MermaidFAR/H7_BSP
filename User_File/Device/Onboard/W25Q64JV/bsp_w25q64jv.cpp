@@ -30,16 +30,16 @@ Class_W25Q64JV BSP_W25Q64JV;
 /**
  * @brief 初始化 W25Q64JV，有限次读取 JEDEC ID，失败返回 false
  *
- * @param __Flash_Mode 工作模式（Normal / MemoryMapped）
+ * @param flash_mode 工作模式（Normal / MemoryMapped）
  */
-bool Class_W25Q64JV::Init(const Enum_W25Q64JV_Mode &__Flash_Mode)
+bool Class_W25Q64JV::Init(Enum_W25Q64JV_Mode flash_mode)
 {
     Initialized = false;
     Busy_Flag = false;
     Auto_Polling_Pending = false;
     Write_Enable_Activated_Flag = false;
     OSPI_Manage_Object = &OSPI2_Manage_Object;
-    Flash_Mode = __Flash_Mode;
+    Flash_Mode = flash_mode;
 
     OSPI_HandleTypeDef *hospi = OSPI_Manage_Object->OSPI_Handler;
     if (hospi == nullptr)
@@ -64,7 +64,7 @@ bool Class_W25Q64JV::Init(const Enum_W25Q64JV_Mode &__Flash_Mode)
         return false;
     }
 
-    if (__Flash_Mode == W25Q64JV_Mode_MemoryMapped)
+    if (flash_mode == W25Q64JV_Mode_MemoryMapped)
     {
         // 配置内存映射模式（Quad I/O 快速读）
         Command = COMMAND_DEFAULT_CONFIG;

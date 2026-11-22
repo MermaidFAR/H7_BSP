@@ -4,8 +4,8 @@
  * @brief One Euro自适应低通滤波器
  */
 
-#ifndef __ALG_FILTER_ONE_EURO_H
-#define __ALG_FILTER_ONE_EURO_H
+#ifndef ALG_FILTER_ONE_EURO_H
+#define ALG_FILTER_ONE_EURO_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -25,16 +25,16 @@
 class Class_Filter_One_Euro
 {
 public:
-    bool Init(float __Min_Cutoff_Frequency, float __Beta = 0.0f,
-              float __Derivative_Cutoff_Frequency = 1.0f, float __D_T = 0.001f);
+    bool Init(float min_cutoff_frequency, float beta = 0.0f,
+              float derivative_cutoff_frequency = 1.0f, float d_t = 0.001f);
 
-    void Reset(float __Value);
+    void Reset(float value);
 
     inline float Get_Out() const;
 
     inline bool Get_Initialized_Flag() const;
 
-    inline void Set_Now(float __Now);
+    inline void Set_Now(float now);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -68,9 +68,9 @@ inline bool Class_Filter_One_Euro::Get_Initialized_Flag() const
     return (Initialized_Flag);
 }
 
-inline void Class_Filter_One_Euro::Set_Now(float __Now)
+inline void Class_Filter_One_Euro::Set_Now(float now)
 {
-    Now = __Now;
+    Now = now;
     if (!Initialized_Flag)
     {
         Reset(Now);

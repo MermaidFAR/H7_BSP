@@ -9,8 +9,8 @@
  * Debug_ABI_Version并更新采样profile。
  */
 
-#ifndef __SYS_DEBUG_H
-#define __SYS_DEBUG_H
+#ifndef SYS_DEBUG_H
+#define SYS_DEBUG_H
 
 /* Includes ------------------------------------------------------------------*/
 

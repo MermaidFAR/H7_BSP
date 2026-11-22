@@ -173,7 +173,7 @@ Class_Quaternion_f32 Namespace_ALG_Quaternion::From_Rotation_Matrix(const Class_
  * @param Angle 旋转角度, 单位弧度
  * @return Class_Quaternion_f32 四元数
  */
-Class_Quaternion_f32 Namespace_ALG_Quaternion::From_Axis_Angle(const Class_Matrix_f32<3, 1> &Axis, const float &Angle)
+Class_Quaternion_f32 Namespace_ALG_Quaternion::From_Axis_Angle(const Class_Matrix_f32<3, 1> &Axis, float Angle)
 {
     Class_Quaternion_f32 result;
     float half_angle = Angle * 0.5f;

@@ -162,13 +162,13 @@ extern const float BUZZER_FREQUENCY_C8;
 class Class_Buzzer
 {
 public:
-    void Init(const float &__Frequency = 4000.0f, const float &__Loudness = 0.0f);
+    void Init(float frequency = 4000.0f, float loudness = 0.0f);
 
-    inline void Set_Frequency(const float &__Frequency);
+    inline void Set_Frequency(float frequency);
 
-    inline void Set_Loudness(const float &__Loudness);
+    inline void Set_Loudness(float loudness);
 
-    inline void Set_Sound(const float &__Frequency, const float &__Loudness);
+    inline void Set_Sound(float frequency, float loudness);
 
 protected:
     // 初始化相关常量
@@ -205,11 +205,11 @@ extern Class_Buzzer BSP_Buzzer;
 
 /**
  * @brief 设置蜂鸣器频率
- * @param __Frequency 蜂鸣器频率, 单位Hz
+ * @param frequency 蜂鸣器频率, 单位Hz
  */
-inline void Class_Buzzer::Set_Frequency(const float &__Frequency)
+inline void Class_Buzzer::Set_Frequency(float frequency)
 {
-    Frequency = Basic_Math_Constrain(__Frequency, 0.0f, 20000.0f);
+    Frequency = Basic_Math_Constrain(frequency, 0.0f, 20000.0f);
 
     float arr;
     if (Frequency == 0.0f)
@@ -229,11 +229,11 @@ inline void Class_Buzzer::Set_Frequency(const float &__Frequency)
 /**
  * @brief 设置蜂鸣器响度
  *
- * @param Loudness 蜂鸣器响度, 0-1
+ * @param loudness 蜂鸣器响度，范围 [0, 1]。
  */
-inline void Class_Buzzer::Set_Loudness(const float &__Loudness)
+inline void Class_Buzzer::Set_Loudness(float loudness)
 {
-    Loudness = Basic_Math_Constrain(__Loudness, 0.0f, 1.0f);
+    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
 
     float arr;
     if (Frequency == 0.0f)
@@ -248,19 +248,19 @@ inline void Class_Buzzer::Set_Loudness(const float &__Loudness)
 
     float ccr = arr * Loudness * 0.5f;
     __HAL_TIM_SetCompare(htim, TIM_Channel, ccr);
-    Loudness = Basic_Math_Constrain(__Loudness, 0.0f, 1.0f);
+    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
 }
 
 /**
  * @brief 设置蜂鸣器声音
  *
- * @param Frequency 蜂鸣器频率, 单位Hz
- * @param Loudness 蜂鸣器响度, 0-1
+ * @param frequency 蜂鸣器频率，单位 Hz。
+ * @param loudness 蜂鸣器响度，范围 [0, 1]。
  */
-void Class_Buzzer::Set_Sound(const float &__Frequency, const float &__Loudness)
+void Class_Buzzer::Set_Sound(float frequency, float loudness)
 {
-    Frequency = Basic_Math_Constrain(__Frequency, 0.0f, 20000.0f);
-    Loudness = Basic_Math_Constrain(__Loudness, 0.0f, 1.0f);
+    Frequency = Basic_Math_Constrain(frequency, 0.0f, 20000.0f);
+    Loudness = Basic_Math_Constrain(loudness, 0.0f, 1.0f);
 
     float arr;
     if (Frequency == 0.0f)

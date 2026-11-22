@@ -14,8 +14,7 @@
 
 #include "alg_filter_vqf.h"
 
-#include <cmath>
-#include <limits>
+#include <math.h>
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -30,17 +29,17 @@
 /**
  * @brief 初始化VQF
  *
- * @param __Parameter VQF参数
- * @param __Gyro_D_T 陀螺仪采样周期, 单位s
- * @param __Accel_D_T 加速度计采样周期, 单位s
+ * @param parameter VQF参数
+ * @param gyro_d_t 陀螺仪采样周期, 单位s
+ * @param accel_d_t 加速度计采样周期, 单位s
  */
-void Class_Filter_VQF::Init(const Struct_VQF_Parameter &__Parameter,
-                            const float &__Gyro_D_T,
-                            const float &__Accel_D_T)
+void Class_Filter_VQF::Init(const Struct_VQF_Parameter &parameter,
+                            float gyro_d_t,
+                            float accel_d_t)
 {
-    Parameter = __Parameter;
-    Gyro_D_T = __Gyro_D_T;
-    Accel_D_T = __Accel_D_T;
+    Parameter = parameter;
+    Gyro_D_T = gyro_d_t;
+    Accel_D_T = accel_d_t;
 
     if (Parameter.Tau_Accel <= 0.0f)
     {
@@ -100,20 +99,20 @@ void Class_Filter_VQF::Reset()
 /**
  * @brief 更新陀螺仪数据
  *
- * @param __Gyro 固定误差校正后的角速度, 单位rad/s
+ * @param gyro 固定误差校正后的角速度, 单位rad/s
  */
-void Class_Filter_VQF::Update_Gyro(const Class_Matrix_f32<3, 1> &__Gyro)
+void Class_Filter_VQF::Update_Gyro(const Class_Matrix_f32<3, 1> &gyro)
 {
-    if (!Initialized_Flag || !Vector_Is_Valid(__Gyro))
+    if (!Initialized_Flag || !Vector_Is_Valid(gyro))
     {
         return;
     }
 
     if (Parameter.Rest_Bias_Estimation_Enable)
     {
-        float gyro[3] = {__Gyro[0][0], __Gyro[1][0], __Gyro[2][0]};
+        float gyro_sample[3] = {gyro[0][0], gyro[1][0], gyro[2][0]};
         float gyro_low_pass[3] = {};
-        Filter_Vector(gyro,
+        Filter_Vector(gyro_sample,
                       3U,
                       Parameter.Rest_Filter_Tau,
                       Gyro_D_T,
@@ -127,7 +126,7 @@ void Class_Filter_VQF::Update_Gyro(const Class_Matrix_f32<3, 1> &__Gyro)
             Rest_Last_Gyro_Low_Pass[i][0] = gyro_low_pass[i];
         }
 
-        const Class_Matrix_f32<3, 1> deviation = __Gyro - Rest_Last_Gyro_Low_Pass;
+        const Class_Matrix_f32<3, 1> deviation = gyro - Rest_Last_Gyro_Low_Pass;
         Rest_Gyro_Squared_Deviation = deviation[0][0] * deviation[0][0] +
                                          deviation[1][0] * deviation[1][0] +
                                          deviation[2][0] * deviation[2][0];
@@ -144,7 +143,7 @@ void Class_Filter_VQF::Update_Gyro(const Class_Matrix_f32<3, 1> &__Gyro)
         }
     }
 
-    Last_Corrected_Gyro = __Gyro - Bias_Estimate;
+    Last_Corrected_Gyro = gyro - Bias_Estimate;
     const float gyro_norm = Last_Corrected_Gyro.Get_Modulus();
     const float angle = gyro_norm * Gyro_D_T;
     if (gyro_norm > 1.0e-9f)
@@ -163,20 +162,20 @@ void Class_Filter_VQF::Update_Gyro(const Class_Matrix_f32<3, 1> &__Gyro)
 /**
  * @brief 更新加速度计数据
  *
- * @param __Accel 加速度, 单位m/s^2
+ * @param accel 加速度, 单位m/s^2
  */
-void Class_Filter_VQF::Update_Accel(const Class_Matrix_f32<3, 1> &__Accel)
+void Class_Filter_VQF::Update_Accel(const Class_Matrix_f32<3, 1> &accel)
 {
-    if (!Initialized_Flag || !Vector_Is_Valid(__Accel) || __Accel.Get_Modulus() <= 1.0e-9f)
+    if (!Initialized_Flag || !Vector_Is_Valid(accel) || accel.Get_Modulus() <= 1.0e-9f)
     {
         return;
     }
 
     if (Parameter.Rest_Bias_Estimation_Enable)
     {
-        float accel[3] = {__Accel[0][0], __Accel[1][0], __Accel[2][0]};
+        float accel_sample[3] = {accel[0][0], accel[1][0], accel[2][0]};
         float accel_low_pass[3] = {};
-        Filter_Vector(accel,
+        Filter_Vector(accel_sample,
                       3U,
                       Parameter.Rest_Filter_Tau,
                       Accel_D_T,
@@ -190,7 +189,7 @@ void Class_Filter_VQF::Update_Accel(const Class_Matrix_f32<3, 1> &__Accel)
             Rest_Last_Accel_Low_Pass[i][0] = accel_low_pass[i];
         }
 
-        const Class_Matrix_f32<3, 1> deviation = __Accel - Rest_Last_Accel_Low_Pass;
+        const Class_Matrix_f32<3, 1> deviation = accel - Rest_Last_Accel_Low_Pass;
         Rest_Accel_Squared_Deviation = deviation[0][0] * deviation[0][0] +
                                          deviation[1][0] * deviation[1][0] +
                                          deviation[2][0] * deviation[2][0];
@@ -212,7 +211,7 @@ void Class_Filter_VQF::Update_Accel(const Class_Matrix_f32<3, 1> &__Accel)
     }
 
     const Class_Matrix_f32<3, 1> accel_gyro_earth =
-        Gyro_Quaternion.Get_Rotation_Matrix() * __Accel;
+        Gyro_Quaternion.Get_Rotation_Matrix() * accel;
     float accel_earth_input[3] = {
         accel_gyro_earth[0][0],
         accel_gyro_earth[1][0],
@@ -260,13 +259,13 @@ void Class_Filter_VQF::Update_Accel(const Class_Matrix_f32<3, 1> &__Accel)
 /**
  * @brief 设置陀螺仪零偏估计
  *
- * @param __Bias 零偏, 单位rad/s
- * @param __Sigma 零偏标准差, 单位rad/s, 小于等于0时保持原协方差
+ * @param bias 零偏, 单位rad/s
+ * @param sigma 零偏标准差, 单位rad/s, 小于等于0时保持原协方差
  */
-void Class_Filter_VQF::Set_Bias_Estimate(const Class_Matrix_f32<3, 1> &__Bias,
-                                         const float &__Sigma)
+void Class_Filter_VQF::Set_Bias_Estimate(const Class_Matrix_f32<3, 1> &bias,
+                                         float sigma)
 {
-    if (!Vector_Is_Valid(__Bias))
+    if (!Vector_Is_Valid(bias))
     {
         return;
     }
@@ -274,12 +273,12 @@ void Class_Filter_VQF::Set_Bias_Estimate(const Class_Matrix_f32<3, 1> &__Bias,
     const float bias_clip = Parameter.Bias_Clip_Deg_S * PI / 180.0f;
     for (uint32_t i = 0U; i < 3U; i++)
     {
-        Bias_Estimate[i][0] = Basic_Math_Constrain(__Bias[i][0], -bias_clip, bias_clip);
+        Bias_Estimate[i][0] = Basic_Math_Constrain(bias[i][0], -bias_clip, bias_clip);
     }
 
-    if (__Sigma > 0.0f && !Basic_Math_Is_Invalid_Float(__Sigma))
+    if (sigma > 0.0f && !Basic_Math_Is_Invalid_Float(sigma))
     {
-        const float sigma_internal = __Sigma * 180.0f * 100.0f / PI;
+        const float sigma_internal = sigma * 180.0f * 100.0f / PI;
         Bias_Covariance = sigma_internal * sigma_internal *
                           Namespace_ALG_Matrix::Identity<3, 3>();
     }
@@ -288,15 +287,15 @@ void Class_Filter_VQF::Set_Bias_Estimate(const Class_Matrix_f32<3, 1> &__Bias,
 /**
  * @brief 设置运动和静止零偏估计开关
  */
-void Class_Filter_VQF::Set_Bias_Estimation_Enable(const bool &__Motion_Enable,
-                                                  const bool &__Rest_Enable)
+void Class_Filter_VQF::Set_Bias_Estimation_Enable(bool motion_enable,
+                                                  bool rest_enable)
 {
     const bool motion_changed =
-        Parameter.Motion_Bias_Estimation_Enable != __Motion_Enable;
+        Parameter.Motion_Bias_Estimation_Enable != motion_enable;
     const bool rest_changed =
-        Parameter.Rest_Bias_Estimation_Enable != __Rest_Enable;
-    Parameter.Motion_Bias_Estimation_Enable = __Motion_Enable;
-    Parameter.Rest_Bias_Estimation_Enable = __Rest_Enable;
+        Parameter.Rest_Bias_Estimation_Enable != rest_enable;
+    Parameter.Motion_Bias_Estimation_Enable = motion_enable;
+    Parameter.Rest_Bias_Estimation_Enable = rest_enable;
 
     if (motion_changed)
     {
@@ -375,9 +374,9 @@ void Class_Filter_VQF::Calculate_Coefficient()
 /**
  * @brief 更新陀螺仪零偏估计
  *
- * @param __Accel_Earth 归一化后的地理系加速度
+ * @param accel_earth 归一化后的地理系加速度
  */
-void Class_Filter_VQF::Update_Bias(const Class_Matrix_f32<3, 1> &__Accel_Earth)
+void Class_Filter_VQF::Update_Bias(const Class_Matrix_f32<3, 1> &accel_earth)
 {
     if (!Parameter.Motion_Bias_Estimation_Enable &&
         !Parameter.Rest_Bias_Estimation_Enable)
@@ -448,9 +447,9 @@ void Class_Filter_VQF::Update_Bias(const Class_Matrix_f32<3, 1> &__Accel_Earth)
     else if (Parameter.Motion_Bias_Estimation_Enable)
     {
         const Class_Matrix_f32<3, 1> predicted_bias = measurement_matrix * Bias_Estimate;
-        error[0][0] = -__Accel_Earth[1][0] / Accel_D_T +
+        error[0][0] = -accel_earth[1][0] / Accel_D_T +
                       bias_low_pass[0] - predicted_bias[0][0];
-        error[1][0] = __Accel_Earth[0][0] / Accel_D_T +
+        error[1][0] = accel_earth[0][0] / Accel_D_T +
                       bias_low_pass[1] - predicted_bias[1][0];
         error[2][0] = -predicted_bias[2][0];
         measurement_noise[0][0] = Bias_Motion_Noise;
@@ -507,57 +506,57 @@ void Class_Filter_VQF::Update_Bias(const Class_Matrix_f32<3, 1> &__Accel_Earth)
 /**
  * @brief 检查三维向量是否有效
  */
-bool Class_Filter_VQF::Vector_Is_Valid(const Class_Matrix_f32<3, 1> &__Vector)
+bool Class_Filter_VQF::Vector_Is_Valid(const Class_Matrix_f32<3, 1> &vector)
 {
-    return (!Basic_Math_Is_Invalid_Float(__Vector[0][0]) &&
-            !Basic_Math_Is_Invalid_Float(__Vector[1][0]) &&
-            !Basic_Math_Is_Invalid_Float(__Vector[2][0]));
+    return (!Basic_Math_Is_Invalid_Float(vector[0][0]) &&
+            !Basic_Math_Is_Invalid_Float(vector[1][0]) &&
+            !Basic_Math_Is_Invalid_Float(vector[2][0]));
 }
 
 /**
  * @brief 归一化四元数
  */
 Class_Quaternion_f32 Class_Filter_VQF::Normalize_Quaternion(
-    const Class_Quaternion_f32 &__Quaternion)
+    const Class_Quaternion_f32 &quaternion)
 {
-    const float modulus = __Quaternion.Get_Modulus();
+    const float modulus = quaternion.Get_Modulus();
     if (modulus <= 1.0e-9f || Basic_Math_Is_Invalid_Float(modulus))
     {
         return (Namespace_ALG_Quaternion::Unit_Real());
     }
-    return (Class_Quaternion_f32(__Quaternion / modulus));
+    return (Class_Quaternion_f32(quaternion / modulus));
 }
 
 /**
  * @brief 计算二阶Butterworth低通滤波器系数
  */
-void Class_Filter_VQF::Calculate_Filter_Coefficient(const float &__Tau,
-                                                    const float &__D_T,
-                                                    double __B[3],
-                                                    double __A[2])
+void Class_Filter_VQF::Calculate_Filter_Coefficient(float tau,
+                                                    float d_t,
+                                                    double b[3],
+                                                    double a[2])
 {
-    if (__Tau < 0.5f * __D_T)
+    if (tau < 0.5f * d_t)
     {
-        __B[0] = 1.0;
-        __B[1] = 0.0;
-        __B[2] = 0.0;
-        __A[0] = 0.0;
-        __A[1] = 0.0;
+        b[0] = 1.0;
+        b[1] = 0.0;
+        b[2] = 0.0;
+        a[0] = 0.0;
+        a[1] = 0.0;
         return;
     }
 
     const double cutoff_frequency =
-        std::sqrt(2.0) / (2.0 * (double)PI * (double)__Tau);
+        sqrt(2.0) / (2.0 * (double)PI * (double)tau);
     const double coefficient =
-        std::tan((double)PI * cutoff_frequency * (double)__D_T);
+        tan((double)PI * cutoff_frequency * (double)d_t);
     const double denominator = coefficient * coefficient +
-                               std::sqrt(2.0) * coefficient + 1.0;
+                               sqrt(2.0) * coefficient + 1.0;
     const double b0 = coefficient * coefficient / denominator;
-    __B[0] = b0;
-    __B[1] = 2.0 * b0;
-    __B[2] = b0;
-    __A[0] = 2.0 * (coefficient * coefficient - 1.0) / denominator;
-    __A[1] = (1.0 - std::sqrt(2.0) * coefficient +
+    b[0] = b0;
+    b[1] = 2.0 * b0;
+    b[2] = b0;
+    a[0] = 2.0 * (coefficient * coefficient - 1.0) / denominator;
+    a[1] = (1.0 - sqrt(2.0) * coefficient +
               coefficient * coefficient) /
              denominator;
 }
@@ -565,67 +564,67 @@ void Class_Filter_VQF::Calculate_Filter_Coefficient(const float &__Tau,
 /**
  * @brief 复位向量滤波器状态
  */
-void Class_Filter_VQF::Reset_Filter_State(const uint32_t &__Length,
-                                          double __State[])
+void Class_Filter_VQF::Reset_Filter_State(uint32_t length,
+                                          double state[])
 {
-    const double invalid = std::numeric_limits<double>::quiet_NaN();
-    for (uint32_t i = 0U; i < 2U * __Length; i++)
+    const double invalid = (double)NAN;
+    for (uint32_t i = 0U; i < 2U * length; i++)
     {
-        __State[i] = invalid;
+        state[i] = invalid;
     }
 }
 
 /**
  * @brief 对向量各分量执行VQF二阶低通
  */
-void Class_Filter_VQF::Filter_Vector(const float __Input[],
-                                     const uint32_t &__Length,
-                                     const float &__Tau,
-                                     const float &__D_T,
-                                     const double __B[3],
-                                     const double __A[2],
-                                     double __State[],
-                                     float __Output[])
+void Class_Filter_VQF::Filter_Vector(const float input[],
+                                     uint32_t length,
+                                     float tau,
+                                     float d_t,
+                                     const double b[3],
+                                     const double a[2],
+                                     double state[],
+                                     float output[])
 {
-    if (std::isnan(__State[0]))
+    if (isnan(state[0]))
     {
-        if (std::isnan(__State[1]))
+        if (isnan(state[1]))
         {
-            __State[1] = 0.0;
-            for (uint32_t i = 0U; i < __Length; i++)
+            state[1] = 0.0;
+            for (uint32_t i = 0U; i < length; i++)
             {
-                __State[2U + i] = 0.0;
+                state[2U + i] = 0.0;
             }
         }
 
-        __State[1] += 1.0;
-        for (uint32_t i = 0U; i < __Length; i++)
+        state[1] += 1.0;
+        for (uint32_t i = 0U; i < length; i++)
         {
-            __State[2U + i] += (double)__Input[i];
-            __Output[i] = (float)(__State[2U + i] / __State[1]);
+            state[2U + i] += (double)input[i];
+            output[i] = (float)(state[2U + i] / state[1]);
         }
 
-        if ((float)__State[1] * __D_T >= __Tau)
+        if ((float)state[1] * d_t >= tau)
         {
-            for (uint32_t i = 0U; i < __Length; i++)
+            for (uint32_t i = 0U; i < length; i++)
             {
-                __State[2U * i] =
-                    (double)__Output[i] * (1.0 - __B[0]);
-                __State[2U * i + 1U] =
-                    (double)__Output[i] * (__B[2] - __A[1]);
+                state[2U * i] =
+                    (double)output[i] * (1.0 - b[0]);
+                state[2U * i + 1U] =
+                    (double)output[i] * (b[2] - a[1]);
             }
         }
         return;
     }
 
-    for (uint32_t i = 0U; i < __Length; i++)
+    for (uint32_t i = 0U; i < length; i++)
     {
-        const double input = (double)__Input[i];
-        const double output = __B[0] * input + __State[2U * i];
-        __State[2U * i] = __B[1] * input - __A[0] * output +
-                          __State[2U * i + 1U];
-        __State[2U * i + 1U] = __B[2] * input - __A[1] * output;
-        __Output[i] = (float)output;
+        const double input_value = (double)input[i];
+        const double output_value = b[0] * input_value + state[2U * i];
+        state[2U * i] = b[1] * input_value - a[0] * output_value +
+                          state[2U * i + 1U];
+        state[2U * i + 1U] = b[2] * input_value - a[1] * output_value;
+        output[i] = (float)output_value;
     }
 }
 
@@ -633,18 +632,18 @@ void Class_Filter_VQF::Filter_Vector(const float __Input[],
  * @brief 计算三阶方阵的逆矩阵
  */
 bool Class_Filter_VQF::Inverse_Matrix_3x3(
-    const Class_Matrix_f32<3, 3> &__Input,
-    Class_Matrix_f32<3, 3> &__Output)
+    const Class_Matrix_f32<3, 3> &input,
+    Class_Matrix_f32<3, 3> &output)
 {
-    const double a = __Input[0][0];
-    const double b = __Input[0][1];
-    const double c = __Input[0][2];
-    const double d = __Input[1][0];
-    const double e = __Input[1][1];
-    const double f = __Input[1][2];
-    const double g = __Input[2][0];
-    const double h = __Input[2][1];
-    const double i = __Input[2][2];
+    const double a = input[0][0];
+    const double b = input[0][1];
+    const double c = input[0][2];
+    const double d = input[1][0];
+    const double e = input[1][1];
+    const double f = input[1][2];
+    const double g = input[2][0];
+    const double h = input[2][1];
+    const double i = input[2][2];
 
     const double cofactor_a = e * i - f * h;
     const double cofactor_b = c * h - b * i;
@@ -660,19 +659,19 @@ bool Class_Filter_VQF::Inverse_Matrix_3x3(
 
     if (fabs(determinant) <= 1.0e-12)
     {
-        __Output = Namespace_ALG_Matrix::Zero<3, 3>();
+        output = Namespace_ALG_Matrix::Zero<3, 3>();
         return (false);
     }
 
     const double inverse_determinant = 1.0 / determinant;
-    __Output[0][0] = (float)(cofactor_a * inverse_determinant);
-    __Output[0][1] = (float)(cofactor_b * inverse_determinant);
-    __Output[0][2] = (float)(cofactor_c * inverse_determinant);
-    __Output[1][0] = (float)(cofactor_d * inverse_determinant);
-    __Output[1][1] = (float)(cofactor_e * inverse_determinant);
-    __Output[1][2] = (float)(cofactor_f * inverse_determinant);
-    __Output[2][0] = (float)(cofactor_g * inverse_determinant);
-    __Output[2][1] = (float)(cofactor_h * inverse_determinant);
-    __Output[2][2] = (float)(cofactor_i * inverse_determinant);
+    output[0][0] = (float)(cofactor_a * inverse_determinant);
+    output[0][1] = (float)(cofactor_b * inverse_determinant);
+    output[0][2] = (float)(cofactor_c * inverse_determinant);
+    output[1][0] = (float)(cofactor_d * inverse_determinant);
+    output[1][1] = (float)(cofactor_e * inverse_determinant);
+    output[1][2] = (float)(cofactor_f * inverse_determinant);
+    output[2][0] = (float)(cofactor_g * inverse_determinant);
+    output[2][1] = (float)(cofactor_h * inverse_determinant);
+    output[2][2] = (float)(cofactor_i * inverse_determinant);
     return (true);
 }

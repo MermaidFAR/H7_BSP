@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef __BSP_W25Q64JV_H
-#define __BSP_W25Q64JV_H
+#ifndef BSP_W25Q64JV_H
+#define BSP_W25Q64JV_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -41,32 +41,32 @@ class Class_W25Q64JV
 {
 public:
     // JEDEC ID 最多尝试 5 次；失败后读写接口保持不可用。
-    bool Init(const Enum_W25Q64JV_Mode &__Flash_Mode = W25Q64JV_Mode_Normal);
+    bool Init(Enum_W25Q64JV_Mode flash_mode = W25Q64JV_Mode_Normal);
     bool Is_Initialized() const { return Initialized; }
 
     void Enable_Quad_Mode();
 
-    inline bool Get_Buffer(const uint32_t &Address, const uint16_t &Length);
+    inline bool Get_Buffer(uint32_t Address, uint16_t Length);
 
     inline bool Set_Write_Enable();
 
-    inline bool Set_Sector_Erased(const uint32_t &Address);
+    inline bool Set_Sector_Erased(uint32_t Address);
 
-    inline void Set_Bolck_Erased_32K(const uint32_t &Address);
+    inline void Set_Bolck_Erased_32K(uint32_t Address);
 
-    inline void Set_Bolck_Erased_64K(const uint32_t &Address);
+    inline void Set_Bolck_Erased_64K(uint32_t Address);
 
     inline void Set_Chip_Erased();
 
-    inline bool Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint16_t &Length);
+    inline bool Set_Buffer(const uint8_t *Buffer, uint32_t Address, uint16_t Length);
 
     bool Is_Ready() { return Initialized && !Is_Busy(); }
 
     uint32_t Get_Auto_Polling_Error_Count() { return Auto_Polling_Error_Count; }
 
-    inline bool Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length);
+    inline bool Read_Data(void *Dest, uint32_t Address, uint32_t Length);
 
-    inline bool Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length);
+    inline bool Write_Data(const void *Src, uint32_t Address, uint32_t Length);
 
     void OSPI_StatusMatchCallback();
 
@@ -187,7 +187,7 @@ extern Class_W25Q64JV BSP_W25Q64JV;
  * @param Address 起始地址
  * @param Length  读取字节数（≤ OSPI_BUFFER_SIZE）
  */
-inline bool Class_W25Q64JV::Get_Buffer(const uint32_t &Address, const uint16_t &Length)
+inline bool Class_W25Q64JV::Get_Buffer(uint32_t Address, uint16_t Length)
 {
     if (!Initialized || Is_Busy() || Length == 0U || Length > OSPI_BUFFER_SIZE ||
         Address >= W25Q64JV_FLASH_SIZE || Length > (W25Q64JV_FLASH_SIZE - Address))
@@ -237,7 +237,7 @@ inline bool Class_W25Q64JV::Set_Write_Enable()
  * @brief 擦除单个 Sector（4KB），地址必须 4096 字节对齐
  *
  */
-inline bool Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
+inline bool Class_W25Q64JV::Set_Sector_Erased(uint32_t Address)
 {
     if (!Initialized || Is_Busy())
     {
@@ -275,7 +275,7 @@ inline bool Class_W25Q64JV::Set_Sector_Erased(const uint32_t &Address)
  * @brief 擦除单个 32K Block，地址必须 32768 字节对齐
  *
  */
-inline void Class_W25Q64JV::Set_Bolck_Erased_32K(const uint32_t &Address)
+inline void Class_W25Q64JV::Set_Bolck_Erased_32K(uint32_t Address)
 {
     if (!Initialized || Is_Busy())
     {
@@ -314,7 +314,7 @@ inline void Class_W25Q64JV::Set_Bolck_Erased_32K(const uint32_t &Address)
  * @brief 擦除单个 64K Block，地址必须 65536 字节对齐
  *
  */
-inline void Class_W25Q64JV::Set_Bolck_Erased_64K(const uint32_t &Address)
+inline void Class_W25Q64JV::Set_Bolck_Erased_64K(uint32_t Address)
 {
     if (!Initialized || Is_Busy())
     {
@@ -388,7 +388,7 @@ inline void Class_W25Q64JV::Set_Chip_Erased()
  * @param Address 目标地址（不跨 Page，即 Address%256 + Length ≤ 256）
  * @param Length  写入字节数
  */
-inline bool Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Address, const uint16_t &Length)
+inline bool Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, uint32_t Address, uint16_t Length)
 {
     if (!Initialized || Is_Busy() || Buffer == nullptr || Length == 0U || Length > W25Q64JV_PAGE_SIZE ||
         Address >= W25Q64JV_FLASH_SIZE || Length > (W25Q64JV_FLASH_SIZE - Address))
@@ -427,7 +427,7 @@ inline bool Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, const uint32_t &Ad
  * @brief 同步读取任意长度数据（分次 DMA 接收，自动等待）
  *
  */
-inline bool Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const uint32_t &Length)
+inline bool Class_W25Q64JV::Read_Data(void *Dest, uint32_t Address, uint32_t Length)
 {
     if (Length == 0U)
     {
@@ -471,7 +471,7 @@ inline bool Class_W25Q64JV::Read_Data(void *Dest, const uint32_t &Address, const
  * @brief 同步写入任意长度数据（自动处理页边界和写使能）
  *
  */
-inline bool Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address, const uint32_t &Length)
+inline bool Class_W25Q64JV::Write_Data(const void *Src, uint32_t Address, uint32_t Length)
 {
     if (Length == 0U)
     {
@@ -520,6 +520,6 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, const uint32_t &Address,
     return true;
 }
 
-#endif /* __BSP_W25Q64JV_H */
+#endif /* BSP_W25Q64JV_H */
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

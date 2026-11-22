@@ -18,21 +18,21 @@
 
 /* Function prototypes -------------------------------------------------------*/
 
-bool Class_Trajectory::Init(float __Velocity_Max, float __Acceleration_Max,
-                           float __Jerk_Max, float __D_T)
+bool Class_Trajectory::Init(float velocity_max, float acceleration_max,
+                           float jerk_max, float d_t)
 {
-    if (Basic_Math_Is_Invalid_Float(__Velocity_Max) || __Velocity_Max <= 0.0f ||
-        Basic_Math_Is_Invalid_Float(__Acceleration_Max) || __Acceleration_Max <= 0.0f ||
-        Basic_Math_Is_Invalid_Float(__Jerk_Max) || __Jerk_Max <= 0.0f ||
-        Basic_Math_Is_Invalid_Float(__D_T) || __D_T <= 0.0f)
+    if (Basic_Math_Is_Invalid_Float(velocity_max) || velocity_max <= 0.0f ||
+        Basic_Math_Is_Invalid_Float(acceleration_max) || acceleration_max <= 0.0f ||
+        Basic_Math_Is_Invalid_Float(jerk_max) || jerk_max <= 0.0f ||
+        Basic_Math_Is_Invalid_Float(d_t) || d_t <= 0.0f)
     {
         return (false);
     }
 
-    Velocity_Max = __Velocity_Max;
-    Acceleration_Max = __Acceleration_Max;
-    Jerk_Max = __Jerk_Max;
-    D_T = __D_T;
+    Velocity_Max = velocity_max;
+    Acceleration_Max = acceleration_max;
+    Jerk_Max = jerk_max;
+    D_T = d_t;
     Status = TRAJECTORY_FINISHED;
     return (Reset(0.0f));
 }
@@ -41,25 +41,25 @@ bool Class_Trajectory::Init(float __Velocity_Max, float __Acceleration_Max,
  * @brief 对齐合法初始状态; 运动中 Reset 后默认保持该速度并将加速度平滑收至零
  * @return 失败时保留原状态和轨迹
  */
-bool Class_Trajectory::Reset(float __Position, float __Velocity, float __Acceleration)
+bool Class_Trajectory::Reset(float position, float velocity, float acceleration)
 {
-    if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(__Position) ||
-        Basic_Math_Is_Invalid_Float(__Velocity) || Basic_Math_Is_Invalid_Float(__Acceleration) ||
-        (double)fabsf(__Velocity) > Velocity_Max || (double)fabsf(__Acceleration) > Acceleration_Max)
+    if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(position) ||
+        Basic_Math_Is_Invalid_Float(velocity) || Basic_Math_Is_Invalid_Float(acceleration) ||
+        (double)fabsf(velocity) > Velocity_Max || (double)fabsf(acceleration) > Acceleration_Max)
     {
         return (false);
     }
-    double acceleration = __Acceleration;
-    double peak_velocity = (double)__Velocity + acceleration * fabs(acceleration) / (2.0 * Jerk_Max);
+    double initial_acceleration = acceleration;
+    double peak_velocity = (double)velocity + initial_acceleration * fabs(initial_acceleration) / (2.0 * Jerk_Max);
     if (fabs(peak_velocity) > Velocity_Max)
     {
         return (false);
     }
 
     Struct_State previous = State;
-    State.Position = __Position;
-    State.Velocity = __Velocity;
-    State.Acceleration = __Acceleration;
+    State.Position = position;
+    State.Velocity = velocity;
+    State.Acceleration = acceleration;
     Struct_Profile candidate = {};
     Build_Velocity(State.Velocity, State.Acceleration, State.Velocity, candidate.Segment);
     candidate.Length = 3;
@@ -80,39 +80,39 @@ bool Class_Trajectory::Reset(float __Position, float __Velocity, float __Acceler
     Segment_Time = 0.0;
     Segment_Index = 0;
     Target_Type = TARGET_VELOCITY;
-    Target = __Velocity;
+    Target = velocity;
     Target_Changed = false;
-    Status = __Acceleration == 0.0f ? TRAJECTORY_FINISHED : TRAJECTORY_RUNNING;
+    Status = acceleration == 0.0f ? TRAJECTORY_FINISHED : TRAJECTORY_RUNNING;
     return (true);
 }
 
-bool Class_Trajectory::Set_Target_Position(float __Position)
+bool Class_Trajectory::Set_Target_Position(float position)
 {
-    if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(__Position))
+    if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(position))
     {
         return (false);
     }
-    if (Target_Type != TARGET_POSITION || Target != (double)__Position || Status == TRAJECTORY_ERROR)
+    if (Target_Type != TARGET_POSITION || Target != (double)position || Status == TRAJECTORY_ERROR)
     {
         Target_Type = TARGET_POSITION;
-        Target = __Position;
+        Target = position;
         Target_Changed = true;
         Status = TRAJECTORY_RUNNING;
     }
     return (true);
 }
 
-bool Class_Trajectory::Set_Target_Velocity(float __Velocity)
+bool Class_Trajectory::Set_Target_Velocity(float velocity)
 {
-    if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(__Velocity) ||
-        (double)fabsf(__Velocity) > Velocity_Max)
+    if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(velocity) ||
+        (double)fabsf(velocity) > Velocity_Max)
     {
         return (false);
     }
-    if (Target_Type != TARGET_VELOCITY || Target != (double)__Velocity || Status == TRAJECTORY_ERROR)
+    if (Target_Type != TARGET_VELOCITY || Target != (double)velocity || Status == TRAJECTORY_ERROR)
     {
         Target_Type = TARGET_VELOCITY;
-        Target = __Velocity;
+        Target = velocity;
         Target_Changed = true;
         Status = TRAJECTORY_RUNNING;
     }
@@ -120,85 +120,85 @@ bool Class_Trajectory::Set_Target_Velocity(float __Velocity)
 }
 
 Class_Trajectory::Struct_State Class_Trajectory::Integrate(
-    const Struct_State *__State, double __Jerk, double __Time)
+    const Struct_State *state, double jerk, double time)
 {
     Struct_State out;
-    out.Position = __State->Position + __Time * (__State->Velocity +
-        __Time * (__State->Acceleration / 2.0 + __Time * __Jerk / 6.0));
-    out.Velocity = __State->Velocity + __Time * (__State->Acceleration + __Time * __Jerk / 2.0);
-    out.Acceleration = __State->Acceleration + __Time * __Jerk;
+    out.Position = state->Position + time * (state->Velocity +
+        time * (state->Acceleration / 2.0 + time * jerk / 6.0));
+    out.Velocity = state->Velocity + time * (state->Acceleration + time * jerk / 2.0);
+    out.Acceleration = state->Acceleration + time * jerk;
     return (out);
 }
 
 /**
  * @brief 从任意合法 v/a 过渡到目标速度及零加速度, 最多三个恒 jerk 段
  */
-void Class_Trajectory::Build_Velocity(double __Velocity, double __Acceleration,
-                                     double __Target, Struct_Segment __Segment[3]) const
+void Class_Trajectory::Build_Velocity(double velocity, double acceleration,
+                                     double target, Struct_Segment segment[3]) const
 {
-    double delta = __Target - __Velocity;
-    double natural_delta = __Acceleration * fabs(__Acceleration) / (2.0 * Jerk_Max);
+    double delta = target - velocity;
+    double natural_delta = acceleration * fabs(acceleration) / (2.0 * Jerk_Max);
     double direction = delta >= natural_delta ? 1.0 : -1.0;
-    double oriented_acceleration = direction * __Acceleration;
-    double peak_squared = direction * Jerk_Max * delta + __Acceleration * __Acceleration / 2.0;
+    double oriented_acceleration = direction * acceleration;
+    double peak_squared = direction * Jerk_Max * delta + acceleration * acceleration / 2.0;
     double peak = sqrt(fmax(0.0, peak_squared));
     double hold_time = 0.0;
     if (peak > Acceleration_Max)
     {
         peak = Acceleration_Max;
         hold_time = (direction * delta -
-            (peak * peak - __Acceleration * __Acceleration / 2.0) / Jerk_Max) / peak;
+            (peak * peak - acceleration * acceleration / 2.0) / Jerk_Max) / peak;
     }
-    __Segment[0].Duration = fmax(0.0, (peak - oriented_acceleration) / Jerk_Max);
-    __Segment[0].Jerk = direction * Jerk_Max;
-    __Segment[1].Duration = fmax(0.0, hold_time);
-    __Segment[1].Jerk = 0.0;
-    __Segment[2].Duration = peak / Jerk_Max;
-    __Segment[2].Jerk = -direction * Jerk_Max;
+    segment[0].Duration = fmax(0.0, (peak - oriented_acceleration) / Jerk_Max);
+    segment[0].Jerk = direction * Jerk_Max;
+    segment[1].Duration = fmax(0.0, hold_time);
+    segment[1].Jerk = 0.0;
+    segment[2].Duration = peak / Jerk_Max;
+    segment[2].Jerk = -direction * Jerk_Max;
 }
 
-double Class_Trajectory::Build_Position(double __Middle_Velocity, double __Cruise_Time,
-                                       Struct_Profile *__Profile) const
+double Class_Trajectory::Build_Position(double middle_velocity, double cruise_time,
+                                       Struct_Profile *profile) const
 {
-    Build_Velocity(State.Velocity, State.Acceleration, __Middle_Velocity, __Profile->Segment);
-    __Profile->Segment[3].Duration = __Cruise_Time;
-    __Profile->Segment[3].Jerk = 0.0;
-    Build_Velocity(__Middle_Velocity, 0.0, 0.0, &__Profile->Segment[4]);
-    __Profile->Length = 7;
-    __Profile->End_Velocity = 0.0;
+    Build_Velocity(State.Velocity, State.Acceleration, middle_velocity, profile->Segment);
+    profile->Segment[3].Duration = cruise_time;
+    profile->Segment[3].Jerk = 0.0;
+    Build_Velocity(middle_velocity, 0.0, 0.0, &profile->Segment[4]);
+    profile->Length = 7;
+    profile->End_Velocity = 0.0;
     Struct_State state = {0.0, State.Velocity, State.Acceleration};
-    for (uint8_t i = 0; i < __Profile->Length; i++)
+    for (uint8_t i = 0; i < profile->Length; i++)
     {
         if (i == 3)
         {
             // 第一段速度过渡的终态 a=0, 避免舍入残差在长匀速段累积。
             state.Acceleration = 0.0;
         }
-        state = Integrate(&state, __Profile->Segment[i].Jerk, __Profile->Segment[i].Duration);
+        state = Integrate(&state, profile->Segment[i].Jerk, profile->Segment[i].Duration);
     }
     return (state.Position);
 }
 
-bool Class_Trajectory::Plan_Position(Struct_Profile *__Profile) const
+bool Class_Trajectory::Plan_Position(Struct_Profile *profile) const
 {
     double distance = Target - State.Position;
     double lower = -Velocity_Max;
     double upper = Velocity_Max;
-    double upper_distance = Build_Position(upper, 0.0, __Profile);
+    double upper_distance = Build_Position(upper, 0.0, profile);
     if (distance >= upper_distance)
     {
-        Build_Position(upper, (distance - upper_distance) / Velocity_Max, __Profile);
+        Build_Position(upper, (distance - upper_distance) / Velocity_Max, profile);
     }
     else
     {
-        double lower_distance = Build_Position(lower, 0.0, __Profile);
+        double lower_distance = Build_Position(lower, 0.0, profile);
         if (distance <= lower_distance)
         {
-            Build_Position(lower, (lower_distance - distance) / Velocity_Max, __Profile);
+            Build_Position(lower, (lower_distance - distance) / Velocity_Max, profile);
         }
         else
         {
-            double stop_distance = Build_Position(0.0, 0.0, __Profile);
+            double stop_distance = Build_Position(0.0, 0.0, profile);
             if (distance != stop_distance)
             {
                 if (distance > stop_distance)
@@ -213,7 +213,7 @@ bool Class_Trajectory::Plan_Position(Struct_Profile *__Profile) const
                 for (uint8_t i = 0; i < 64; i++)
                 {
                     double middle = (lower + upper) / 2.0;
-                    double trial_distance = Build_Position(middle, 0.0, __Profile);
+                    double trial_distance = Build_Position(middle, 0.0, profile);
                     if (trial_distance == distance)
                     {
                         break;
@@ -222,10 +222,10 @@ bool Class_Trajectory::Plan_Position(Struct_Profile *__Profile) const
                     {
                         // 中间速度达到浮点精度时, 从位移不足一侧用匀速段补齐。
                         middle = distance > stop_distance ? lower : upper;
-                        trial_distance = Build_Position(middle, 0.0, __Profile);
+                        trial_distance = Build_Position(middle, 0.0, profile);
                         if (middle != 0.0)
                         {
-                            Build_Position(middle, (distance - trial_distance) / middle, __Profile);
+                            Build_Position(middle, (distance - trial_distance) / middle, profile);
                         }
                         break;
                     }
@@ -241,34 +241,34 @@ bool Class_Trajectory::Plan_Position(Struct_Profile *__Profile) const
             }
         }
     }
-    __Profile->End_Position = Target;
-    return (Check_Profile(__Profile, distance));
+    profile->End_Position = Target;
+    return (Check_Profile(profile, distance));
 }
 
-bool Class_Trajectory::Plan_Velocity(Struct_Profile *__Profile) const
+bool Class_Trajectory::Plan_Velocity(Struct_Profile *profile) const
 {
-    Build_Velocity(State.Velocity, State.Acceleration, Target, __Profile->Segment);
-    __Profile->Length = 3;
-    __Profile->End_Velocity = Target;
+    Build_Velocity(State.Velocity, State.Acceleration, Target, profile->Segment);
+    profile->Length = 3;
+    profile->End_Velocity = Target;
     Struct_State state = {0.0, State.Velocity, State.Acceleration};
-    for (uint8_t i = 0; i < __Profile->Length; i++)
+    for (uint8_t i = 0; i < profile->Length; i++)
     {
-        state = Integrate(&state, __Profile->Segment[i].Jerk, __Profile->Segment[i].Duration);
+        state = Integrate(&state, profile->Segment[i].Jerk, profile->Segment[i].Duration);
     }
-    __Profile->End_Position = State.Position + state.Position;
-    return (Check_Profile(__Profile, state.Position));
+    profile->End_Position = State.Position + state.Position;
+    return (Check_Profile(profile, state.Position));
 }
 
-bool Class_Trajectory::Check_Profile(const Struct_Profile *__Profile, double __Distance) const
+bool Class_Trajectory::Check_Profile(const Struct_Profile *profile, double distance) const
 {
     Struct_State state = {0.0, State.Velocity, State.Acceleration};
     double velocity_tolerance = 1.0e-10 * Velocity_Max;
     double acceleration_tolerance = 1.0e-10 * Acceleration_Max;
-    for (uint8_t i = 0; i < __Profile->Length; i++)
+    for (uint8_t i = 0; i < profile->Length; i++)
     {
-        double time = __Profile->Segment[i].Duration;
-        double jerk = __Profile->Segment[i].Jerk;
-        if (__Profile->Length == 7 && i == 3)
+        double time = profile->Segment[i].Duration;
+        double jerk = profile->Segment[i].Jerk;
+        if (profile->Length == 7 && i == 3)
         {
             if (fabs(state.Acceleration) > acceleration_tolerance)
             {
@@ -300,8 +300,8 @@ bool Class_Trajectory::Check_Profile(const Struct_Profile *__Profile, double __D
             return (false);
         }
     }
-    return (fabs(state.Position - __Distance) <= 1.0e-9 * (1.0 + fabs(__Distance)) &&
-            fabs(state.Velocity - __Profile->End_Velocity) <= velocity_tolerance &&
+    return (fabs(state.Position - distance) <= 1.0e-9 * (1.0 + fabs(distance)) &&
+            fabs(state.Velocity - profile->End_Velocity) <= velocity_tolerance &&
             fabs(state.Acceleration) <= acceleration_tolerance);
 }
 

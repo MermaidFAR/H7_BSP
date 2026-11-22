@@ -6,8 +6,8 @@
  * @note zzm 维护与完善
  */
 
-#ifndef __DJI_MOTOR_H
-#define __DJI_MOTOR_H
+#ifndef DJI_MOTOR_H
+#define DJI_MOTOR_H
 
 /* Includes ------------------------------------------------------------------*/
 

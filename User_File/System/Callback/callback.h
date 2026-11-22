@@ -15,8 +15,8 @@
  ******************************************************************************
  */
 
-#ifndef __TIM_CALLBACK_H
-#define __TIM_CALLBACK_H
+#ifndef CALLBACK_H
+#define CALLBACK_H
 
 #include <stdint.h>
 #include "stm32h7xx_hal.h"
@@ -55,4 +55,4 @@ void OSPI2_Tx_Callback(uint8_t *Buffer);
 }
 #endif
 
-#endif /* __TIM_CALLBACK_H */
+#endif /* CALLBACK_H */

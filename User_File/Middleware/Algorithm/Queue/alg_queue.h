@@ -36,7 +36,7 @@ public:
 
     inline Type Get_Rear() const;
 
-    inline void Push(const Type &__Data);
+    inline void Push(const Type &data);
 
     inline Type Pop();
 
@@ -131,10 +131,10 @@ inline Type Class_Queue<Type, Max_Size>::Get_Rear() const
 *
 * @tparam Type 类型
 * @tparam Max_Size 队列长度最大值
-* @param __Data 传入值
+* @param data 传入值
 */
 template<typename Type, uint32_t Max_Size>
-inline void Class_Queue<Type, Max_Size>::Push(const Type &__Data)
+inline void Class_Queue<Type, Max_Size>::Push(const Type &data)
 {
     if (Length == Max_Size)
     {
@@ -152,7 +152,7 @@ inline void Class_Queue<Type, Max_Size>::Push(const Type &__Data)
             Rear = (Rear + 1) % Max_Size;
         }
 
-        Queue[Rear] = __Data;
+        Queue[Rear] = data;
         Length++;
     }
 }

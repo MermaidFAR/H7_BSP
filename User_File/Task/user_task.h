@@ -1,11 +1,11 @@
-#ifndef __USER_TASK_H
-#define __USER_TASK_H
+#ifndef USER_TASK_H
+#define USER_TASK_H
 #include "bsp_bmi088.h"
 #include "bsp_key.h"
 #include "bsp_usb.h" // USB_Init 声明
 #include "bsp_ws2812.h"
 #include "cmsis_os2.h"
-#include "dvc_erictool.h"
+#include "erictool.h"
 #include <cstdint>
 #include <sys/types.h>
 #include "sys_debug.h"
@@ -26,4 +26,4 @@ void Status_Task(void *argument);
 }
 #endif
 
-#endif /* __USER_TASK_H */
+#endif /* USER_TASK_H */

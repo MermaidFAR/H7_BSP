@@ -83,14 +83,14 @@ public:
         Microsecond = 0;
     }
 
-    explicit Class_Time(const int64_t &__Microsecond)
+    explicit Class_Time(int64_t microsecond)
     {
-        Microsecond = __Microsecond;
+        Microsecond = microsecond;
     }
 
-    Class_Time(const int32_t &__Second, const int16_t &__Millisecond, const int16_t &__Microsecond)
+    Class_Time(int32_t second, int16_t millisecond, int16_t microsecond)
     {
-        Microsecond = (int64_t)(__Second) * 1000000LL + (int64_t)(__Millisecond) * 1000LL + (int64_t)(__Microsecond);
+        Microsecond = (int64_t)(second) * 1000000LL + (int64_t)(millisecond) * 1000LL + (int64_t)(microsecond);
     }
 
     // 复制构造函数
@@ -135,17 +135,17 @@ public:
         return (Class_Time(Microsecond - Time.Get_Microsecond()));
     }
 
-    inline Class_Time operator*(const float &value) const
+    inline Class_Time operator*(float value) const
     {
         return (Class_Time((int64_t)((float) (Microsecond) * value)));
     }
 
-    inline friend Class_Time operator*(const float &value, const Class_Time &Time)
+    inline friend Class_Time operator*(float value, const Class_Time &Time)
     {
         return (Class_Time((int64_t)((float) (Time.Get_Microsecond()) * value)));
     }
 
-    inline Class_Time operator/(const float &value) const
+    inline Class_Time operator/(float value) const
     {
         return (Class_Time((int64_t)((float) (Microsecond) / value)));
     }
@@ -162,13 +162,13 @@ public:
         return (*this);
     }
 
-    inline Class_Time &operator*=(const float &value)
+    inline Class_Time &operator*=(float value)
     {
         Microsecond = (int64_t)((float) (Microsecond) * value);
         return (*this);
     }
 
-    inline Class_Time &operator/=(const float &value)
+    inline Class_Time &operator/=(float value)
     {
         Microsecond = (int64_t)((float) (Microsecond) / value);
         return (*this);
@@ -235,11 +235,11 @@ extern Class_Timestamp SYS_Timestamp;
 
 namespace Namespace_SYS_Timestamp
 {
-    void Delay_Second(const uint32_t &Second);
+    void Delay_Second(uint32_t Second);
 
-    void Delay_Millisecond(const uint32_t &Millisecond);
+    void Delay_Millisecond(uint32_t Millisecond);
 
-    void Delay_Microsecond(const uint32_t &Microsecond);
+    void Delay_Microsecond(uint32_t Microsecond);
 }
 
 /* Exported function declarations --------------------------------------------*/

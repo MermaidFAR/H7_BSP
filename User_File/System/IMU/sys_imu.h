@@ -10,8 +10,8 @@
  * 具体功能仍由Class_BMI088和VQF算法类完整实现。
  */
 
-#ifndef __SYS_IMU_H
-#define __SYS_IMU_H
+#ifndef SYS_IMU_H
+#define SYS_IMU_H
 
 /* Includes ------------------------------------------------------------------*/
 

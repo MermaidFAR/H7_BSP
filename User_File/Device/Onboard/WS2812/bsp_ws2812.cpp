@@ -47,17 +47,17 @@ Class_WS2812 BSP_WS2812;
 /**
  * @brief WS2812单个灯珠初始化, 默认灯灭
  *
- * @param __Red 红色分量
- * @param __Green 绿色分量
- * @param __Blue 蓝色分量
+ * @param red 红色分量
+ * @param green 绿色分量
+ * @param blue 蓝色分量
  */
-void Class_WS2812::Init(const uint8_t &__Red, const uint8_t &__Green, const uint8_t &__Blue)
+void Class_WS2812::Init(uint8_t red, uint8_t green, uint8_t blue)
 {
     SPI_Manage_Object = &SPI6_Manage_Object;
 
-    Color.Red = __Red;
-    Color.Green = __Green;
-    Color.Blue = __Blue;
+    Color.Red = red;
+    Color.Green = green;
+    Color.Blue = blue;
     Has_Written_Color = false;
 }
 

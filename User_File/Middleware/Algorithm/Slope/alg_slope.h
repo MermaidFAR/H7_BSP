@@ -40,17 +40,17 @@ enum Enum_Slope_First
 class Class_Slope
 {
 public:
-    void Init(const float &__Increase_Value, const float &__Decrease_Value, const Enum_Slope_First &__Slope_First = Slope_First_REAL);
+    void Init(float increase_value, float decrease_value, Enum_Slope_First slope_first = Slope_First_REAL);
 
     inline float Get_Out() const;
 
-    inline void Set_Now_Real(const float &__Now_Real);
+    inline void Set_Now_Real(float now_real);
 
-    inline void Set_Increase_Value(const float &__Increase_Value);
+    inline void Set_Increase_Value(float increase_value);
 
-    inline void Set_Decrease_Value(const float &__Decrease_Value);
+    inline void Set_Decrease_Value(float decrease_value);
 
-    inline void Set_Target(const float &__Target);
+    inline void Set_Target(float target);
 
     void TIM_Calculate_PeriodElapsedCallback();
 
@@ -104,41 +104,41 @@ inline float Class_Slope::Get_Out() const
 /**
  * @brief 设定当前规划值
  *
- * @param __Now_Real 当前规划值
+ * @param now_real 当前规划值
  */
-inline void Class_Slope::Set_Now_Real(const float &__Now_Real)
+inline void Class_Slope::Set_Now_Real(float now_real)
 {
-    Now_Real = __Now_Real;
+    Now_Real = now_real;
 }
 
 /**
  * @brief 设定绝对值增量, 一次计算周期改变值
  *
- * @param __Increase_Value 绝对值增量, 一次计算周期改变值
+ * @param increase_value 绝对值增量, 一次计算周期改变值
  */
-inline void Class_Slope::Set_Increase_Value(const float &__Increase_Value)
+inline void Class_Slope::Set_Increase_Value(float increase_value)
 {
-    Increase_Value = __Increase_Value;
+    Increase_Value = increase_value;
 }
 
 /**
  * @brief 设定绝对值减量, 一次计算周期改变值
  *
- * @param __Decrease_Value 绝对值减量, 一次计算周期改变值
+ * @param decrease_value 绝对值减量, 一次计算周期改变值
  */
-inline void Class_Slope::Set_Decrease_Value(const float &__Decrease_Value)
+inline void Class_Slope::Set_Decrease_Value(float decrease_value)
 {
-    Decrease_Value = __Decrease_Value;
+    Decrease_Value = decrease_value;
 }
 
 /**
  * @brief 设定目标值
  *
- * @param __Target 目标值
+ * @param target 目标值
  */
-inline void Class_Slope::Set_Target(const float &__Target)
+inline void Class_Slope::Set_Target(float target)
 {
-    Target = __Target;
+    Target = target;
 }
 
 #endif

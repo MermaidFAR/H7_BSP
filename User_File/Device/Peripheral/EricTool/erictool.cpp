@@ -1,5 +1,5 @@
 /**
- * @file dvc_erictool.cpp
+ * @file erictool.cpp
  * @author yssickjgd (1345578933@qq.com)
  * @brief EricTool justfloat 调试工具（UART / USB CDC）
  * @version 0.2
@@ -13,7 +13,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "dvc_erictool.h"
+#include "erictool.h"
 #include <math.h>
 #include <string.h>
 
@@ -159,11 +159,11 @@ static void EricTool_ParseCommand(const uint8_t *data, uint16_t length,
  * @brief Vofa+ 初始化
  *
  * @param huart                        绑定的 UART 外设句柄
- * @param __Rx_Variable_Assignment_Num 接收指令字典数量
- * @param __Rx_Variable_Assignment_List 接收指令字典列表指针（字符串指针数组）
- * @param __Frame_Tail                 帧尾（justfloat 默认 0x7f800000）
+ * @param rx_variable_assignment_num 接收指令字典数量
+ * @param rx_variable_assignment_list 接收指令字典列表指针（字符串指针数组）
+ * @param frame_tail                 帧尾（justfloat 默认 0x7f800000）
  */
-void Class_EricTool_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &__Rx_Variable_Assignment_Num, const char **__Rx_Variable_Assignment_List, const uint32_t &__Frame_Tail)
+void Class_EricTool_UART::Init(const UART_HandleTypeDef *huart, uint8_t rx_variable_assignment_num, const char **rx_variable_assignment_list, uint32_t frame_tail)
 {
     UART_Manage_Object = UART_Get_Manage_Object(huart);
     if (UART_Manage_Object == nullptr)
@@ -171,11 +171,11 @@ void Class_EricTool_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &_
         return;
     }
 
-    Rx_Variable_Num = __Rx_Variable_Assignment_Num;
-    Rx_Variable_List = __Rx_Variable_Assignment_List;
+    Rx_Variable_Num = rx_variable_assignment_num;
+    Rx_Variable_List = rx_variable_assignment_list;
     Variable_Index = -1;
     Variable_Value = 0.0f;
-    Frame_Tail = __Frame_Tail;
+    Frame_Tail = frame_tail;
 }
 
 /**
@@ -184,7 +184,7 @@ void Class_EricTool_UART::Init(const UART_HandleTypeDef *huart, const uint8_t &_
  * @param Rx_Data 接收完毕的缓冲区指针
  * @param Length  本帧字节长度
  */
-void Class_EricTool_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, const uint16_t &Length)
+void Class_EricTool_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, uint16_t Length)
 {
     EricTool_ParseCommand(Rx_Data, Length, Rx_Variable_List, Rx_Variable_Num, Variable_Index, Variable_Value);
 }
@@ -222,18 +222,18 @@ void Class_EricTool_UART::Output()
 /**
  * @brief EricTool USB CDC 初始化
  *
- * @param __Rx_Variable_Assignment_Num 接收指令字典数量
- * @param __Rx_Variable_Assignment_List 接收指令字典列表指针（字符串指针数组）
- * @param __Frame_Tail                 帧尾（justfloat 默认 0x7f800000）
+ * @param rx_variable_assignment_num 接收指令字典数量
+ * @param rx_variable_assignment_list 接收指令字典列表指针（字符串指针数组）
+ * @param frame_tail                 帧尾（justfloat 默认 0x7f800000）
  */
-void Class_EricTool_USB::Init(const uint8_t &__Rx_Variable_Assignment_Num, const char **__Rx_Variable_Assignment_List, const uint32_t &__Frame_Tail)
+void Class_EricTool_USB::Init(uint8_t rx_variable_assignment_num, const char **rx_variable_assignment_list, uint32_t frame_tail)
 {
     USB_Manage_Object = &USB0_Manage_Object;
-    Rx_Variable_Num = __Rx_Variable_Assignment_Num;
-    Rx_Variable_List = __Rx_Variable_Assignment_List;
+    Rx_Variable_Num = rx_variable_assignment_num;
+    Rx_Variable_List = rx_variable_assignment_list;
     Variable_Index = -1;
     Variable_Value = 0.0f;
-    Frame_Tail = __Frame_Tail;
+    Frame_Tail = frame_tail;
 }
 
 /**
@@ -242,7 +242,7 @@ void Class_EricTool_USB::Init(const uint8_t &__Rx_Variable_Assignment_Num, const
  * @param Rx_Data 接收完毕的缓冲区指针
  * @param Length  本帧字节长度
  */
-void Class_EricTool_USB::USB_RxCallback(const uint8_t *Rx_Data, const uint16_t &Length)
+void Class_EricTool_USB::USB_RxCallback(const uint8_t *Rx_Data, uint16_t Length)
 {
     EricTool_ParseCommand(Rx_Data, Length, Rx_Variable_List, Rx_Variable_Num, Variable_Index, Variable_Value);
 }

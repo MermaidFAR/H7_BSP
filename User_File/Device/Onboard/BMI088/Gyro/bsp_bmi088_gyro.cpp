@@ -31,13 +31,13 @@ uint32_t Class_BMI088_Gyro::Get_Outlier_Counter() const
     return (BMI088_Gyro_Outlier_Counter);
 }
 
-void Class_BMI088_Gyro::Notify_FIFO_Interrupt(const uint64_t &__Timestamp_Us)
+void Class_BMI088_Gyro::Notify_FIFO_Interrupt(uint64_t timestamp_us)
 {
-    FIFO_Last_Interrupt_Timestamp_Us = __Timestamp_Us;
+    FIFO_Last_Interrupt_Timestamp_Us = timestamp_us;
     FIFO_Interrupt_Count++;
 }
 
-bool Class_BMI088_Gyro::Pop_Sample(Struct_BMI088_Gyro_Sample &__Sample)
+bool Class_BMI088_Gyro::Pop_Sample(Struct_BMI088_Gyro_Sample &sample)
 {
     const uint16_t tail = Sample_Queue_Tail;
     __DMB();
@@ -46,7 +46,7 @@ bool Class_BMI088_Gyro::Pop_Sample(Struct_BMI088_Gyro_Sample &__Sample)
         return false;
     }
 
-    __Sample = Sample_Queue[tail];
+    sample = Sample_Queue[tail];
     __DMB();
     Sample_Queue_Tail = (uint16_t)((tail + 1U) &
                                                BMI088_GYRO_SAMPLE_QUEUE_MASK);
@@ -68,9 +68,7 @@ bool Class_BMI088_Gyro::Check_Chip_Id(uint8_t Max_Attempts) const
 }
 
 /**
- * @brief 初始化BMI088加速度计
- *
- * @param Heater_Enable 是否使能加热电阻
+ * @brief 初始化 BMI088 陀螺仪与 FIFO。
  */
 bool Class_BMI088_Gyro::Init()
 {
@@ -165,10 +163,9 @@ void Class_BMI088_Gyro::Start_FIFO_Acquisition()
 }
 
 /**
- * @brief SPI接收回调函数, 处理加速度计数据
- *
+ * @brief 处理陀螺仪 SPI 接收结果，包括 FIFO 状态和样本数据。
  */
-uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
+uint8_t Class_BMI088_Gyro::SPI_RxCallback(uint64_t ready_timestamp_us)
 {
     const uint8_t spi_init_address =
         SPI_Manage_Object->Tx_Buffer[0] & ~BMI088_GYRO_READ_MASK;
@@ -191,12 +188,12 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
         }
 
         const bool from_interrupt =
-            __Ready_Timestamp_Us != 0U &&
-            __Ready_Timestamp_Us == FIFO_Last_Interrupt_Timestamp_Us &&
-            __Ready_Timestamp_Us != FIFO_Last_Handled_Interrupt_Timestamp_Us;
+            ready_timestamp_us != 0U &&
+            ready_timestamp_us == FIFO_Last_Interrupt_Timestamp_Us &&
+            ready_timestamp_us != FIFO_Last_Handled_Interrupt_Timestamp_Us;
         if (from_interrupt)
         {
-            FIFO_Last_Handled_Interrupt_Timestamp_Us = __Ready_Timestamp_Us;
+            FIFO_Last_Handled_Interrupt_Timestamp_Us = ready_timestamp_us;
         }
 
         if (frame_count < BMI088_GYRO_FIFO_WATERMARK_FRAME_COUNT && !overrun)
@@ -216,10 +213,10 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
 
         if (FIFO_Previous_Anchor_Timestamp_Us != 0U &&
             FIFO_Previous_Batch_Frame_Count != 0U &&
-            __Ready_Timestamp_Us > FIFO_Previous_Anchor_Timestamp_Us)
+            ready_timestamp_us > FIFO_Previous_Anchor_Timestamp_Us)
         {
             const float estimated_period_us =
-                (float)(__Ready_Timestamp_Us -
+                (float)(ready_timestamp_us -
                                    FIFO_Previous_Anchor_Timestamp_Us) /
                 (float)FIFO_Previous_Batch_Frame_Count;
             if (estimated_period_us >= BMI088_GYRO_MIN_SAMPLE_PERIOD_US &&
@@ -233,13 +230,13 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
 
         FIFO_Batch_Total_Frame_Count = frame_count;
         FIFO_Batch_Processed_Frame_Count = 0U;
-        FIFO_Batch_Anchor_Timestamp_Us = __Ready_Timestamp_Us;
+        FIFO_Batch_Anchor_Timestamp_Us = ready_timestamp_us;
         FIFO_Batch_Sample_Period_Us = FIFO_Sample_Period_Us;
         if (!from_interrupt && FIFO_Last_Enqueued_Timestamp_Us != 0U &&
-            __Ready_Timestamp_Us > FIFO_Last_Enqueued_Timestamp_Us)
+            ready_timestamp_us > FIFO_Last_Enqueued_Timestamp_Us)
         {
             const float batch_period_us =
-                (float)(__Ready_Timestamp_Us -
+                (float)(ready_timestamp_us -
                                    FIFO_Last_Enqueued_Timestamp_Us) /
                 (float)frame_count;
             if (batch_period_us >= 250.0f && batch_period_us <= 750.0f)
@@ -375,8 +372,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us)
 }
 
 /**
- * @brief TIM定时器中断回调函数, 100us周期
- *
+ * @brief 发起陀螺仪 FIFO 状态或数据的 SPI 读取。
  */
 uint8_t Class_BMI088_Gyro::SPI_Request_Gyro()
 {
@@ -404,15 +400,15 @@ uint8_t Class_BMI088_Gyro::SPI_Request_Gyro()
 }
 
 Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Decode_Gyro_Frame(
-    const uint8_t *__Frame) const
+    const uint8_t *frame) const
 {
     Class_Matrix_f32<3, 1> gyro;
-    const int16_t raw_x = (int16_t)((uint16_t)__Frame[0] |
-        ((uint16_t)__Frame[1] << 8U));
-    const int16_t raw_y = (int16_t)((uint16_t)__Frame[2] |
-        ((uint16_t)__Frame[3] << 8U));
-    const int16_t raw_z = (int16_t)((uint16_t)__Frame[4] |
-        ((uint16_t)__Frame[5] << 8U));
+    const int16_t raw_x = (int16_t)((uint16_t)frame[0] |
+        ((uint16_t)frame[1] << 8U));
+    const int16_t raw_y = (int16_t)((uint16_t)frame[2] |
+        ((uint16_t)frame[3] << 8U));
+    const int16_t raw_z = (int16_t)((uint16_t)frame[4] |
+        ((uint16_t)frame[5] << 8U));
     const float scale = (float)(1U << (4U - BMI088_GYRO_RANGE)) *
                         125.0f * BASIC_MATH_DEG_TO_RAD / 32768.0f;
     gyro[0][0] = (float)raw_x * scale;
@@ -422,9 +418,9 @@ Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Decode_Gyro_Frame(
 }
 
 bool Class_BMI088_Gyro::Enqueue_Sample(
-    const Class_Matrix_f32<3, 1> &__Gyro,
-    const uint64_t &__Timestamp_Us,
-    const bool &__Valid)
+    const Class_Matrix_f32<3, 1> &gyro,
+    uint64_t timestamp_us,
+    bool valid)
 {
     const uint32_t sequence = ++FIFO_Sample_Sequence;
     const uint16_t head = Sample_Queue_Head;
@@ -436,12 +432,12 @@ bool Class_BMI088_Gyro::Enqueue_Sample(
     }
 
     Struct_BMI088_Gyro_Sample &sample = Sample_Queue[head];
-    sample.Timestamp_Us = __Timestamp_Us;
-    sample.Gyro_Rad_S[0] = __Gyro[0][0];
-    sample.Gyro_Rad_S[1] = __Gyro[1][0];
-    sample.Gyro_Rad_S[2] = __Gyro[2][0];
+    sample.Timestamp_Us = timestamp_us;
+    sample.Gyro_Rad_S[0] = gyro[0][0];
+    sample.Gyro_Rad_S[1] = gyro[1][0];
+    sample.Gyro_Rad_S[2] = gyro[2][0];
     sample.Sequence = sequence;
-    sample.Valid = __Valid ? 1U : 0U;
+    sample.Valid = valid ? 1U : 0U;
     sample.Reserved[0] = 0U;
     sample.Reserved[1] = 0U;
     sample.Reserved[2] = 0U;
@@ -462,7 +458,7 @@ bool Class_BMI088_Gyro::Enqueue_Sample(
  *
  * @param Register_Address 寄存器地址
  */
-uint8_t Class_BMI088_Gyro::Read_Single_Register(const uint8_t &Register_Address) const
+uint8_t Class_BMI088_Gyro::Read_Single_Register(uint8_t Register_Address) const
 {
     const uint8_t tx_data[1] = {(uint8_t)(Register_Address | BMI088_GYRO_READ_MASK)};
 
@@ -475,7 +471,7 @@ uint8_t Class_BMI088_Gyro::Read_Single_Register(const uint8_t &Register_Address)
  * @param Register_Address 寄存器地址
  * @param Rx_Length 接收数据长度
  */
-void Class_BMI088_Gyro::Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const
+void Class_BMI088_Gyro::Read_Multi_Register(uint8_t Register_Address, uint32_t Rx_Length) const
 {
     if (Rx_Length > (SPI_BUFFER_SIZE - 1U))
     {
@@ -493,7 +489,7 @@ void Class_BMI088_Gyro::Read_Multi_Register(const uint8_t &Register_Address, con
  * @param Register_Address 寄存器地址
  * @param Tx_Data_Buffer 发送数据缓冲区
  */
-uint8_t Class_BMI088_Gyro::Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const
+uint8_t Class_BMI088_Gyro::Write_Single_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer) const
 {
     const uint8_t tx_data[2] = {Register_Address, Tx_Data_Buffer[0]};
 
@@ -508,7 +504,7 @@ uint8_t Class_BMI088_Gyro::Write_Single_Register(const uint8_t &Register_Address
  * @param Tx_Data_Buffer 发送数据缓冲区
  * @param Tx_Length 发送数据长度
  */
-void Class_BMI088_Gyro::Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const
+void Class_BMI088_Gyro::Write_Multi_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer, uint32_t Tx_Length) const
 {
     if (Tx_Length > (SPI_BUFFER_SIZE - 1U))
     {

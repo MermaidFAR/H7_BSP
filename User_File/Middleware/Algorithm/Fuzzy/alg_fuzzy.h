@@ -4,8 +4,8 @@
  * @brief 双输入零阶Sugeno模糊推理
  */
 
-#ifndef __ALG_FUZZY_H
-#define __ALG_FUZZY_H
+#ifndef ALG_FUZZY_H
+#define ALG_FUZZY_H
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -37,19 +37,19 @@ struct Struct_Fuzzy_Sugeno_Config
 class Class_Fuzzy_Sugeno
 {
 public:
-    bool Init(const Struct_Fuzzy_Sugeno_Config &__Config);
+    bool Init(const Struct_Fuzzy_Sugeno_Config &config);
 
-    bool Calculate(float __Input_1, float __Input_2, float *__Out) const;
+    bool Calculate(float input_1, float input_2, float *out) const;
 
     inline uint16_t Get_Output_Count() const;
 
 protected:
     Struct_Fuzzy_Sugeno_Config Config;
 
-    static bool Check_Nodes(const float *__Nodes, uint16_t __Count);
+    static bool Check_Nodes(const float *nodes, uint16_t count);
 
-    static uint16_t Find_Interval(const float *__Nodes, uint16_t __Count,
-                                  float __Input, float *__Ratio);
+    static uint16_t Find_Interval(const float *nodes, uint16_t count,
+                                  float input, float *ratio);
 };
 
 /* Exported variables --------------------------------------------------------*/

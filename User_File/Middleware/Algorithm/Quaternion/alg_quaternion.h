@@ -52,7 +52,7 @@ public:
     // 赋值函数
     using Class_Matrix_f32<4, 1>::operator=;
 
-    inline float &operator[](const int &Index)
+    inline float &operator[](int Index)
     {
         return (Data[Index]);
     }
@@ -61,7 +61,7 @@ public:
 
     using Class_Matrix_f32<4, 1>::operator-;
 
-    inline Class_Quaternion_f32 operator*(const float &Value) const
+    inline Class_Quaternion_f32 operator*(float Value) const
     {
         Class_Quaternion_f32 result;
         result.Data[0] = Data[0] * Value;
@@ -71,7 +71,7 @@ public:
         return (result);
     }
 
-    inline friend Class_Quaternion_f32 operator*(const float &Value, const Class_Quaternion_f32 &Quaternion)
+    inline friend Class_Quaternion_f32 operator*(float Value, const Class_Quaternion_f32 &Quaternion)
     {
         Class_Quaternion_f32 result;
         result.Data[0] = Quaternion.Data[0] * Value;
@@ -146,7 +146,7 @@ public:
 
     using Class_Matrix_f32<4, 1>::operator-=;
 
-    inline Class_Quaternion_f32 &operator*=(const float &Value)
+    inline Class_Quaternion_f32 &operator*=(float Value)
     {
         Data[0] *= Value;
         Data[1] *= Value;
@@ -272,7 +272,7 @@ namespace Namespace_ALG_Quaternion
 
     Class_Quaternion_f32 From_Rotation_Matrix(const Class_Matrix_f32<3, 3> &Rotation_Matrix);
 
-    Class_Quaternion_f32 From_Axis_Angle(const Class_Matrix_f32<3, 1> &Axis, const float &Angle);
+    Class_Quaternion_f32 From_Axis_Angle(const Class_Matrix_f32<3, 1> &Axis, float Angle);
 }
 
 /* Exported function declarations --------------------------------------------*/

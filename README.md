@@ -47,13 +47,12 @@ cmake --build --preset Release --parallel
 
 ### 3. 最小接入示例
 
-[Control_Task.cpp](User_File/Task/Control_Task.cpp) 由 `TIM4` 以 1 kHz 节拍唤醒。应用可组合健康判定、IMU 姿态和电机接口，并在安全分支接入设备适用的失能或零力矩指令。
+[Control_Task.cpp](User_File/Task/Control_Task.cpp) 由 `TIM4` 以 1 kHz 节拍唤醒，RTOS 按 `H7_BSP.ioc` 配置以 `osPriorityHigh1` 创建 `ControlTask`。应用可组合健康判定、IMU 姿态和电机接口，并在安全分支接入设备适用的失能或零力矩指令。
 
 ```cpp
 extern "C" void Control_Task(void *argument)
 {
     (void)argument;
-    osThreadSetPriority(osThreadGetId(), osPriorityHigh1);
 
     // 在此处完成业务模块与电机 Init()
 
@@ -128,7 +127,12 @@ cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 | **惯性传感** | BMI088 FIFO / SPI DMA 采集、恒温加热 PWM 电压补偿、VQF 姿态与零偏估计 | [BMI088](User_File/Device/Onboard/BMI088) · [sys\_imu](User_File/System/IMU) |
 | **板载器件** | W25Q64JV 外部 Flash、24 V/5 V 电源输出与电压采样、WS2812、蜂鸣器、按键 | [Onboard](User_File/Device/Onboard) |
 | **控制与轨迹** | PID（微分先行 / D 支路 IIR / 变速分离积分）、SMC 滑模、DOB 扰动观测、三阶 S 曲线、Sugeno 模糊推理 | [Algorithm](User_File/Middleware/Algorithm) |
+| **LQR** | 定长全状态反馈，支持在线更新离线求得的增益，适合平衡底盘和轮腿控制 | [LQR](User_File/Middleware/Algorithm/LQR/alg_lqr.h) |
+| **MPC** | 定长线性预测控制，在线迭代有上限，适合执行器输入受幅值约束的控制环 | [MPC](User_File/Middleware/Algorithm/MPC/alg_mpc.h) |
+| **ESO** | 独立的一阶和二阶扩张状态观测器，可为速度环或位置环估计总扰动并提供补偿量 | [ESO](User_File/Middleware/Algorithm/ESO/alg_eso.h) |
+| **ADRC** | 复用二阶 ESO 的线性自抗扰控制，支持搭配跟踪微分器，用于受外扰的位置或角度跟踪 | [ADRC](User_File/Middleware/Algorithm/ADRC/alg_adrc.h) |
 | **估计与滤波** | Kalman、EKF、VQF、RLS 递推最小二乘、FIR / IIR、One Euro、多项式拟合微分 | [Filter](User_File/Middleware/Algorithm/Filter) · [RLS](User_File/Middleware/Algorithm/RLS) |
+| **Alpha-Beta** | 以常速度模型估计标量位置与速度，支持固定周期、变步长和只读外推，适合视觉位置更新与短时丢帧 | [Alpha-Beta](User_File/Middleware/Algorithm/Filter/AlphaBeta/alg_filter_alpha_beta.h) |
 | **数学与辅助** | Basic、Complex、定长 Matrix、Quaternion、Slope、FSM、Queue、Pulse 周期分频 | [Algorithm](User_File/Middleware/Algorithm) |
 | **应用策略** | SpinMode（云台/底盘坐标变换与小陀螺速度前馈）、PowerControl（底盘功率限制与 RLS 辨识） | [SpinMode](User_File/Application/SpinMode) · [PowerControl](User_File/Application/PowerControl) |
 | **系统与调试** | 统一初始化、临界区、回调分发、微秒时间戳、整车健康快照、EricTool（USB/UART） | [System](User_File/System) · [EricTool](User_File/Device/Peripheral/EricTool) |
@@ -174,6 +178,21 @@ cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 
 - **调试静音**：在 Ozone / GDB Watch 中将 `SYS_Health_Buzzer_Mute` 置 `1`（或调用 `Sys_Health_Set_Buzzer_Mute(true)`）即可静音，不影响灯效与 `Sys_Health_Is_Safe()` 安全判定。
 - **遥测绑定**：`EricTool_USB` 与 `EricTool_UART` 均支持 `Set_Data(channels, count)` 浮点指针数组接口，可直接绑定 `&SYS_Health.Power_Voltage_V` 或 `&Debug_IMU_Data.Euler_Yaw_rad`。
+
+### 4. FreeRTOS 任务分工
+
+应用任务的创建优先级和栈大小来自 CubeMX 的 `FREERTOS.Tasks01` 配置。配置与创建代码见 [H7_BSP.ioc](H7_BSP.ioc) 和 [freertos.c](Core/Src/freertos.c)。
+
+| 任务 | CMSIS 优先级 | 栈大小 | 职责 |
+| :--- | :--- | ---: | :--- |
+| [`BMI088Task`](User_File/Task/BMI088_Task.cpp) | `osPriorityHigh2`（42） | 8 KiB | 响应 SPI/FIFO 事件，处理陀螺仪样本、执行 VQF 姿态解算并发布 IMU 调试快照 |
+| [`ControlTask`](User_File/Task/Control_Task.cpp) | `osPriorityHigh1`（41） | 8 KiB | 由 TIM4 以 1 kHz 唤醒，检查整车安全状态并提供正常控制与失能的应用扩展口 |
+| [`CanTxTask`](User_File/Task/Can_Tx_Task.cpp) | `osPriorityHigh`（40） | 4 KiB | 处理三路 CAN 的异步队列、周期帧与总线恢复，事件唤醒并以 1 ms 超时重试 |
+| [`TransportTask`](User_File/Task/Transport_Task.cpp) | `osPriorityNormal`（24） | 8 KiB | 初始化 USB CDC，发送 EricTool 的 IMU 遥测 |
+| [`TIM_1ms_Task`](User_File/Task/TIM_1ms_Task.cpp) | `osPriorityLow`（8） | 4 KiB | 分发后台周期回调，包括 Flash 超时、按键、UART 恢复、SPI 服务、ADC、灯效及每 128 ms 的 BMI088 温度读取与温控 |
+| [`StatusTask`](User_File/Task/Status_Task.cpp) | `osPriorityLow`（8） | 2 KiB | 以 20 Hz 汇总整车健康并驱动状态灯与蜂鸣器 |
+| [`InsTask`](User_File/Task/Ins_Task.cpp) | `osPriorityLow`（8） | 1 KiB | 预留惯性导航扩展口，当前阻塞等待应用事件 |
+| [`StorageTask`](User_File/Task/Storage_Task.cpp) | `osPriorityLow`（8） | 4 KiB | 预留存储扩展口，当前在启动后退出 |
 
 ## 开发约定
 

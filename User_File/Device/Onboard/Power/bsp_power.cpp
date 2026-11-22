@@ -28,17 +28,17 @@ Class_Power BSP_Power;
 /**
  * @brief 初始化电源
  *
- * @param __DC24_0 DC24V_0输出
- * @param __DC24_1 DC24V_1输出
- * @param __DC5 DC5V输出
+ * @param dc24_0_status 是否启用 DC24V_0 输出
+ * @param dc24_1_status 是否启用 DC24V_1 输出
+ * @param dc5_status 是否启用 DC5V 输出
  */
-void Class_Power::Init(const bool &__DC24_0_Status, const bool &__DC24_1_Status, const bool &__DC5_Status)
+void Class_Power::Init(bool dc24_0_status, bool dc24_1_status, bool dc5_status)
 {
     ADC_Manage_Object = &ADC1_Manage_Object;
 
-    HAL_GPIO_WritePin(DC24_0__OUTPUT_GPIO_Port, DC24_0__OUTPUT_Pin, __DC24_0_Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(DC24_1__OUTPUT_GPIO_Port, DC24_1__OUTPUT_Pin, __DC24_1_Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(DC5__OUTPUT_GPIO_Port, DC5__OUTPUT_Pin, __DC5_Status ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DC24_0__OUTPUT_GPIO_Port, DC24_0__OUTPUT_Pin, dc24_0_status ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DC24_1__OUTPUT_GPIO_Port, DC24_1__OUTPUT_Pin, dc24_1_status ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DC5__OUTPUT_GPIO_Port, DC5__OUTPUT_Pin, dc5_status ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 bool Class_Power::Get_Power_Voltage(float *voltage, uint64_t *sample_timestamp_us) const

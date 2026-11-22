@@ -4,7 +4,7 @@
 #include "bsp_bmi088.h"
 #include "bsp_power.h"
 #include "bsp_w25q64jv.h"
-#include "Init.h"
+#include "sys_init.h"
 #include "sys_debug.h"
 #include "sys_timestamp.h"
 #include <stddef.h>

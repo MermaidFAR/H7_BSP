@@ -3,8 +3,8 @@
  * @brief 定长递推最小二乘辨识
  */
 
-#ifndef __ALG_RLS_H
-#define __ALG_RLS_H
+#ifndef ALG_RLS_H
+#define ALG_RLS_H
 
 #include <stdint.h>
 #include <stddef.h>

@@ -30,12 +30,12 @@ static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8]);
 
 /**
  * @brief  QD4310 CAN 反馈帧统一回调入口
- * @param  hcan FDCAN 句柄
- * @param  id   接收到的 CAN ID
- * @param  data 反馈数据 (8 字节)
- * @param  len  数据长度
- * @note   通过 BSP_CAN_RegisterCallback 为每个电机 ID (0x500 + motor_id) 注册,
- *         context 直接指向对应电机实例
+ * @param  hfdcan 接收帧的 FDCAN 句柄
+ * @param  id      接收到的 CAN ID
+ * @param  data    反馈数据缓冲区
+ * @param  len     数据长度，单位为字节
+ * @param  context 注册回调时绑定的电机实例
+ * @note   通过 BSP_CAN_RegisterCallback 为每个反馈 ID（0x500 + motor_id）注册。
  */
 static void QDrive_Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *data, uint32_t len, void *context)
 {

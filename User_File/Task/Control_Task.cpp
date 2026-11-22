@@ -4,11 +4,9 @@
 extern "C" void Control_Task(void* argument)
 {
     (void)argument;
-    // 在每个 1 kHz CAN 发送周期前生成最新目标；BMI088 High2 任务仍优先处理传感器数据。
-    osThreadSetPriority(osThreadGetId(), osPriorityHigh1);
+    // RTOS 以 osPriorityHigh1 创建本任务，调度优先级介于 BMI088 解算与 CAN 发送之间。
 
-    // Gimbal_Init();
-    // Balance_init();
+    // 在此初始化应用控制模块。
 
     for (;;)
     {
@@ -18,8 +16,7 @@ extern "C" void Control_Task(void* argument)
             // 应用在此接入零力矩、失能和安全反馈查询。
             continue;
         }
-        // Gimbal_Loop();
-        // Balance_loop();
+        // 在此计算并更新本周期的控制输出。
     }
 }
 

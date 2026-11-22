@@ -60,7 +60,7 @@ public:
     Class_PID PID_Temperature;
 
     // 每个通信/配置步骤最多尝试 5 次，失败返回 false。
-    bool Init(const bool &__Heater_Enable = false);
+    bool Init(bool heater_enable = false);
 
     inline float Get_Now_Temperature() const;
 
@@ -84,9 +84,9 @@ public:
 
     inline float Get_Heater_Enable() const;
 
-    inline void Set_Target_Temperature(const float &__Target_Temperature);
+    inline void Set_Target_Temperature(float target_temperature);
 
-    inline void Set_Heater_Enable(const bool &__Heater_Enable);
+    inline void Set_Heater_Enable(bool heater_enable);
 
     void SPI_RxCpltCallback();
 
@@ -180,13 +180,13 @@ protected:
 
     // 内部函数
 
-    uint8_t Read_Single_Register(const uint8_t &Register_Address) const;
+    uint8_t Read_Single_Register(uint8_t Register_Address) const;
 
-    uint8_t Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const;
+    uint8_t Read_Multi_Register(uint8_t Register_Address, uint32_t Rx_Length) const;
 
-    uint8_t Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
+    uint8_t Write_Single_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer) const;
 
-    void Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const;
+    void Write_Multi_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer, uint32_t Tx_Length) const;
 
 private:
     bool Check_Chip_Id(uint8_t Max_Attempts) const;
@@ -251,21 +251,21 @@ inline uint32_t Class_BMI088_Accel::Get_Heater_PWM_Compare() const
 /**
  * @brief 设置目标温度
  *
- * @param __Target_Temperature 目标温度
+ * @param target_temperature 目标温度
  */
-inline void Class_BMI088_Accel::Set_Target_Temperature(const float &__Target_Temperature)
+inline void Class_BMI088_Accel::Set_Target_Temperature(float target_temperature)
 {
-    Target_Temperature = __Target_Temperature;
+    Target_Temperature = target_temperature;
 }
 
 /**
  * @brief 设置加热电阻使能
  *
- * @param __Heater_Enable 加热电阻使能
+ * @param heater_enable 加热电阻使能
  */
-inline void Class_BMI088_Accel::Set_Heater_Enable(const bool &__Heater_Enable)
+inline void Class_BMI088_Accel::Set_Heater_Enable(bool heater_enable)
 {
-    Heater_Enable = __Heater_Enable;
+    Heater_Enable = heater_enable;
 }
 
 #endif

@@ -66,14 +66,14 @@ class SpinMode
 
     /**
      * @brief 暂存上层云台世界 Yaw 目标，通过 Get_WorldTarget() 读取。
-     * @param world_angle rad；逆时针为正，可由上层按 IMU 姿态设置并保持。
+     * @param target_angle 单位为 rad，逆时针为正，可由上层按 IMU 姿态设置并保持。
      * @note 原样保留连续角度；不参与速度计算，不自动采集、锁存或修正目标。
      */
     void Set_WorldTarget(float target_angle);
 
     /**
      * @brief 更新当前云台与底盘的相对夹角，计算时扣除 config.zero_point。
-     * @param theta rad；theta - zero_point = 云台 Yaw - 底盘 Yaw，逆时针为正。
+     * @param measured_theta 单位为 rad，逆时针为正。measured_theta - zero_point = 云台 Yaw - 底盘 Yaw。
      * @note 可输入连续角度，计算时归一化为最短相对角；已归零时 zero_point 设为 0。
      */
     void Set_theta(float measured_theta);

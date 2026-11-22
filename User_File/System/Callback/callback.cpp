@@ -22,7 +22,7 @@
 #include <cstdint>
 
 extern "C" {
-    extern osThreadId_t GimbalTaskHandle;
+    extern osThreadId_t ControlTaskHandle;
 }
 
 /**
@@ -37,24 +37,13 @@ void Task3600s_Callback() { SYS_Timestamp.TIM_3600s_PeriodElapsedCallback(); }
  */
 void Task1s_Callback() {}
 
-/**
- * @brief 每125us调用一次
- * @note
- * 已废弃,原因过高频率中断打断MCU影响RTOS使用,实际实现极为优雅,仅是不兼容RTOS
- */
-// void Task125us_Callback()
-// {
-//     BSP_BMI088.TIM_125us_Calculate_PeriodElapsedCallback();
-// }
-
-/**
- * @brief 每1ms调用一次
- * @note
- */
+/** @brief 使用 TIM4 的 1 ms 节拍提供 1 kHz 控制基准。 */
 void Task1ms_Callback()
 {
-    // Balance 控制链直接使用 TIM4 的 1 ms 基准，即 1 kHz。
-    osThreadFlagsSet(GimbalTaskHandle, 0x0001);
+    if (ControlTaskHandle != NULL)
+    {
+        osThreadFlagsSet(ControlTaskHandle, 0x0001);
+    }
 }
 
 extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {

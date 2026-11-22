@@ -60,7 +60,7 @@ Class_Complex_f32 Namespace_ALG_Complex::Unit_Imaginary()
  *
  * @param Angle 旋转角度, 单位: 弧度
  */
-Class_Complex_f32 Namespace_ALG_Complex::Angle_Unit(const float &Angle)
+Class_Complex_f32 Namespace_ALG_Complex::Angle_Unit(float Angle)
 {
     Class_Complex_f32 result;
     result[0] = arm_cos_f32(Angle);
@@ -74,7 +74,7 @@ Class_Complex_f32 Namespace_ALG_Complex::Angle_Unit(const float &Angle)
  * @param Modulus 复数模长
  * @param Angle 复数幅角
  */
-Class_Complex_f32 Namespace_ALG_Complex::Polar(const float &Modulus, const float &Angle)
+Class_Complex_f32 Namespace_ALG_Complex::Polar(float Modulus, float Angle)
 {
     Class_Complex_f32 result;
     result[0] = Modulus * arm_cos_f32(Angle);

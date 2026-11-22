@@ -74,9 +74,9 @@ public:
 
     uint32_t Get_Outlier_Counter() const;
 
-    void Notify_FIFO_Interrupt(const uint64_t &__Timestamp_Us);
+    void Notify_FIFO_Interrupt(uint64_t timestamp_us);
 
-    bool Pop_Sample(Struct_BMI088_Gyro_Sample &__Sample);
+    bool Pop_Sample(Struct_BMI088_Gyro_Sample &sample);
 
     inline uint16_t Get_Queue_Depth() const;
 
@@ -106,7 +106,7 @@ public:
 
     inline Class_Matrix_f32<3, 1> Get_Callibrated_Gyro() const;
 
-    uint8_t SPI_RxCallback(const uint64_t &__Ready_Timestamp_Us);
+    uint8_t SPI_RxCallback(uint64_t ready_timestamp_us);
 
     uint8_t SPI_Request_Gyro();
 
@@ -213,19 +213,19 @@ protected:
 
     // 内部函数
 
-    uint8_t Read_Single_Register(const uint8_t &Register_Address) const;
+    uint8_t Read_Single_Register(uint8_t Register_Address) const;
 
-    void Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const;
+    void Read_Multi_Register(uint8_t Register_Address, uint32_t Rx_Length) const;
 
-    uint8_t Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const;
+    uint8_t Write_Single_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer) const;
 
-    void Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const;
+    void Write_Multi_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer, uint32_t Tx_Length) const;
 
-    Class_Matrix_f32<3, 1> Decode_Gyro_Frame(const uint8_t *__Frame) const;
+    Class_Matrix_f32<3, 1> Decode_Gyro_Frame(const uint8_t *frame) const;
 
-    bool Enqueue_Sample(const Class_Matrix_f32<3, 1> &__Gyro,
-                        const uint64_t &__Timestamp_Us,
-                        const bool &__Valid);
+    bool Enqueue_Sample(const Class_Matrix_f32<3, 1> &gyro,
+                        uint64_t timestamp_us,
+                        bool valid);
 
 private:
     bool Check_Chip_Id(uint8_t Max_Attempts) const;

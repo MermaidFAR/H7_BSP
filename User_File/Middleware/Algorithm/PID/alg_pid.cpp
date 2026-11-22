@@ -26,39 +26,39 @@
 /**
  * @brief 更新 PID 参数，保留目标、输出及积分/微分历史状态。
  *
- * @param __K_P P值
- * @param __K_I I值
- * @param __K_D D值
- * @param __K_F 每周期目标增量前馈系数，不除以 D_T
- * @param __I_Out_Max 积分限幅
- * @param __Out_Max 输出限幅
- * @param __D_T 时间片长度
- * @param __Dead_Zone 非负死区阈值，含边界的有效误差归零，区外扣除死区宽度
- * @param __I_Variable_Speed_A 变速积分内段阈值，与 B 均为零时关闭变速积分
- * @param __I_Variable_Speed_B 变速积分外段阈值，启用线性段时要求 0 <= A < B
- * @param __I_Separate_Threshold 积分分离阈值，达到时清空积分；零为关闭，非零须为正
- * @param __D_First 是否开启微分先行
- * @param __D_Filter_Cutoff D 支路一阶 IIR 截止频率，Hz；0 关闭，采样频率为 1 / D_T
+ * @param k_p P值
+ * @param k_i I值
+ * @param k_d D值
+ * @param k_f 每周期目标增量前馈系数，不除以 D_T
+ * @param i_out_max 积分限幅
+ * @param out_max 输出限幅
+ * @param d_t 时间片长度
+ * @param dead_zone 非负死区阈值，含边界的有效误差归零，区外扣除死区宽度
+ * @param i_variable_speed_a 变速积分内段阈值，与 B 均为零时关闭变速积分
+ * @param i_variable_speed_b 变速积分外段阈值，启用线性段时要求 0 <= A < B
+ * @param i_separate_threshold 积分分离阈值，达到时清空积分；零为关闭，非零须为正
+ * @param d_first 是否开启微分先行
+ * @param d_filter_cutoff D 支路一阶 IIR 截止频率，Hz；0 关闭，采样频率为 1 / D_T
  * @note 持续启用且 D_First 不变时保留滤波速率；首次启用或切换微分来源时从 0 开始。
  */
-void Class_PID::Init(const float &__K_P, const float &__K_I, const float &__K_D, const float &__K_F, const float &__I_Out_Max, const float &__Out_Max, const float &__D_T, const float &__Dead_Zone, const float &__I_Variable_Speed_A, const float &__I_Variable_Speed_B, const float &__I_Separate_Threshold, const Enum_PID_D_First &__D_First, const float &__D_Filter_Cutoff)
+void Class_PID::Init(float k_p, float k_i, float k_d, float k_f, float i_out_max, float out_max, float d_t, float dead_zone, float i_variable_speed_a, float i_variable_speed_b, float i_separate_threshold, Enum_PID_D_First d_first, float d_filter_cutoff)
 {
-    const float d_filter_out = D_Filter_Cutoff > 0.0f && D_First == __D_First
+    const float d_filter_out = D_Filter_Cutoff > 0.0f && D_First == d_first
                                    ? D_Filter.Get_Out() : 0.0f;
-    K_P = __K_P;
-    K_I = __K_I;
-    K_D = __K_D;
-    K_F = __K_F;
-    I_Out_Max = __I_Out_Max;
-    Out_Max = __Out_Max;
-    D_T = __D_T;
-    Dead_Zone = __Dead_Zone;
-    I_Variable_Speed_A = __I_Variable_Speed_A;
-    I_Variable_Speed_B = __I_Variable_Speed_B;
-    I_Separate_Threshold = __I_Separate_Threshold;
-    D_First = __D_First;
-    D_Filter_Cutoff = !Basic_Math_Is_Invalid_Float(__D_Filter_Cutoff) && __D_Filter_Cutoff > 0.0f
-                          ? __D_Filter_Cutoff : 0.0f;
+    K_P = k_p;
+    K_I = k_i;
+    K_D = k_d;
+    K_F = k_f;
+    I_Out_Max = i_out_max;
+    Out_Max = out_max;
+    D_T = d_t;
+    Dead_Zone = dead_zone;
+    I_Variable_Speed_A = i_variable_speed_a;
+    I_Variable_Speed_B = i_variable_speed_b;
+    I_Separate_Threshold = i_separate_threshold;
+    D_First = d_first;
+    D_Filter_Cutoff = !Basic_Math_Is_Invalid_Float(d_filter_cutoff) && d_filter_cutoff > 0.0f
+                          ? d_filter_cutoff : 0.0f;
     if (D_Filter_Cutoff > 0.0f)
     {
         D_Filter.Init(D_Filter_Cutoff, 1.0f / D_T);

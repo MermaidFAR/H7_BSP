@@ -97,9 +97,9 @@ bool Class_BMI088_Accel::Check_Chip_Id(uint8_t Max_Attempts) const
 /**
  * @brief 初始化BMI088加速度计
  *
- * @param Heater_Enable 是否使能加热电阻
+ * @param heater_enable 是否使能加热电阻
  */
-bool Class_BMI088_Accel::Init(const bool &__Heater_Enable)
+bool Class_BMI088_Accel::Init(bool heater_enable)
 {
     const uint8_t max_attempts = 5;
     Valid_Flag = false;
@@ -115,7 +115,7 @@ bool Class_BMI088_Accel::Init(const bool &__Heater_Enable)
     htim = &htim3;
     TIM_Channel = TIM_CHANNEL_4;
 
-    Heater_Enable = __Heater_Enable;
+    Heater_Enable = heater_enable;
 
     // 初始化PID
     PID_Temperature.Init(100.0f, 10.0f, 0.0f, 0.0f, 300.0f, 500.0f, 0.128f);
@@ -279,8 +279,7 @@ uint8_t Class_BMI088_Accel::SPI_Request_Temperature()
 }
 
 /**
- * @brief TIM定时器中断回调函数, 100ms周期
- *
+ * @brief 由 128 ms 周期任务回调更新加热控制。
  */
 void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
 {
@@ -352,7 +351,7 @@ void Class_BMI088_Accel::TIM_128ms_Heater_PID_PeriodElapsedCallback()
  *
  * @param Register_Address 寄存器地址
  */
-uint8_t Class_BMI088_Accel::Read_Single_Register(const uint8_t &Register_Address) const
+uint8_t Class_BMI088_Accel::Read_Single_Register(uint8_t Register_Address) const
 {
     uint8_t tx_data[2] = {};
     tx_data[0] = (uint8_t)(Register_Address | BMI088_ACCEL_READ_MASK);
@@ -366,7 +365,7 @@ uint8_t Class_BMI088_Accel::Read_Single_Register(const uint8_t &Register_Address
  * @param Register_Address 寄存器地址
  * @param Rx_Length 接收数据长度
  */
-uint8_t Class_BMI088_Accel::Read_Multi_Register(const uint8_t &Register_Address, const uint32_t &Rx_Length) const
+uint8_t Class_BMI088_Accel::Read_Multi_Register(uint8_t Register_Address, uint32_t Rx_Length) const
 {
     constexpr uint32_t tx_length = 2U;
     if (Rx_Length > (SPI_BUFFER_SIZE - tx_length))
@@ -386,7 +385,7 @@ uint8_t Class_BMI088_Accel::Read_Multi_Register(const uint8_t &Register_Address,
  * @param Register_Address 寄存器地址
  * @param Tx_Data_Buffer 发送数据缓冲区
  */
-uint8_t Class_BMI088_Accel::Write_Single_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer) const
+uint8_t Class_BMI088_Accel::Write_Single_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer) const
 {
     const uint8_t tx_data[2] = {Register_Address, Tx_Data_Buffer[0]};
 
@@ -401,7 +400,7 @@ uint8_t Class_BMI088_Accel::Write_Single_Register(const uint8_t &Register_Addres
  * @param Tx_Data_Buffer 发送数据缓冲区
  * @param Tx_Length 发送数据长度
  */
-void Class_BMI088_Accel::Write_Multi_Register(const uint8_t &Register_Address, const uint8_t *Tx_Data_Buffer, const uint32_t &Tx_Length) const
+void Class_BMI088_Accel::Write_Multi_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer, uint32_t Tx_Length) const
 {
     if (Tx_Length > (SPI_BUFFER_SIZE - 1U))
     {

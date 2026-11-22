@@ -43,18 +43,18 @@ static void BMI088_Reset_DMA_Handle(DMA_HandleTypeDef *DMA_Handler)
 /**
  * @brief 设置BMI088内部VQF的初始化参数
  *
- * @param __Config VQF配置
+ * @param config VQF配置
  * @note 只接受初始化前的配置，避免运行中修改采样周期或滤波参数破坏内部状态。
  */
-void Class_BMI088::Set_VQF_Config(const Struct_BMI088_VQF_Config &__Config)
+void Class_BMI088::Set_VQF_Config(const Struct_BMI088_VQF_Config &config)
 {
-    const float accel_interval_us = __Config.Accel_D_T * 1000000.0f;
-    if (Init_Finished_Flag || !isfinite(__Config.Gyro_D_T) || __Config.Gyro_D_T <= 0.0f ||
+    const float accel_interval_us = config.Accel_D_T * 1000000.0f;
+    if (Init_Finished_Flag || !isfinite(config.Gyro_D_T) || config.Gyro_D_T <= 0.0f ||
         !(accel_interval_us >= 1.0f && accel_interval_us < 0x1p64f))
     {
         return;
     }
-    VQF_Config = __Config;
+    VQF_Config = config;
     Accel_Interval_Us = (uint64_t)accel_interval_us;
 }
 
@@ -173,8 +173,7 @@ void Class_BMI088::EXTI_Flag_Callback(uint16_t GPIO_Pin)
 }
 
 /**
- * @brief 定时器周期中断回调函数
- *
+ * @brief 每 128 ms 请求一次温度读取并更新加热控制。
  */
 void Class_BMI088::TIM_128ms_Calculate_PeriodElapsedCallback()
 {
@@ -205,25 +204,25 @@ void Class_BMI088::TIM_1ms_Service_PeriodElapsedCallback()
     BMI088_Service_Transfer(true);
 }
 
-void Class_BMI088::BMI088_Recover_SPI(uint8_t __Reason)
+void Class_BMI088::BMI088_Recover_SPI(uint8_t reason)
 {
     SPI_Recovery_Counter++;
-    SPI_Recovery_Last_Reason = __Reason;
-    if ((__Reason & (BMI088_SPI_RECOVERY_ACCEL_TIMEOUT |
+    SPI_Recovery_Last_Reason = reason;
+    if ((reason & (BMI088_SPI_RECOVERY_ACCEL_TIMEOUT |
                      BMI088_SPI_RECOVERY_GYRO_TIMEOUT |
                      BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT)) != 0U)
     {
         SPI_Transfer_Timeout_Counter++;
     }
-    if ((__Reason & BMI088_SPI_RECOVERY_ACCEL_TIMEOUT) != 0U)
+    if ((reason & BMI088_SPI_RECOVERY_ACCEL_TIMEOUT) != 0U)
     {
         SPI_Accel_Timeout_Counter++;
     }
-    if ((__Reason & BMI088_SPI_RECOVERY_GYRO_TIMEOUT) != 0U)
+    if ((reason & BMI088_SPI_RECOVERY_GYRO_TIMEOUT) != 0U)
     {
         SPI_Gyro_Timeout_Counter++;
     }
-    if ((__Reason & BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT) != 0U)
+    if ((reason & BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT) != 0U)
     {
         SPI_Temperature_Timeout_Counter++;
     }
@@ -252,7 +251,7 @@ void Class_BMI088::BMI088_Recover_SPI(uint8_t __Reason)
     SYS_Exit_Critical(primask);
 }
 
-void Class_BMI088::BMI088_Service_Transfer(const bool &Allow_Recovery)
+void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
 {
     if (!Init_Finished_Flag)
     {
@@ -530,11 +529,11 @@ void Class_BMI088::Mark_Ready(Enum_BMI088_Sensor sensor, uint64_t timestamp, boo
     SYS_Exit_Critical(primask);
 }
 
-void Class_BMI088::Set_Accel_Update_Result(const bool &__Accepted, const uint8_t &__Reject_Reason)
+void Class_BMI088::Set_Accel_Update_Result(bool accepted, uint8_t reject_reason)
 {
-    Accel_Update_Result = (__Accepted ? 1U : 0U) | ((uint32_t)__Reject_Reason << 8U);
+    Accel_Update_Result = (accepted ? 1U : 0U) | ((uint32_t)reject_reason << 8U);
     Accel_Update_Attempt_Counter++;
-    if (!__Accepted)
+    if (!accepted)
     {
         Accel_Update_Rejected_Counter++;
     }
