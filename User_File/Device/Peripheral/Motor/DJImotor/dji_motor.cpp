@@ -9,9 +9,9 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "dji_motor.h"
-#include <string.h>
 #include "sys_critical.h"
 #include "sys_timestamp.h"
+#include <string.h>
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -19,9 +19,9 @@
 
 struct Struct_DJIMotor_Tx_Group
 {
-    Struct_CAN_Tx_Msg message{};                 ///< 同一总线、同一发送 ID 共用一帧 8 字节报文。
-    Class_DJIMotor *slot_owner[4]{};             ///< 每台电机占两个字节，槽位由电机 ID 决定。
-    Class_DJIMotor_Group *send_owner = nullptr;  ///< 该物理报文绑定的逻辑组，避免重复组装管理。
+    Struct_CAN_Tx_Msg message{};                ///< 同一总线、同一发送 ID 共用一帧 8 字节报文。
+    Class_DJIMotor *slot_owner[4]{};            ///< 每台电机占两个字节，槽位由电机 ID 决定。
+    Class_DJIMotor_Group *send_owner = nullptr; ///< 该物理报文绑定的逻辑组，避免重复组装管理。
     bool initialized = false;
 };
 
@@ -169,9 +169,9 @@ static int DJI_Motor_Find_Free_Registration(FDCAN_HandleTypeDef *hfdcan, uint32_
 void Class_DJIMotor::PID_Init(Class_PID *pid, const PID_InitTypeDef *config)
 {
     pid->Init(config->K_P, config->K_I, config->K_D, config->K_F,
-                config->I_Out_Max, config->Out_Max, config->D_T, config->Dead_Zone,
-                config->I_Variable_Speed_A, config->I_Variable_Speed_B,
-                config->I_Separate_Threshold, config->D_First, config->D_Filter_Cutoff);
+              config->I_Out_Max, config->Out_Max, config->D_T, config->Dead_Zone,
+              config->I_Variable_Speed_A, config->I_Variable_Speed_B,
+              config->I_Separate_Threshold, config->D_First, config->D_Filter_Cutoff);
 }
 
 /**
@@ -215,7 +215,7 @@ bool Class_DJIMotor::Init(const Struct_DJIMotor_Init_Config &config)
     }
     hfdcan = config.hfdcan;
     rx_id = resolved_rx_id;
-    group = (uint8_t)group_index;
+    group = (uint8_t) group_index;
     slot = resolved_slot;
     close_loop = config.close_loop;
     outer_loop = config.outer_loop;
@@ -228,22 +228,13 @@ bool Class_DJIMotor::Init(const Struct_DJIMotor_Init_Config &config)
     reverse = config.reverse;
     command_limit = resolved_limit;
     gear_ratio = config.gear_ratio > 0.0f && !Basic_Math_Is_Invalid_Float(config.gear_ratio)
-                     ? config.gear_ratio : DJI_Motor_Get_Default_Gear_Ratio(config.motor_type);
-    feedback_timeout_us = (uint64_t)config.feedback_timeout_ms * 1000;
+                     ? config.gear_ratio
+                     : DJI_Motor_Get_Default_Gear_Ratio(config.motor_type);
+    feedback_timeout_us = (uint64_t) config.feedback_timeout_ms * 1000;
     has_temperature = config.motor_type != DJI_MOTOR_TYPE_M2006;
     PID_Init(&current_pid, &config.current_pid);
     PID_Init(&speed_pid, &config.speed_pid);
     PID_Init(&angle_pid, &config.angle_pid);
-    feedback.pid = {};
-    for (uint8_t i = 0; i < 3; ++i)
-    {
-        for (uint8_t j = 0; j < 3; ++j)
-        {
-            pid_debug_gains[i][j] = 0.0f;
-        }
-    }
-    Apply_PID_Debug_Gains();
-    Update_PID_Debug();
 
     if (!BSP_CAN_RegisterCallback(resolved_rx_id, config.hfdcan, CAN_RxCpltCallback, this))
     {
@@ -290,50 +281,6 @@ bool Class_DJIMotor::Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot)
     }
     SYS_Exit_Critical(interrupt_state);
     return ready;
-}
-
-/** @brief 双向同步调试区的 kp/ki/kd 与 PID 参数，通过缓存识别调试器主动修改的值。 */
-void Class_DJIMotor::Apply_PID_Debug_Gains()
-{
-    Class_PID *pids[3] = {&current_pid, &speed_pid, &angle_pid};
-    Struct_DJIMotor_PID_Debug *debug[3] = {&feedback.pid.current, &feedback.pid.speed, &feedback.pid.angle};
-    for (uint8_t i = 0; i < 3; ++i)
-    {
-        // 只有调试入口发生修改时才写回，保留原 PID setter 的调参方式。
-        if (debug[i]->kp != pid_debug_gains[i][0] && !Basic_Math_Is_Invalid_Float(debug[i]->kp))
-        {
-            pids[i]->Set_K_P(debug[i]->kp);
-        }
-        if (debug[i]->ki != pid_debug_gains[i][1] && !Basic_Math_Is_Invalid_Float(debug[i]->ki))
-        {
-            pids[i]->Set_K_I(debug[i]->ki);
-        }
-        if (debug[i]->kd != pid_debug_gains[i][2] && !Basic_Math_Is_Invalid_Float(debug[i]->kd))
-        {
-            pids[i]->Set_K_D(debug[i]->kd);
-        }
-        debug[i]->kp = pid_debug_gains[i][0] = pids[i]->Get_K_P();
-        debug[i]->ki = pid_debug_gains[i][1] = pids[i]->Get_K_I();
-        debug[i]->kd = pid_debug_gains[i][2] = pids[i]->Get_K_D();
-    }
-}
-
-/** @brief 导出各环最近一次计算状态；out 是该 PID 输出，尚未叠加后续环节和协议限幅。 */
-void Class_DJIMotor::Update_PID_Debug()
-{
-    Class_PID *pids[3] = {&current_pid, &speed_pid, &angle_pid};
-    Struct_DJIMotor_PID_Debug *debug[3] = {&feedback.pid.current, &feedback.pid.speed, &feedback.pid.angle};
-    for (uint8_t i = 0; i < 3; ++i)
-    {
-        debug[i]->kf = pids[i]->Get_K_F();
-        debug[i]->integral_out_max = pids[i]->Get_I_Out_Max();
-        debug[i]->out_max = pids[i]->Get_Out_Max();
-        debug[i]->target = pids[i]->Get_Target();
-        debug[i]->now = pids[i]->Get_Now();
-        debug[i]->error = pids[i]->Get_Error();
-        debug[i]->integral_error = pids[i]->Get_Integral_Error();
-        debug[i]->out = pids[i]->Get_Out();
-    }
 }
 
 /**
@@ -393,7 +340,7 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
                                         uint32_t len,
                                         void *context)
 {
-    Class_DJIMotor *motor = (Class_DJIMotor *)context;
+    Class_DJIMotor *motor = (Class_DJIMotor *) context;
     if (motor == nullptr || data == nullptr || len != 8 ||
         hfdcan != motor->hfdcan || id != motor->rx_id)
     {
@@ -401,7 +348,7 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
     }
 
     /** 反馈的编码器、转速和电流均为高字节在前；转速与电流按有符号 16 位数解释。 */
-    uint16_t new_encoder = ((uint16_t)data[0] << 8) | data[1];
+    uint16_t new_encoder = ((uint16_t) data[0] << 8) | data[1];
     if (new_encoder >= 8192)
     {
         return;
@@ -413,7 +360,7 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
     else
     {
         /** 超过半圈的跳变视为跨越 0/8191 边界，要求相邻有效反馈间实际转动小于半圈。 */
-        int32_t delta = (int32_t)new_encoder - motor->last_encoder;
+        int32_t delta = (int32_t) new_encoder - motor->last_encoder;
         if (delta > 4096)
         {
             --motor->total_round;
@@ -426,14 +373,14 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
     motor->last_encoder = new_encoder;
 
     float direction = motor->reverse ? -1.0f : 1.0f;
-    int16_t rpm = (int16_t)(((uint16_t)data[2] << 8) | data[3]);
+    int16_t rpm = (int16_t) (((uint16_t) data[2] << 8) | data[3]);
     motor->feedback.encoder = new_encoder;
     motor->feedback.rotor_angle = direction * new_encoder * DJI_MOTOR_ENCODER_TO_RADIAN;
     motor->feedback.rotor_total_angle = direction *
-        (motor->total_round * 2.0f * DJI_MOTOR_PI + new_encoder * DJI_MOTOR_ENCODER_TO_RADIAN);
+                                        (motor->total_round * 2.0f * DJI_MOTOR_PI + new_encoder * DJI_MOTOR_ENCODER_TO_RADIAN);
     float measured_speed = direction * rpm * DJI_MOTOR_RPM_TO_RADIAN_PER_SECOND;
     motor->feedback.rotor_speed = DJI_MOTOR_ROTOR_SPEED_LPF_ALPHA * motor->feedback.rotor_speed +
-        (1.0f - DJI_MOTOR_ROTOR_SPEED_LPF_ALPHA) * measured_speed;
+                                  (1.0f - DJI_MOTOR_ROTOR_SPEED_LPF_ALPHA) * measured_speed;
     /** 角度和速度先统一逻辑方向，再通过减速比折算到输出轴；原始电流保留报文符号。 */
     motor->feedback.output_angle = motor->feedback.rotor_angle / motor->gear_ratio;
     motor->feedback.output_total_angle = motor->feedback.rotor_total_angle / motor->gear_ratio;
@@ -444,7 +391,7 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
     motor->feedback.output_angle_degree = motor->feedback.output_angle * DJI_MOTOR_RADIAN_TO_DEGREE;
     motor->feedback.output_total_angle_degree = motor->feedback.output_total_angle * DJI_MOTOR_RADIAN_TO_DEGREE;
     motor->feedback.output_speed_degree_per_second = motor->feedback.output_speed * DJI_MOTOR_RADIAN_TO_DEGREE;
-    motor->feedback.current_raw = (int16_t)(((uint16_t)data[4] << 8) | data[5]);
+    motor->feedback.current_raw = (int16_t) (((uint16_t) data[4] << 8) | data[5]);
     if (motor->has_temperature)
     {
         motor->feedback.temperature = data[6];
@@ -455,12 +402,9 @@ void Class_DJIMotor::CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan,
     SYS_Exit_Critical(interrupt_state);
 }
 
-/** @brief 清零本电机的两个报文字节并清除 PID 执行标志，保留同帧其他电机指令。 */
+/** @brief 清零本电机的两个报文字节，保留同帧其他电机指令。 */
 void Class_DJIMotor::Clear_Command()
 {
-    feedback.pid.current.active = false;
-    feedback.pid.speed.active = false;
-    feedback.pid.angle.active = false;
     if (!initialized)
     {
         return;
@@ -498,7 +442,6 @@ bool Class_DJIMotor::Check_Feedback_Timeout()
     current_pid.Set_Integral_Error(0.0f);
     speed_pid.Set_Integral_Error(0.0f);
     angle_pid.Set_Integral_Error(0.0f);
-    Update_PID_Debug();
     return false;
 }
 
@@ -512,10 +455,6 @@ void Class_DJIMotor::Control()
     {
         return;
     }
-    Apply_PID_Debug_Gains();
-    feedback.pid.current.active = false;
-    feedback.pid.speed.active = false;
-    feedback.pid.angle.active = false;
     if (!Check_Feedback_Timeout())
     {
         return;
@@ -527,9 +466,9 @@ void Class_DJIMotor::Control()
     {
         angle_pid.Set_Target(output);
         angle_pid.Set_Now(angle_feedback == DJI_MOTOR_FEEDBACK_EXTERNAL
-                              ? *external_angle : feedback.output_total_angle);
+                              ? *external_angle
+                              : feedback.output_total_angle);
         angle_pid.TIM_Calculate_PeriodElapsedCallback();
-        feedback.pid.angle.active = true;
         output = angle_pid.Get_Out();
     }
     if ((close_loop & DJI_MOTOR_SPEED_LOOP) != 0 &&
@@ -542,9 +481,9 @@ void Class_DJIMotor::Control()
         }
         speed_pid.Set_Target(output);
         speed_pid.Set_Now(speed_feedback == DJI_MOTOR_FEEDBACK_EXTERNAL
-                              ? *external_speed : feedback.output_speed);
+                              ? *external_speed
+                              : feedback.output_speed);
         speed_pid.TIM_Calculate_PeriodElapsedCallback();
-        feedback.pid.speed.active = true;
         output = speed_pid.Get_Out();
     }
     /** 电流前馈在电流环之前叠加；未启用电流环时直接叠加到最终协议指令。 */
@@ -559,7 +498,6 @@ void Class_DJIMotor::Control()
         current_pid.Set_Target(output);
         current_pid.Set_Now(logical_current);
         current_pid.TIM_Calculate_PeriodElapsedCallback();
-        feedback.pid.current.active = true;
         output = current_pid.Get_Out();
     }
     if (reverse)
@@ -573,13 +511,12 @@ void Class_DJIMotor::Control()
     Basic_Math_Constrain(&output, -command_limit, command_limit);
 
     /** 将逻辑输出恢复为电机方向并限幅后，以有符号 16 位补码、高字节在前写入共享报文。 */
-    int16_t command = (int16_t)output;
-    uint16_t raw = (uint16_t)command;
+    int16_t command = (int16_t) output;
+    uint16_t raw = (uint16_t) command;
     Struct_DJIMotor_Tx_Group *sender = &DJI_Motor_Tx_Groups[group];
-    sender->message.data[2 * slot] = (uint8_t)((raw >> 8) & 0xFF);
-    sender->message.data[2 * slot + 1] = (uint8_t)(raw & 0xFF);
+    sender->message.data[2 * slot] = (uint8_t) ((raw >> 8) & 0xFF);
+    sender->message.data[2 * slot + 1] = (uint8_t) (raw & 0xFF);
     command_timestamp_us = SYS_Timestamp.Get_Now_Microsecond();
-    Update_PID_Debug();
 }
 
 /** @brief 检查共享帧各电机的反馈和指令龄期后再发布。 */

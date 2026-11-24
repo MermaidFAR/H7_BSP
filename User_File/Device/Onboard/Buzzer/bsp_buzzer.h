@@ -23,8 +23,8 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "alg_basic.h"
-#include "tim.h"
 #include "stm32h7xx_hal.h"
+#include "tim.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -161,7 +161,7 @@ extern const float BUZZER_FREQUENCY_C8;
  */
 class Class_Buzzer
 {
-public:
+  public:
     void Init(float frequency = 4000.0f, float loudness = 0.0f);
 
     /** @brief 设置频率 (Hz)，无效值保留当前设置。 */
@@ -173,7 +173,7 @@ public:
     /** @brief 同时设置频率 (Hz) 与响度 [0, 1]。 */
     void Set_Sound(float frequency, float loudness);
 
-private:
+  private:
     TIM_HandleTypeDef *htim = nullptr;
     uint32_t TIM_Channel = TIM_CHANNEL_2;
     float Frequency = 4000.0f;

@@ -1,9 +1,9 @@
 /** @file Ins_Task.cpp @brief 预留惯性导航任务入口 */
 #include "user_task.h"
 
-extern "C" void Ins_Task(void* argument)
+extern "C" void Ins_Task(void *argument)
 {
-    (void)argument;
+    (void) argument;
 
     // BMI088Task 负责姿态解算。此处阻塞等待应用扩展事件。
     for (;;)

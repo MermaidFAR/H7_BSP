@@ -220,9 +220,9 @@ int32_t Basic_Math_Float_To_Int(float x, float Float_1, float Float_2, int32_t I
     }
 
     // 双精度容纳完整 float 输入跨度和完整 int32_t 输出跨度。
-    const double ratio = ((double)x - (double)Float_1) / ((double)Float_2 - (double)Float_1);
+    const double ratio = ((double) x - (double) Float_1) / ((double) Float_2 - (double) Float_1);
     const double clamped = Basic_Math_Constrain(ratio, 0.0, 1.0);
-    return (int32_t)((double)Int_1 + clamped * ((double)Int_2 - (double)Int_1));
+    return (int32_t) ((double) Int_1 + clamped * ((double) Int_2 - (double) Int_1));
 }
 
 /**
@@ -242,9 +242,9 @@ float Basic_Math_Int_To_Float(int32_t x, int32_t Int_1, int32_t Int_2, float Flo
         return 0.0f;
     }
 
-    const double ratio = ((double)x - (double)Int_1) / ((double)Int_2 - (double)Int_1);
-    const double out = ratio * ((double)Float_2 - (double)Float_1) + (double)Float_1;
-    return (float)Basic_Math_Constrain(out, -(double)FLT_MAX, (double)FLT_MAX);
+    const double ratio = ((double) x - (double) Int_1) / ((double) Int_2 - (double) Int_1);
+    const double out = ratio * ((double) Float_2 - (double) Float_1) + (double) Float_1;
+    return (float) Basic_Math_Constrain(out, -(double) FLT_MAX, (double) FLT_MAX);
 }
 
 /**

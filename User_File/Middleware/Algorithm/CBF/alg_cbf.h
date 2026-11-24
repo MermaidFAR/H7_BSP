@@ -27,7 +27,7 @@
  */
 class Class_CBF_Scalar
 {
-public:
+  public:
     bool Init_First_Order(float x_min, float x_max, float alpha, float b0,
                           float u_min, float u_max)
     {
@@ -78,11 +78,20 @@ public:
         return Filter(CBF_SCALAR_SECOND_ORDER, u_nom, x, v, drift_f0);
     }
 
-    float Get_Out() const { return Out; }
-    bool Is_Active() const { return Active; }
-    bool Is_Initialized() const { return Mode != CBF_SCALAR_UNINITIALIZED; }
+    float Get_Out() const
+    {
+        return Out;
+    }
+    bool Is_Active() const
+    {
+        return Active;
+    }
+    bool Is_Initialized() const
+    {
+        return Mode != CBF_SCALAR_UNINITIALIZED;
+    }
 
-private:
+  private:
     enum Enum_CBF_Scalar_Mode
     {
         CBF_SCALAR_UNINITIALIZED,
@@ -186,13 +195,13 @@ private:
  * }
  * @endcode
  */
-template<int Control_Dim, int Max_Constraints>
+template <int Control_Dim, int Max_Constraints>
 class Class_CBF_QP
 {
     static_assert(Control_Dim >= 1 && Control_Dim <= 4, "CBF QP supports 1 to 4 controls");
     static_assert(Max_Constraints >= 1 && Max_Constraints <= 8, "CBF QP supports 1 to 8 constraints");
 
-public:
+  public:
     using Vector = Class_Matrix_f32<Control_Dim, 1>;
     static constexpr uint32_t MAX_ITERATIONS = 64U;
 
@@ -300,7 +309,7 @@ public:
                 {
                     return Fail();
                 }
-                const float momentum = (float)iteration / ((float)iteration + 3.0f);
+                const float momentum = (float) iteration / ((float) iteration + 3.0f);
                 for (int i = 0; i < Count; ++i)
                 {
                     const float next = accelerated[i] + step * residual[i];
@@ -337,11 +346,20 @@ public:
         return true;
     }
 
-    const Vector &Get_Out() const { return Out; }
-    bool Is_Active() const { return Active; }
-    bool Is_Converged() const { return Converged; }
+    const Vector &Get_Out() const
+    {
+        return Out;
+    }
+    bool Is_Active() const
+    {
+        return Active;
+    }
+    bool Is_Converged() const
+    {
+        return Converged;
+    }
 
-private:
+  private:
     struct Constraint
     {
         Vector Normal;

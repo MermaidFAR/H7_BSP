@@ -38,12 +38,12 @@ bool Class_Filter_Polynomial::Init(uint32_t window_size, float d_t,
     double projection_3 = (3.0 * n_squared - 7.0) / 20.0;
     double norm_3 = n * (n_squared - 1.0) * (n_squared - 4.0) *
                     (n_squared - 9.0) / 2800.0;
-    double sampling_frequency = 1.0 / (double)d_t;
+    double sampling_frequency = 1.0 / (double) d_t;
 
     for (uint32_t i = 0; i < window_size; i++)
     {
         // 对称采样坐标上的离散正交基, 在窗口末端half处求值及求导。
-        double u = (double)i - half;
+        double u = (double) i - half;
         double value[4] = {1.0 / n, 0.0, 0.0, 0.0};
         if (polynomial_order >= 1)
         {
@@ -71,11 +71,11 @@ bool Class_Filter_Polynomial::Init(uint32_t window_size, float d_t,
         for (uint32_t derivative = 0; derivative <= polynomial_order; derivative++)
         {
             double scaled = value[derivative] * scale;
-            if (fabs(scaled) > (double)FLT_MAX)
+            if (fabs(scaled) > (double) FLT_MAX)
             {
                 return (false);
             }
-            float result = (float)scaled;
+            float result = (float) scaled;
             if (Basic_Math_Is_Invalid_Float(result))
             {
                 return (false);

@@ -25,12 +25,12 @@ enum Enum_DMMotor_Mode : uint8_t
 
 struct Struct_DMMotor_Feedback
 {
-    uint8_t state = 0; // 协议状态码
-    float position = 0.0f; // 位置，rad，含方向配置
-    float total_position = 0.0f; // 累计位置，rad
-    float velocity = 0.0f; // 速度，rad/s
-    float torque = 0.0f; // 转矩，N*m
-    float mos_temperature = 0.0f; // MOS 温度，摄氏度
+    uint8_t state = 0;              // 协议状态码
+    float position = 0.0f;          // 位置，rad，含方向配置
+    float total_position = 0.0f;    // 累计位置，rad
+    float velocity = 0.0f;          // 速度，rad/s
+    float torque = 0.0f;            // 转矩，N*m
+    float mos_temperature = 0.0f;   // MOS 温度，摄氏度
     float rotor_temperature = 0.0f; // 转子温度，摄氏度
 };
 
@@ -48,7 +48,7 @@ struct Struct_DMMotor_Health
 
 class Class_DMMotor
 {
-public:
+  public:
     bool Init(FDCAN_HandleTypeDef *hfdcan,
               uint8_t can_id,
               uint16_t master_id,
@@ -81,7 +81,7 @@ public:
 
     Struct_DMMotor_Feedback feedback;
 
-private:
+  private:
     enum Enum_DM_Mode_Submission : uint8_t
     {
         DM_MODE_SUB_IDLE,

@@ -14,11 +14,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "bsp_bmi088_gyro_register.h"
-#include "sys_critical.h"
-#include "bsp_spi.h"
 #include "alg_matrix.h"
+#include "bsp_bmi088_gyro_register.h"
+#include "bsp_spi.h"
 #include "stm32h7xx_hal.h"
+#include "sys_critical.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -62,7 +62,7 @@ static_assert(sizeof(Struct_BMI088_Gyro_Sample) == 32U,
  */
 class Class_BMI088_Gyro
 {
-public:
+  public:
     // 每个通信/配置步骤最多尝试 5 次，失败返回 false。
     bool Init();
 
@@ -110,7 +110,7 @@ public:
 
     uint8_t SPI_Request_Gyro();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 绑定的SPI
@@ -227,7 +227,7 @@ protected:
                         uint64_t timestamp_us,
                         bool valid);
 
-private:
+  private:
     bool Check_Chip_Id(uint8_t Max_Attempts) const;
 };
 
@@ -260,8 +260,8 @@ inline Class_Matrix_f32<3, 1> Class_BMI088_Gyro::Get_Raw_Gyro() const
 
 inline uint16_t Class_BMI088_Gyro::Get_Queue_Depth() const
 {
-    return (uint16_t)((Sample_Queue_Head - Sample_Queue_Tail) &
-                                 BMI088_GYRO_SAMPLE_QUEUE_MASK);
+    return (uint16_t) ((Sample_Queue_Head - Sample_Queue_Tail) &
+                       BMI088_GYRO_SAMPLE_QUEUE_MASK);
 }
 
 inline uint16_t Class_BMI088_Gyro::Get_Queue_High_Watermark() const

@@ -21,7 +21,8 @@
 #include "sys_timestamp.h"
 #include <cstdint>
 
-extern "C" {
+extern "C"
+{
     extern osThreadId_t ControlTaskHandle;
 }
 
@@ -29,13 +30,18 @@ extern "C" {
  * @brief 每3600s调用一次
  *
  */
-void Task3600s_Callback() { SYS_Timestamp.TIM_3600s_PeriodElapsedCallback(); }
+void Task3600s_Callback()
+{
+    SYS_Timestamp.TIM_3600s_PeriodElapsedCallback();
+}
 
 /**
  * @brief 每1s调用一次
  *
  */
-void Task1s_Callback() {}
+void Task1s_Callback()
+{
+}
 
 /** @brief 使用 TIM4 的 1 ms 节拍提供 1 kHz 控制基准。 */
 void Task1ms_Callback()
@@ -46,18 +52,21 @@ void Task1ms_Callback()
     }
 }
 
-extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  if (!init_finished) {
-    return;
-  }
+extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (!init_finished)
+    {
+        return;
+    }
 
-  if (GPIO_Pin == BMI088_ACCEL__INTERRUPT_Pin ||
-      GPIO_Pin == BMI088_GYRO__INTERRUPT_Pin) {
-    BSP_BMI088.EXTI_Flag_Callback(GPIO_Pin);
-  }
+    if (GPIO_Pin == BMI088_ACCEL__INTERRUPT_Pin ||
+        GPIO_Pin == BMI088_GYRO__INTERRUPT_Pin)
+    {
+        BSP_BMI088.EXTI_Flag_Callback(GPIO_Pin);
+    }
 }
 
-extern "C" void TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+extern "C" void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (!init_finished)
     {
@@ -77,13 +86,15 @@ extern "C" void TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     }
 }
 
-extern "C" void SPI2_Callback(uint8_t *, uint8_t *, uint16_t, uint16_t) {
-  if ((SPI2_Manage_Object.Activate_GPIOx == BMI088_ACCEL__SPI_CS_GPIO_Port &&
-       SPI2_Manage_Object.Activate_GPIO_Pin == BMI088_ACCEL__SPI_CS_Pin) ||
-      (SPI2_Manage_Object.Activate_GPIOx == BMI088_GYRO__SPI_CS_GPIO_Port &&
-       SPI2_Manage_Object.Activate_GPIO_Pin == BMI088_GYRO__SPI_CS_Pin)) {
-    BSP_BMI088.SPI_RxCpltCallback();
-  }
+extern "C" void SPI2_Callback(uint8_t *, uint8_t *, uint16_t, uint16_t)
+{
+    if ((SPI2_Manage_Object.Activate_GPIOx == BMI088_ACCEL__SPI_CS_GPIO_Port &&
+         SPI2_Manage_Object.Activate_GPIO_Pin == BMI088_ACCEL__SPI_CS_Pin) ||
+        (SPI2_Manage_Object.Activate_GPIOx == BMI088_GYRO__SPI_CS_GPIO_Port &&
+         SPI2_Manage_Object.Activate_GPIO_Pin == BMI088_GYRO__SPI_CS_Pin))
+    {
+        BSP_BMI088.SPI_RxCpltCallback();
+    }
 }
 
 void OSPI2_Polling_Callback()

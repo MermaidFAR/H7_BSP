@@ -19,8 +19,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "tim.h"
 #include "stm32h7xx_hal.h"
+#include "tim.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -36,7 +36,7 @@
  */
 class Class_Timestamp
 {
-public:
+  public:
     void Init(TIM_HandleTypeDef *htim);
 
     inline uint64_t Get_Current_Timestamp() const;
@@ -49,7 +49,7 @@ public:
 
     void TIM_3600s_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     TIM_HandleTypeDef *TIM_Handler;
@@ -78,7 +78,7 @@ protected:
  */
 class Class_Time
 {
-public:
+  public:
     // 构造函数
     Class_Time()
     {
@@ -92,7 +92,7 @@ public:
 
     Class_Time(int32_t second, int16_t millisecond, int16_t microsecond)
     {
-        Microsecond = (int64_t)(second) * 1000000LL + (int64_t)(millisecond) * 1000LL + (int64_t)(microsecond);
+        Microsecond = (int64_t) (second) * 1000000LL + (int64_t) (millisecond) * 1000LL + (int64_t) (microsecond);
     }
 
     // 复制构造函数
@@ -139,7 +139,7 @@ public:
 
     inline Class_Time operator*(float value) const
     {
-        return Class_Time(isfinite(value) ? Saturate_Microseconds((float)Microsecond * value) : 0);
+        return Class_Time(isfinite(value) ? Saturate_Microseconds((float) Microsecond * value) : 0);
     }
 
     inline friend Class_Time operator*(float value, const Class_Time &Time)
@@ -149,8 +149,7 @@ public:
 
     inline Class_Time operator/(float value) const
     {
-        return Class_Time(isfinite(value) && value != 0.0f ?
-                          Saturate_Microseconds((float)Microsecond / value) : 0);
+        return Class_Time(isfinite(value) && value != 0.0f ? Saturate_Microseconds((float) Microsecond / value) : 0);
     }
 
     inline Class_Time &operator+=(const Class_Time &Time)
@@ -213,7 +212,7 @@ public:
 
     inline int64_t Get_Microsecond() const;
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -240,7 +239,7 @@ protected:
         {
             return INT64_MIN;
         }
-        return (int64_t)value;
+        return (int64_t) value;
     }
 };
 
@@ -250,12 +249,12 @@ extern Class_Timestamp SYS_Timestamp;
 
 namespace Namespace_SYS_Timestamp
 {
-    void Delay_Second(uint32_t Second);
+void Delay_Second(uint32_t Second);
 
-    void Delay_Millisecond(uint32_t Millisecond);
+void Delay_Millisecond(uint32_t Millisecond);
 
-    void Delay_Microsecond(uint32_t Microsecond);
-}
+void Delay_Microsecond(uint32_t Microsecond);
+} // namespace Namespace_SYS_Timestamp
 
 /* Exported function declarations --------------------------------------------*/
 
@@ -337,9 +336,10 @@ inline int64_t Class_Time::Get_Microsecond() const
  * @note   供纯 C 模块 (bsp_can, QD4310 等) 调用
  */
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-uint64_t SYS_Timestamp_Get_Microsecond(void);
+    uint64_t SYS_Timestamp_Get_Microsecond(void);
 #ifdef __cplusplus
 }
 #endif

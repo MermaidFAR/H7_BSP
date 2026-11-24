@@ -46,7 +46,7 @@ typedef struct
  */
 class PowerControl
 {
-public:
+  public:
     bool Init(const PowerControlConfig_t *config);
     bool Set_Input(const PowerControlInput_t *input);
     bool TIM_Calculate_PeriodElapsedCallback();
@@ -58,7 +58,7 @@ public:
     void Reset_Identification();
     bool Get_Model_Coefficients(float *friction, float *copper) const;
 
-protected:
+  protected:
     PowerControlConfig_t Config = {};
     PowerControlInput_t Input = {};
     PowerControlOutput_t Output = {};

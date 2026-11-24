@@ -195,9 +195,10 @@ void Class_EricTool_UART::UART_RxCpltCallback(const uint8_t *Rx_Data, uint16_t L
  */
 uint8_t Class_EricTool_UART::TIM_1ms_Write_PeriodElapsedCallback()
 {
-  if (UART_Manage_Object == nullptr) return HAL_ERROR;
-  Output();
-  return UART_Transmit_Data(UART_Manage_Object->UART_Handler, Tx_Buffer, Data_Number * sizeof(float) + sizeof(uint32_t));
+    if (UART_Manage_Object == nullptr)
+        return HAL_ERROR;
+    Output();
+    return UART_Transmit_Data(UART_Manage_Object->UART_Handler, Tx_Buffer, Data_Number * sizeof(float) + sizeof(uint32_t));
 }
 
 /**
@@ -274,9 +275,10 @@ void Class_EricTool_USB::Output()
     memcpy(tmp_buffer + Data_Number * sizeof(uint32_t), &Frame_Tail, sizeof(uint32_t));
 }
 
-void EricTool_Send_Telemetry(void) {
-  EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback();  // USB 遥测
-  EricTool_UART.TIM_1ms_Write_PeriodElapsedCallback(); // UART justfloat
+void EricTool_Send_Telemetry(void)
+{
+    EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback();  // USB 遥测
+    EricTool_UART.TIM_1ms_Write_PeriodElapsedCallback(); // UART justfloat
 }
 
-    /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

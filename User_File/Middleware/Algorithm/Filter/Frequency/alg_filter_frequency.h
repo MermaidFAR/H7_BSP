@@ -44,17 +44,17 @@ enum Enum_Filter_Frequency_Window
 };
 
 float Filter_Frequency_Window_Value(Enum_Filter_Frequency_Window window,
-                                  uint32_t index, uint32_t order);
+                                    uint32_t index, uint32_t order);
 
 /**
  * @brief Reusable, Frequency滤波器算法
  * @details Init成功后按固定周期输入有限采样值。Init、Reset与采样不得并发调用。
  * 对称系数的群延迟为阶数/(2*采样率), 更换窗函数不改变同阶群延迟。
  */
-template<uint32_t Filter_Frequency_Order = 50>
+template <uint32_t Filter_Frequency_Order = 50>
 class Class_Filter_Frequency
 {
-public:
+  public:
     bool Init(float value_constrain_low = 0.0f, float value_constrain_high = 1.0f, Enum_Filter_Frequency_Type filter_frequency_type = Filter_Frequency_Type_LOWPASS, float frequency_low = 0.0f, float frequency_high = FREQUENCY_FILTER_DEFAULT_SAMPLING_FREQUENCY / 2.0f, float sampling_frequency = FREQUENCY_FILTER_DEFAULT_SAMPLING_FREQUENCY, Enum_Filter_Frequency_Window window = Filter_Frequency_Window_RECTANGULAR);
 
     void Reset();
@@ -65,7 +65,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 输入限幅
@@ -128,7 +128,7 @@ protected:
  * @param window 对称窗类型, 默认矩形窗
  * @return 配置与归一化系数有效时返回true
  */
-template<uint32_t Filter_Frequency_Order>
+template <uint32_t Filter_Frequency_Order>
 bool Class_Filter_Frequency<Filter_Frequency_Order>::Init(float value_constrain_low, float value_constrain_high, Enum_Filter_Frequency_Type filter_frequency_type, float frequency_low, float frequency_high, float sampling_frequency, Enum_Filter_Frequency_Window window)
 {
     if (Filter_Frequency_Order == 0 ||
@@ -160,10 +160,8 @@ bool Class_Filter_Frequency<Filter_Frequency_Order>::Init(float value_constrain_
         return (false);
     }
 
-    float omega_low = filter_frequency_type == Filter_Frequency_Type_HIGHPASS ?
-                      0.0f : (frequency_low / sampling_frequency) * (2.0f * PI);
-    float omega_high = filter_frequency_type == Filter_Frequency_Type_LOWPASS ?
-                       0.0f : (frequency_high / sampling_frequency) * (2.0f * PI);
+    float omega_low = filter_frequency_type == Filter_Frequency_Type_HIGHPASS ? 0.0f : (frequency_low / sampling_frequency) * (2.0f * PI);
+    float omega_high = filter_frequency_type == Filter_Frequency_Type_LOWPASS ? 0.0f : (frequency_high / sampling_frequency) * (2.0f * PI);
     float omega_reference = 0.0f;
     if (filter_frequency_type == Filter_Frequency_Type_HIGHPASS)
     {
@@ -185,11 +183,11 @@ bool Class_Filter_Frequency<Filter_Frequency_Order>::Init(float value_constrain_
             return (false);
         }
         coefficient_max = fmaxf(coefficient_max, fabsf(coefficient));
-        float reference = arm_cos_f32(((float)i - Filter_Frequency_Order / 2.0f) * omega_reference);
-        gain += (double)coefficient * (double)reference * (i == Filter_Frequency_Order - i ? 1.0 : 2.0);
+        float reference = arm_cos_f32(((float) i - Filter_Frequency_Order / 2.0f) * omega_reference);
+        gain += (double) coefficient * (double) reference * (i == Filter_Frequency_Order - i ? 1.0 : 2.0);
     }
 
-    float normalization = (float)gain;
+    float normalization = (float) gain;
     if (Basic_Math_Is_Invalid_Float(normalization) || fabsf(normalization) <= FLT_EPSILON)
     {
         return (false);
@@ -220,12 +218,12 @@ bool Class_Filter_Frequency<Filter_Frequency_Order>::Init(float value_constrain_
 /**
  * @brief 计算未归一化的加窗系数, 调用前由Init验证参数
  */
-template<uint32_t Filter_Frequency_Order>
+template <uint32_t Filter_Frequency_Order>
 float Class_Filter_Frequency<Filter_Frequency_Order>::Calculate_Coefficient(
     uint32_t index, Enum_Filter_Frequency_Type type, float omega_low,
     float omega_high, Enum_Filter_Frequency_Window window) const
 {
-    float position = (float)index - Filter_Frequency_Order / 2.0f;
+    float position = (float) index - Filter_Frequency_Order / 2.0f;
     float coefficient = 0.0f;
     switch (type)
     {
@@ -248,7 +246,7 @@ float Class_Filter_Frequency<Filter_Frequency_Order>::Calculate_Coefficient(
 /**
  * @brief 清空输入历史、环形索引和输出, 保留滤波配置与系数
  */
-template<uint32_t Filter_Frequency_Order>
+template <uint32_t Filter_Frequency_Order>
 void Class_Filter_Frequency<Filter_Frequency_Order>::Reset()
 {
     for (uint32_t i = 0; i <= Filter_Frequency_Order; i++)
@@ -264,7 +262,7 @@ void Class_Filter_Frequency<Filter_Frequency_Order>::Reset()
  *
  * @tparam Filter_Frequency_Order 滤波器阶数
  */
-template<uint32_t Filter_Frequency_Order>
+template <uint32_t Filter_Frequency_Order>
 void Class_Filter_Frequency<Filter_Frequency_Order>::TIM_Calculate_PeriodElapsedCallback()
 {
     Out = 0.0f;
@@ -285,7 +283,7 @@ void Class_Filter_Frequency<Filter_Frequency_Order>::TIM_Calculate_PeriodElapsed
  *
  * @return float 输出值
  */
-template<uint32_t Filter_Frequency_Order>
+template <uint32_t Filter_Frequency_Order>
 inline float Class_Filter_Frequency<Filter_Frequency_Order>::Get_Out() const
 {
     return (Out);
@@ -296,7 +294,7 @@ inline float Class_Filter_Frequency<Filter_Frequency_Order>::Get_Out() const
  *
  * @param now 当前值
  */
-template<uint32_t Filter_Frequency_Order>
+template <uint32_t Filter_Frequency_Order>
 inline void Class_Filter_Frequency<Filter_Frequency_Order>::Set_Now(float now)
 {
     float now_value = now;

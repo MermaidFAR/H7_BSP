@@ -26,7 +26,7 @@
  */
 class Class_SMC
 {
-public:
+  public:
     bool Init(float surface_coefficient, float k, float eta, float boundary, float gain, float out_max = 0.0f);
 
     inline float Get_Out() const;
@@ -65,24 +65,24 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
-    float Lambda = 0.0f;            ///< 滑模面系数, 1/s
-    float K = 0.0f;                 ///< 线性趋近增益, 1/s
-    float Eta = 0.0f;               ///< 切换趋近增益, 与y的二阶导数同单位
-    float Boundary = 0.0f;          ///< 边界层半宽, 与y的一阶导数同单位
-    float Gain = 0.0f;              ///< 名义输入增益
-    float Gain_Inverse = 0.0f;      ///< 名义输入增益的倒数
-    float Out_Max = 0.0f;           ///< 对称输出限幅, 0为不限制
+  protected:
+    float Lambda = 0.0f;       ///< 滑模面系数, 1/s
+    float K = 0.0f;            ///< 线性趋近增益, 1/s
+    float Eta = 0.0f;          ///< 切换趋近增益, 与y的二阶导数同单位
+    float Boundary = 0.0f;     ///< 边界层半宽, 与y的一阶导数同单位
+    float Gain = 0.0f;         ///< 名义输入增益
+    float Gain_Inverse = 0.0f; ///< 名义输入增益的倒数
+    float Out_Max = 0.0f;      ///< 对称输出限幅, 0为不限制
 
-    float Target = 0.0f;            ///< 目标值
-    float Target_Dot = 0.0f;        ///< 目标一阶导数
-    float Target_DDot = 0.0f;       ///< 目标二阶导数
-    float Now = 0.0f;               ///< 当前测量值
-    float Now_Dot = 0.0f;           ///< 当前测量一阶导数
-    float Model = 0.0f;             ///< 名义模型中不含控制输入的二阶导数项
+    float Target = 0.0f;      ///< 目标值
+    float Target_Dot = 0.0f;  ///< 目标一阶导数
+    float Target_DDot = 0.0f; ///< 目标二阶导数
+    float Now = 0.0f;         ///< 当前测量值
+    float Now_Dot = 0.0f;     ///< 当前测量一阶导数
+    float Model = 0.0f;       ///< 名义模型中不含控制输入的二阶导数项
 
-    float Surface = 0.0f;           ///< 最近一次计算的滑模面值
-    float Out = 0.0f;               ///< 最近一次计算的限幅后输出
+    float Surface = 0.0f; ///< 最近一次计算的滑模面值
+    float Out = 0.0f;     ///< 最近一次计算的限幅后输出
 };
 
 /* Exported variables --------------------------------------------------------*/

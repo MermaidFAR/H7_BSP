@@ -46,14 +46,14 @@
  * }
  * @endcode
  */
-template<int State_Dim, int Control_Dim, int Horizon>
+template <int State_Dim, int Control_Dim, int Horizon>
 class Class_MPC
 {
     static_assert(State_Dim >= 1 && State_Dim <= 6, "MPC supports 1 to 6 states");
     static_assert(Control_Dim >= 1 && Control_Dim <= 2, "MPC supports 1 to 2 inputs");
     static_assert(Horizon >= 1 && Horizon <= 25, "MPC supports 1 to 25 steps");
 
-public:
+  public:
     using State = Class_Matrix_f32<State_Dim, 1>;
     using Input = Class_Matrix_f32<Control_Dim, 1>;
     using State_Matrix = Class_Matrix_f32<State_Dim, State_Dim>;
@@ -128,8 +128,14 @@ public:
         return true;
     }
 
-    void Set_Now(const State &state) { X_Now = state; }
-    void Set_Ref(const State &reference) { X_Ref = reference; }
+    void Set_Now(const State &state)
+    {
+        X_Now = state;
+    }
+    void Set_Ref(const State &reference)
+    {
+        X_Ref = reference;
+    }
 
     void Reset_Warm_Start()
     {
@@ -139,9 +145,18 @@ public:
         Previous_Plan_Valid = false;
     }
 
-    const Input &Get_Out() const { return Out; }
-    bool Is_Converged() const { return Converged; }
-    uint32_t Get_Iterations() const { return Iterations; }
+    const Input &Get_Out() const
+    {
+        return Out;
+    }
+    bool Is_Converged() const
+    {
+        return Converged;
+    }
+    uint32_t Get_Iterations() const
+    {
+        return Iterations;
+    }
 
     /** @brief 读取最近成功求解的实际预测状态，step 取 1..Horizon。 */
     bool Get_Predicted_State(int step, State &state) const
@@ -212,7 +227,7 @@ public:
         return true;
     }
 
-private:
+  private:
     using Gain = Class_Matrix_f32<Control_Dim, State_Dim>;
 
     struct Riccati_Stage
@@ -237,7 +252,7 @@ private:
         double C1[Control_Dim][Control_Dim];
     };
 
-    template<int Dim>
+    template <int Dim>
     static bool Valid_Bounds(const Class_Matrix_f32<Dim, 1> &lower,
                              const Class_Matrix_f32<Dim, 1> &upper)
     {
@@ -251,7 +266,7 @@ private:
         return true;
     }
 
-    template<int Dim>
+    template <int Dim>
     static bool Valid_Weight(const Class_Matrix_f32<Dim, Dim> &matrix, bool semidefinite)
     {
         double factor[Dim][Dim] = {};
@@ -263,7 +278,7 @@ private:
             {
                 return false;
             }
-            scale[i] = sqrt((double)diagonal);
+            scale[i] = sqrt((double) diagonal);
         }
         for (int i = 0; i < Dim; ++i)
         {
@@ -275,7 +290,7 @@ private:
                 {
                     return false;
                 }
-                double pivot = entry == 0.0f ? 0.0 : (double)entry / (scale[i] * scale[j]);
+                double pivot = entry == 0.0f ? 0.0 : (double) entry / (scale[i] * scale[j]);
                 for (int k = 0; k < j; ++k)
                 {
                     pivot -= factor[i][k] * factor[j][k];
@@ -310,7 +325,7 @@ private:
 
     static bool Fits_Float(double value)
     {
-        return isfinite(value) && fabs(value) <= (double)FLT_MAX;
+        return isfinite(value) && fabs(value) <= (double) FLT_MAX;
     }
 
     static bool Riccati_Step(const State_Matrix &a, const Input_Model &b, const State_Matrix &q,
@@ -325,11 +340,11 @@ private:
             {
                 for (int j = 0; j < State_Dim; ++j)
                 {
-                    pa[i][j] += next_p[i][k] * (double)a[k][j];
+                    pa[i][j] += next_p[i][k] * (double) a[k][j];
                 }
                 for (int j = 0; j < Control_Dim; ++j)
                 {
-                    pb[i][j] += next_p[i][k] * (double)b[k][j];
+                    pb[i][j] += next_p[i][k] * (double) b[k][j];
                 }
             }
         }
@@ -339,17 +354,17 @@ private:
         {
             for (int j = 0; j < Control_Dim; ++j)
             {
-                hessian[i][j] = (double)r[i][j] + (i == j ? rho_u : 0.0);
+                hessian[i][j] = (double) r[i][j] + (i == j ? rho_u : 0.0);
                 for (int k = 0; k < State_Dim; ++k)
                 {
-                    hessian[i][j] += (double)b[k][i] * pb[k][j];
+                    hessian[i][j] += (double) b[k][i] * pb[k][j];
                 }
             }
             for (int k = 0; k < State_Dim; ++k)
             {
                 for (int j = 0; j < State_Dim; ++j)
                 {
-                    gradient[i][j] += (double)b[k][i] * pa[k][j];
+                    gradient[i][j] += (double) b[k][i] * pa[k][j];
                 }
             }
         }
@@ -388,10 +403,10 @@ private:
         {
             for (int j = 0; j <= i; ++j)
             {
-                double value = (double)q[i][j] + (i == j ? rho_x : 0.0);
+                double value = (double) q[i][j] + (i == j ? rho_x : 0.0);
                 for (int k = 0; k < State_Dim; ++k)
                 {
-                    value += (double)a[k][i] * pa[k][j];
+                    value += (double) a[k][i] * pa[k][j];
                 }
                 for (int k = 0; k < Control_Dim; ++k)
                 {
@@ -414,11 +429,11 @@ private:
             for (int j = 0; j < Control_Dim; ++j)
             {
                 const double value = work.C1[i][j];
-                if (!Fits_Float(value) || (i == j && (float)value <= 0.0f))
+                if (!Fits_Float(value) || (i == j && (float) value <= 0.0f))
                 {
                     return false;
                 }
-                stage.C1[i][j] = (float)value;
+                stage.C1[i][j] = (float) value;
             }
             for (int j = 0; j < State_Dim; ++j)
             {
@@ -427,7 +442,7 @@ private:
                 {
                     return false;
                 }
-                stage.K[i][j] = (float)value;
+                stage.K[i][j] = (float) value;
             }
         }
         return true;
@@ -437,8 +452,8 @@ private:
                             const Input_Matrix &r, const State_Matrix &terminal_weight,
                             float rho, bool split_state, Riccati_Cache &cache)
     {
-        const double rho_x = split_state ? (double)rho : 0.0;
-        const double rho_u = (double)rho;
+        const double rho_x = split_state ? (double) rho : 0.0;
+        const double rho_u = (double) rho;
         double next_p[State_Dim][State_Dim] = {};
         Riccati_Work work;
         bool converged = false;
@@ -474,18 +489,18 @@ private:
         {
             for (int j = 0; j < State_Dim; ++j)
             {
-                cache.P_Infinity[i][j] = (float)next_p[i][j];
-                double closed_loop = (double)a[j][i];
+                cache.P_Infinity[i][j] = (float) next_p[i][j];
+                double closed_loop = (double) a[j][i];
                 for (int k = 0; k < Control_Dim; ++k)
                 {
-                    closed_loop -= (double)b[j][k] * work.K[k][i];
+                    closed_loop -= (double) b[j][k] * work.K[k][i];
                 }
                 if (!Fits_Float(closed_loop))
                 {
                     return false;
                 }
-                cache.C2[i][j] = (float)closed_loop;
-                next_p[i][j] = (double)terminal_weight[i][j] + (i == j ? rho_x : 0.0);
+                cache.C2[i][j] = (float) closed_loop;
+                next_p[i][j] = (double) terminal_weight[i][j] + (i == j ? rho_x : 0.0);
             }
         }
 
@@ -498,7 +513,7 @@ private:
             {
                 for (int j = 0; j < State_Dim; ++j)
                 {
-                    const double steady = (double)cache.P_Infinity[i][j];
+                    const double steady = (double) cache.P_Infinity[i][j];
                     const double scale = fmax(fabs(steady), fabs(next_p[i][j]));
                     at_steady_state = at_steady_state && fabs(next_p[i][j] - steady) <= 1e-8 * scale;
                 }
@@ -637,7 +652,10 @@ private:
         return true;
     }
 
-    bool State_Bounded(int index) const { return (State_Mask & (1U << index)) != 0U; }
+    bool State_Bounded(int index) const
+    {
+        return (State_Mask & (1U << index)) != 0U;
+    }
 
     bool In_State_Box(const State &state) const
     {
@@ -651,8 +669,18 @@ private:
         return true;
     }
 
-    enum Enum_MPC_Plan { MPC_PLAN_ADMM, MPC_PLAN_SHIFTED, MPC_PLAN_FEEDBACK };
-    enum Enum_MPC_Plan_Result { MPC_PLAN_VALID, MPC_PLAN_INFEASIBLE, MPC_PLAN_INVALID };
+    enum Enum_MPC_Plan
+    {
+        MPC_PLAN_ADMM,
+        MPC_PLAN_SHIFTED,
+        MPC_PLAN_FEEDBACK
+    };
+    enum Enum_MPC_Plan_Result
+    {
+        MPC_PLAN_VALID,
+        MPC_PLAN_INFEASIBLE,
+        MPC_PLAN_INVALID
+    };
 
     Enum_MPC_Plan_Result Build_Plan(const Riccati_Cache &cache, Enum_MPC_Plan plan)
     {
@@ -867,7 +895,7 @@ private:
                 {
                     // 仅在修复舍入违例时给递推留数个 ULP，等式约束保留原宽度。
                     const float margin = 8.0f * FLT_EPSILON *
-                        fmaxf(fabsf(base.Data[i]), fmaxf(fabsf(X_Min.Data[i]), fabsf(X_Max.Data[i])));
+                                         fmaxf(fabsf(base.Data[i]), fmaxf(fabsf(X_Min.Data[i]), fabsf(X_Max.Data[i])));
                     if (lower + margin < upper - margin)
                     {
                         lower += margin;
@@ -910,7 +938,8 @@ private:
                     const float n1 = edge.Normal[1] / scale;
                     const float norm = n0 * n0 + n1 * n1;
                     const float correction = (edge.Bound / scale -
-                        n0 * nominal.Data[0] - n1 * nominal.Data[1]) / norm;
+                                              n0 * nominal.Data[0] - n1 * nominal.Data[1]) /
+                                             norm;
                     candidate.Data[0] += n0 * correction;
                     candidate.Data[1] += n1 * correction;
                     if (!candidate.Is_Finite())

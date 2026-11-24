@@ -14,7 +14,7 @@ CAT_BSP（仓库名 `H7_BSP`）围绕板级外设、设备驱动、控制/估计
 - **STM32H7 内存域与 DMA 治理**：通过自有链接脚本与 MPU 配置划分 `RAM_DMA`（64 KiB 不可缓存区），DMA1/DMA2 收发缓冲统一放入 `.dma_buffer`，规避 D-Cache 一致性与 DTCM 不可达陷阱。
 - **低抖动 CAN 底座**：三总线独立异步命令队列（消除跨总线队头阻塞）、周期最新值覆盖槽、同一 `(FDCAN, ID)` 一对多回调分发（原生兼容多台达妙电机共享 `master_id`），以及事件驱动 + 1 ms 超时兜底的 `Can_Tx_Task`。
 - **NVIC 抢占优先级分层**：基准定时、IMU SPI/DMA/EXTI、FDCAN、辅助定时、UART DMA、OSPI/MDMA 与 USB 分层配置，并与 `H7_BSP.ioc` 同步。
-- **整车健康联动与实时观测**：20 Hz `SYS_Health` 汇总初始化错误、IMU、Flash、电源电压与 DJI / DM / QD4310 三类电机。控制层通过 `Sys_Health_Is_Safe()` 判定是否进入安全分支，WS2812 与蜂鸣器显示健康状态，Ozone / GDB 可通过 Seqlock 读取一致的快照。
+- **整车健康联动与实时观测**：20 Hz `SYS_Health` 汇总初始化错误、IMU、Flash、电源电压与 DJI / DM / QD4310 三类电机。控制层通过 `Sys_Health_Is_Safe()` 判定是否进入安全分支，WS2812 与蜂鸣器显示健康状态，EmberProbe / GDB 可通过 Seqlock 读取一致的快照。
 - **C with Classes 风格**：C++ 构建关闭异常与 RTTI，控制和驱动热路径使用定长数据结构。启动时 FreeRTOS 从 `heap_5` 分配任务与消息队列。
 
 ## 快速开始
@@ -41,7 +41,7 @@ cmake --build --preset Release --parallel
 ### 2. 烧录与调试
 
 - **烧录与探针**：OpenOCD 探针配置及脚本位于 [User\_Config/](User_Config)，支持 DAPLink / ST-Link。
-- **源码调试**：使用 SEGGER Ozone 打开 [H7_BSP.jdebug](H7_BSP.jdebug)（按本机固件路径调整），在 Watch 窗口直接展开 `SYS_Health` 与 `Debug_IMU_Data` 观察整车实时状态。
+- **源码调试**：在 EmberProbe 中加载 Debug 构建的 ELF，展开 `SYS_Health` 查看整车健康状态，展开 `BSP_BMI088` 查看姿态与传感器状态。
 - **调度分析**：使用 SEGGER SystemView 打开 [H7_BSP.SVPrj](H7_BSP.SVPrj) 查看任务抢占、中断耗时与栈水位。
 - **曲线遥测**：`EricTool_USB` / `EricTool_UART` 支持 JustFloat 绘图与 `variable:value#` 调参指令，示例见 [Transport\_Task.cpp](User_File/Task/Transport_Task.cpp)。
 
@@ -81,7 +81,7 @@ extern "C" void Control_Task(void *argument)
 graph TD
     App[Application / Task] --> Device["Device: 电机与板载器件"]
     App --> Algo[Middleware / Algorithm]
-    App --> Sys["System: Init / Health / Debug / Timestamp"]
+    App --> Sys["System: Init / Health / Timestamp"]
     Device --> BSP["BSP: CAN / UART / SPI / USB / OSPI / ADC"]
     Sys --> BSP
     BSP --> HAL[STM32 HAL / CMSIS]
@@ -101,7 +101,6 @@ User_File/
 ├── System/
 │   ├── Callback/           HAL 弱回调统一路由（TIM / EXTI / SPI / OSPI）
 │   ├── Critical/           统一临界区原语（sys_critical.h）
-│   ├── Debug/              固定 ABI 的 IMU 调试快照（Debug_IMU_Data）
 │   ├── Health/             20 Hz 整车健康监控与安全判定（SYS_Health）
 │   ├── IMU/                VQF 姿态与零偏估计参数配置
 │   ├── Init/               外设与器件统一初始化及错误掩码
@@ -177,8 +176,8 @@ cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 | `HEALTH_OFFLINE` | 黄灯慢闪 | 切入时 800 Hz 短鸣 | 电机或传感器从未连上（`NO_DATA`）或中途超时（`STALE`） |
 | `HEALTH_FAULT` | 红灯快闪 | 每秒 2400 Hz 短鸣 50 ms | 硬件初始化失败（`INIT_FAILED`）、欠压、电机故障或时间戳异常 |
 
-- **调试静音**：在 Ozone / GDB Watch 中将 `SYS_Health_Buzzer_Mute` 置 `1`（或调用 `Sys_Health_Set_Buzzer_Mute(true)`）即可静音，不影响灯效与 `Sys_Health_Is_Safe()` 安全判定。
-- **遥测绑定**：`EricTool_USB` 与 `EricTool_UART` 均支持 `Set_Data(channels, count)` 浮点指针数组接口，可直接绑定 `&SYS_Health.Power_Voltage_V` 或 `&Debug_IMU_Data.Euler_Yaw_rad`。
+- **调试静音**：在 EmberProbe / GDB 中将 `SYS_Health_Buzzer_Mute` 置 `1`（或调用 `Sys_Health_Set_Buzzer_Mute(true)`）即可静音，不影响灯效与 `Sys_Health_Is_Safe()` 安全判定。
+- **遥测绑定**：`EricTool_USB` 与 `EricTool_UART` 均支持 `Set_Data(channels, count)` 浮点指针数组接口，可直接绑定 `&SYS_Health.Power_Voltage_V`。USB 默认按 yaw、pitch、roll 顺序发送 BMI088 欧拉角，单位为 rad，数据每 5 ms 至多刷新一次。
 
 ### 4. FreeRTOS 任务分工
 
@@ -186,7 +185,7 @@ cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 
 | 任务 | CMSIS 优先级 | 栈大小 | 职责 |
 | :--- | :--- | ---: | :--- |
-| [`BMI088Task`](User_File/Task/BMI088_Task.cpp) | `osPriorityHigh2`（42） | 8 KiB | 响应 SPI/FIFO 事件，处理陀螺仪样本、执行 VQF 姿态解算并发布 IMU 调试快照 |
+| [`BMI088Task`](User_File/Task/BMI088_Task.cpp) | `osPriorityHigh2`（42） | 8 KiB | 响应 SPI/FIFO 事件，处理陀螺仪样本、执行 VQF 姿态解算，更新 IMU 健康诊断与欧拉角遥测 |
 | [`ControlTask`](User_File/Task/Control_Task.cpp) | `osPriorityHigh1`（41） | 8 KiB | 由 TIM4 以 1 kHz 唤醒，检查整车安全状态并提供正常控制与失能的应用扩展口 |
 | [`CanTxTask`](User_File/Task/Can_Tx_Task.cpp) | `osPriorityHigh`（40） | 4 KiB | 处理三路 CAN 的异步队列、周期帧与总线恢复，事件唤醒并以 1 ms 超时重试 |
 | [`TransportTask`](User_File/Task/Transport_Task.cpp) | `osPriorityNormal`（24） | 8 KiB | 初始化 USB CDC，发送 EricTool 的 IMU 遥测 |

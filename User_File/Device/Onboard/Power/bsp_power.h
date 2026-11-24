@@ -15,10 +15,10 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "bsp_adc.h"
-#include "sys_critical.h"
-#include "sys_timestamp.h"
 #include "gpio.h"
 #include "stm32h7xx_hal.h"
+#include "sys_critical.h"
+#include "sys_timestamp.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -30,7 +30,7 @@
  */
 class Class_Power
 {
-public:
+  public:
     void Init(bool dc24_0_status = false, bool dc24_1_status = false, bool dc5_status = false);
 
     bool Is_Initialized() const
@@ -49,7 +49,7 @@ public:
 
     inline void Set_DC5(bool status);
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 绑定的ADC

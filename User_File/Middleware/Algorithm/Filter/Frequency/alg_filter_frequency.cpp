@@ -31,7 +31,7 @@ const float FREQUENCY_FILTER_DEFAULT_SAMPLING_FREQUENCY = 1000.0f;
  * @brief 计算对称窗权重, 调用前由Init验证类型与阶数
  */
 float Filter_Frequency_Window_Value(Enum_Filter_Frequency_Window window,
-                                  uint32_t index, uint32_t order)
+                                    uint32_t index, uint32_t order)
 {
     if (window == Filter_Frequency_Window_RECTANGULAR)
     {
@@ -42,7 +42,7 @@ float Filter_Frequency_Window_Value(Enum_Filter_Frequency_Window window,
         return (window == Filter_Frequency_Window_HAMMING ? 0.08f : 0.0f);
     }
 
-    float cosine = arm_cos_f32((2.0f * PI) * ((float)index / order));
+    float cosine = arm_cos_f32((2.0f * PI) * ((float) index / order));
     switch (window)
     {
     case Filter_Frequency_Window_HAMMING:

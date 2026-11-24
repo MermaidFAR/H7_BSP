@@ -106,7 +106,7 @@ bool Class_ESO_Second_Order::Init(float b0, float omega_o, float d_t)
 
 void Class_ESO_Second_Order::Reset(float initial_y, float initial_dy)
 {
-    (void)Try_Reset(initial_y, initial_dy);
+    (void) Try_Reset(initial_y, initial_dy);
 }
 
 bool Class_ESO_Second_Order::Try_Reset(float initial_y, float initial_dy)
@@ -126,7 +126,7 @@ bool Class_ESO_Second_Order::Try_Reset(float initial_y, float initial_dy)
 
 void Class_ESO_Second_Order::TIM_Calculate_PeriodElapsedCallback()
 {
-    (void)Update(Now, Input);
+    (void) Update(Now, Input);
 }
 
 bool Class_ESO_Second_Order::Update(float measurement, float applied_input)

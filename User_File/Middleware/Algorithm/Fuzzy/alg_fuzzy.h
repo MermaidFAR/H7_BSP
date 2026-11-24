@@ -36,14 +36,14 @@ struct Struct_Fuzzy_Sugeno_Config
  */
 class Class_Fuzzy_Sugeno
 {
-public:
+  public:
     bool Init(const Struct_Fuzzy_Sugeno_Config &config);
 
     bool Calculate(float input_1, float input_2, float *out) const;
 
     inline uint16_t Get_Output_Count() const;
 
-protected:
+  protected:
     Struct_Fuzzy_Sugeno_Config Config;
 
     static bool Check_Nodes(const float *nodes, uint16_t count);

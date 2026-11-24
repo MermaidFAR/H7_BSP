@@ -26,15 +26,16 @@
 
 #define ERICTOOL_RX_VARIABLE_ASSIGNMENT_MAX_LENGTH (100)
 
-    /* Exported types ------------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 
-    /**
-     * @brief Reusable, EricTool justfloat 串口调试工具（UART 版本）
-     * @note  上行：justfloat 帧（N×float + 4B 帧尾 0x7f800000）
-     *        下行：文本指令 "variable:value#"，成功后可读取字典索引和值；非法帧返回索引 -1、值 0
-     */
-    class Class_EricTool_UART {
-public:
+/**
+ * @brief Reusable, EricTool justfloat 串口调试工具（UART 版本）
+ * @note  上行：justfloat 帧（N×float + 4B 帧尾 0x7f800000）
+ *        下行：文本指令 "variable:value#"，成功后可读取字典索引和值；非法帧返回索引 -1、值 0
+ */
+class Class_EricTool_UART
+{
+  public:
     void Init(const UART_HandleTypeDef *huart, uint8_t rx_variable_assignment_num = 0, const char **rx_variable_assignment_list = nullptr, uint32_t frame_tail = 0x7f800000);
 
     inline int32_t Get_Variable_Index() const;
@@ -48,43 +49,43 @@ public:
 
     uint8_t TIM_1ms_Write_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 绑定的 UART 管理对象
-  Struct_UART_Manage_Object *UART_Manage_Object = nullptr;
-  // 接收指令字典数量
-  uint8_t Rx_Variable_Num = 0;
-  // 接收指令字典列表指针
-  const char **Rx_Variable_List = nullptr;
-  // 数据包尾标（justfloat 默认 0x7f800000）
-  uint32_t Frame_Tail;
+    Struct_UART_Manage_Object *UART_Manage_Object = nullptr;
+    // 接收指令字典数量
+    uint8_t Rx_Variable_Num = 0;
+    // 接收指令字典列表指针
+    const char **Rx_Variable_List = nullptr;
+    // 数据包尾标（justfloat 默认 0x7f800000）
+    uint32_t Frame_Tail;
 
-  // 常量
+    // 常量
 
-  // 内部变量
+    // 内部变量
 
-  // 发送缓冲区
-  uint8_t Tx_Buffer[UART_BUFFER_SIZE];
+    // 发送缓冲区
+    uint8_t Tx_Buffer[UART_BUFFER_SIZE];
 
-  // 需要绘图的各个变量数据地址（最多 24 个通道）
-  const volatile float *Data[24];
-  // 当前发送的数据数量
-  uint8_t Data_Number = 0;
-  // 当前接收的指令在指令字典中的编号（-1 表示未匹配）
-  int32_t Variable_Index = -1;
-  // 当前接收的指令值
-  float Variable_Value = 0.0f;
+    // 需要绘图的各个变量数据地址（最多 24 个通道）
+    const volatile float *Data[24];
+    // 当前发送的数据数量
+    uint8_t Data_Number = 0;
+    // 当前接收的指令在指令字典中的编号（-1 表示未匹配）
+    int32_t Variable_Index = -1;
+    // 当前接收的指令值
+    float Variable_Value = 0.0f;
 
-  // 读变量
+    // 读变量
 
-  // 写变量
+    // 写变量
 
-  // 读写变量
+    // 读写变量
 
-  // 内部函数
+    // 内部函数
 
-  void Output();
+    void Output();
 };
 
 /**
@@ -94,7 +95,7 @@ protected:
  */
 class Class_EricTool_USB
 {
-public:
+  public:
     void Init(uint8_t rx_variable_assignment_num = 0, const char **rx_variable_assignment_list = nullptr, uint32_t frame_tail = 0x7f800000);
 
     inline int32_t Get_Variable_Index() const;
@@ -108,7 +109,7 @@ public:
 
     void TIM_1ms_Write_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 绑定的 USB 管理对象
     Struct_USB_Manage_Object *USB_Manage_Object;
     // 接收指令字典数量
@@ -165,7 +166,7 @@ inline float Class_EricTool_UART::Get_Variable_Value() const
  */
 inline void Class_EricTool_UART::Set_Data(int Number, ...)
 {
-    if (Number < 0 || (unsigned int)Number > sizeof(Data) / sizeof(Data[0]))
+    if (Number < 0 || (unsigned int) Number > sizeof(Data) / sizeof(Data[0]))
     {
         return;
     }
@@ -176,7 +177,7 @@ inline void Class_EricTool_UART::Set_Data(int Number, ...)
         Data[i] = va_arg(data_ptr, const volatile float *);
     }
     va_end(data_ptr);
-    Data_Number = (uint8_t)Number;
+    Data_Number = (uint8_t) Number;
 }
 
 /**
@@ -202,7 +203,7 @@ inline float Class_EricTool_USB::Get_Variable_Value() const
 // 变参必须传入 const volatile float *，也可使用数组重载。
 inline void Class_EricTool_USB::Set_Data(int Number, ...)
 {
-    if (Number < 0 || (unsigned int)Number > sizeof(Data) / sizeof(Data[0]))
+    if (Number < 0 || (unsigned int) Number > sizeof(Data) / sizeof(Data[0]))
     {
         return;
     }
@@ -213,7 +214,7 @@ inline void Class_EricTool_USB::Set_Data(int Number, ...)
         Data[i] = va_arg(data_ptr, const volatile float *);
     }
     va_end(data_ptr);
-    Data_Number = (uint8_t)Number;
+    Data_Number = (uint8_t) Number;
 }
 
 extern Class_EricTool_USB EricTool_USB;
@@ -221,4 +222,4 @@ extern Class_EricTool_UART EricTool_UART;
 void EricTool_Send_Telemetry(void);
 #endif // !ERICTOOL_H
 
-    /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

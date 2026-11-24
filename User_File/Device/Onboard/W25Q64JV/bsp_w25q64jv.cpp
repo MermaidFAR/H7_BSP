@@ -136,7 +136,6 @@ void Class_W25Q64JV::Enable_Quad_Mode()
         osDelay(1);
     }
 
-
     // 写 SR2 = 0x02（QE = 1），抑制回调中的 AutoPolling，手动轮询 WIP
     OSPI_Manage_Object->Tx_Buffer[0] = 0x02;
 
@@ -184,7 +183,6 @@ void Class_W25Q64JV::Enable_Quad_Mode()
 
     Suppress_AutoPolling = false;
     Busy_Flag = false;
-
 }
 
 /**

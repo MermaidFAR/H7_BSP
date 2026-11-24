@@ -30,7 +30,7 @@ typedef struct
      *       世界角速度，不应在世界速度目标中重复叠加此相对运动补偿。
      *       forward 不是电流/力矩前馈，不加到速度 PID 的控制输出端。
      */
-    float forward;//希望底盘要做好哦,做不好就不要用这个值了
+    float forward; // 希望底盘要做好哦,做不好就不要用这个值了
 } SpinOutput_t;
 
 typedef struct
@@ -107,12 +107,12 @@ class SpinMode
   protected:
     Class_FSM<3> SpinMode_FSM;
     SpinOutput_t Output = {};
-    float zero_point = 0.0f;             /**< rad；初始化时归一化的相对角零偏。 */
-    float world_angle = 0.0f;            /**< rad；上层保持的连续世界 Yaw 目标。 */
-    float theta = 0.0f;                  /**< rad；尚未扣除 zero_point 的相对角反馈。 */
-    float x_target = 0.0f;               /**< m/s；云台坐标系前向速度指令。 */
-    float y_target = 0.0f;               /**< m/s；云台坐标系左向速度指令。 */
-    float w_target = 0.0f;               /**< rad/s；底盘逆时针角速度指令。 */
+    float zero_point = 0.0f;  /**< rad；初始化时归一化的相对角零偏。 */
+    float world_angle = 0.0f; /**< rad；上层保持的连续世界 Yaw 目标。 */
+    float theta = 0.0f;       /**< rad；尚未扣除 zero_point 的相对角反馈。 */
+    float x_target = 0.0f;    /**< m/s；云台坐标系前向速度指令。 */
+    float y_target = 0.0f;    /**< m/s；云台坐标系左向速度指令。 */
+    float w_target = 0.0f;    /**< rad/s；底盘逆时针角速度指令。 */
 };
 
 #endif

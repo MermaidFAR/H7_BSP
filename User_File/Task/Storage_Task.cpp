@@ -23,6 +23,6 @@ extern "C"
 
 extern "C" void Storage_Task(void *argument)
 {
-    (void)argument;
+    (void) argument;
     osThreadExit();
 }

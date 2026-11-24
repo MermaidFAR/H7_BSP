@@ -28,7 +28,7 @@
  */
 class Class_Filter_Polynomial
 {
-public:
+  public:
     bool Init(uint32_t window_size, float d_t = 0.001f,
               uint32_t polynomial_order = 2);
 
@@ -45,7 +45,7 @@ public:
     inline uint32_t Get_Polynomial_Order() const;
     inline bool Get_Ready_Flag() const;
 
-protected:
+  protected:
     float Coefficient[4][FILTER_POLYNOMIAL_MAX_WINDOW_SIZE] = {};
     float Input_Signal[FILTER_POLYNOMIAL_MAX_WINDOW_SIZE] = {};
     float Out[4] = {};

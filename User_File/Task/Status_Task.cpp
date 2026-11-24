@@ -56,9 +56,9 @@ static void Status_Show_Health(Enum_Sys_Health_State state, uint8_t phase, bool 
 
 extern "C" void Status_Task(void *argument)
 {
-    (void)argument;
+    (void) argument;
     Sys_Health_Init();
-    uint32_t period = (uint32_t)(((uint64_t)osKernelGetTickFreq() * SYS_HEALTH_PERIOD_MS + 999) / 1000);
+    uint32_t period = (uint32_t) (((uint64_t) osKernelGetTickFreq() * SYS_HEALTH_PERIOD_MS + 999) / 1000);
     if (period == 0)
         period = 1;
     uint32_t deadline = osKernelGetTickCount();
@@ -78,7 +78,7 @@ extern "C" void Status_Task(void *argument)
         phase = (phase + 1U) % 20U;
         deadline += period;
         uint32_t now = osKernelGetTickCount();
-        if ((int32_t)(now - deadline) >= 0)
+        if ((int32_t) (now - deadline) >= 0)
             deadline = now + period;
         osDelayUntil(deadline);
     }

@@ -26,7 +26,7 @@
  */
 class Class_Complex_f32 : public Class_Matrix_f32<2, 1>
 {
-public:
+  public:
     // 构造函数
     using Class_Matrix_f32<2, 1>::Class_Matrix_f32;
 
@@ -170,7 +170,7 @@ public:
 
     inline Class_Matrix_f32<2, 2> Get_Rotation_Matrix() const;
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -190,16 +190,16 @@ protected:
 
 namespace Namespace_ALG_Complex
 {
-    Class_Complex_f32 Zero();
+Class_Complex_f32 Zero();
 
-    Class_Complex_f32 Unit_Real();
+Class_Complex_f32 Unit_Real();
 
-    Class_Complex_f32 Unit_Imaginary();
+Class_Complex_f32 Unit_Imaginary();
 
-    Class_Complex_f32 Angle_Unit(float Angle);
+Class_Complex_f32 Angle_Unit(float Angle);
 
-    Class_Complex_f32 Polar(float Modulus, float Angle);
-}
+Class_Complex_f32 Polar(float Modulus, float Angle);
+} // namespace Namespace_ALG_Complex
 
 /* Exported function declarations --------------------------------------------*/
 
@@ -272,7 +272,7 @@ inline float Class_Complex_f32::Get_Angle() const
  */
 inline Class_Matrix_f32<2, 2> Class_Complex_f32::Get_Self_Matrix() const
 {
-    Class_Matrix_f32 < 2, 2 > result;
+    Class_Matrix_f32<2, 2> result;
     result[0][0] = Data[0];
     result[0][1] = -Data[1];
     result[1][0] = Data[1];
@@ -287,7 +287,7 @@ inline Class_Matrix_f32<2, 2> Class_Complex_f32::Get_Self_Matrix() const
  */
 inline Class_Matrix_f32<2, 2> Class_Complex_f32::Get_Rotation_Matrix() const
 {
-    Class_Matrix_f32 < 2, 2 > result;
+    Class_Matrix_f32<2, 2> result;
     float modulus_square = Data[0] * Data[0] + Data[1] * Data[1];
     if (modulus_square <= Matrix_Compare_Epsilon)
     {

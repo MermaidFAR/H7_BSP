@@ -60,19 +60,19 @@ bool Class_RLS::Update(const float *features, float measurement)
     double denominator = Forgetting_Factor;
     for (uint8_t i = 0; i < Dimension; i++)
     {
-        prediction += (double)features[i] * Parameters[i];
+        prediction += (double) features[i] * Parameters[i];
         for (uint8_t j = 0; j < Dimension; j++)
         {
-            covariance_feature[i] += Covariance[i][j] * (double)features[j];
+            covariance_feature[i] += Covariance[i][j] * (double) features[j];
         }
-        denominator += (double)features[i] * covariance_feature[i];
+        denominator += (double) features[i] * covariance_feature[i];
     }
     if (!isfinite(denominator) || denominator <= 0.0)
     {
         return false;
     }
 
-    const double correction = ((double)measurement - prediction) / denominator;
+    const double correction = ((double) measurement - prediction) / denominator;
     const double inverse_forgetting = 1.0 / Forgetting_Factor;
     for (uint8_t i = 0; i < Dimension; i++)
     {
@@ -91,7 +91,7 @@ bool Class_RLS::Update(const float *features, float measurement)
     // 候选状态完整校验后再提交；参数必须能由 float 接口返回。
     for (uint8_t i = 0; i < Dimension; i++)
     {
-        if (!(fabs(new_parameters[i]) <= (double)FLT_MAX) || new_covariance[i][i] <= 0.0)
+        if (!(fabs(new_parameters[i]) <= (double) FLT_MAX) || new_covariance[i][i] <= 0.0)
         {
             return false;
         }
@@ -140,7 +140,7 @@ bool Class_RLS::Get_Parameters(float *out, uint8_t capacity) const
     }
     for (uint8_t i = 0; i < Dimension; i++)
     {
-        out[i] = (float)Parameters[i];
+        out[i] = (float) Parameters[i];
     }
     return (true);
 }
@@ -151,7 +151,7 @@ float Class_RLS::Get_Parameter(uint8_t index) const
     {
         return (0.0f);
     }
-    return ((float)Parameters[index]);
+    return ((float) Parameters[index]);
 }
 
 uint8_t Class_RLS::Get_Dimension() const

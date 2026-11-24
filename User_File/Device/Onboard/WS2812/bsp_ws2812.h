@@ -39,7 +39,7 @@ struct Struct_WS2812_Color
  */
 class Class_WS2812
 {
-public:
+  public:
     void Init(uint8_t red = 0, uint8_t green = 0, uint8_t blue = 0);
 
     inline void Set_Red(uint8_t red);
@@ -54,7 +54,7 @@ public:
 
     void TIM_10ms_Write_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 绑定的SPI
@@ -156,12 +156,11 @@ inline void Class_WS2812::Set_RGB(uint8_t red, uint8_t green, uint8_t blue)
  */
 inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &color, float brightness)
 {
-    brightness = Basic_Math_Is_Invalid_Float(brightness) ? 0.0f :
-                 Basic_Math_Constrain(brightness, 0.0f, 1.0f);
+    brightness = Basic_Math_Is_Invalid_Float(brightness) ? 0.0f : Basic_Math_Constrain(brightness, 0.0f, 1.0f);
     const Struct_WS2812_Color scaled_color = {
-        (uint8_t)((float)color.Red * brightness),
-        (uint8_t)((float)color.Green * brightness),
-        (uint8_t)((float)color.Blue * brightness),
+        (uint8_t) ((float) color.Red * brightness),
+        (uint8_t) ((float) color.Green * brightness),
+        (uint8_t) ((float) color.Blue * brightness),
     };
     const uint32_t primask = SYS_Enter_Critical();
     Color = scaled_color;
@@ -171,10 +170,11 @@ inline void Class_WS2812::Set_Color(const Struct_WS2812_Color &color, float brig
 #endif
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback();
+    void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback();
 
 #ifdef __cplusplus
 }

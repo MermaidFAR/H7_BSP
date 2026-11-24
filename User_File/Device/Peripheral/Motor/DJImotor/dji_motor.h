@@ -58,67 +58,42 @@ enum Enum_DJIMotor_Feedback : uint8_t
 struct Struct_DJIMotor_Init_Config
 {
     FDCAN_HandleTypeDef *hfdcan; // 已初始化的 CAN 总线
-    uint8_t can_id; // 电机编号，M2006/M3508 为 1~8，GM6020 为 1~7；不是报文 ID
+    uint8_t can_id;              // 电机编号，M2006/M3508 为 1~8，GM6020 为 1~7；不是报文 ID
     Enum_DJIMotor_Type motor_type;
-    uint8_t close_loop; // 按位或组合 DJI_MOTOR_xxx_LOOP；0 表示无闭环
+    uint8_t close_loop;            // 按位或组合 DJI_MOTOR_xxx_LOOP；0 表示无闭环
     Enum_DJIMotor_Loop outer_loop; // 选择目标入口；已启用的电流环仍会执行
-    PID_InitTypeDef current_pid; // 电流原始值闭环，各启用环的 D_T 须与 Control 周期一致
-    PID_InitTypeDef speed_pid; // 速度闭环，内置反馈为输出侧 rad/s
-    PID_InitTypeDef angle_pid; // 角度闭环，内置反馈为输出侧累计 rad
+    PID_InitTypeDef current_pid;   // 电流原始值闭环，各启用环的 D_T 须与 Control 周期一致
+    PID_InitTypeDef speed_pid;     // 速度闭环，内置反馈为输出侧 rad/s
+    PID_InitTypeDef angle_pid;     // 角度闭环，内置反馈为输出侧累计 rad
     Enum_DJIMotor_Control_Mode control_mode = DJI_MOTOR_CONTROL_CURRENT;
-    float gear_ratio = 0.0f; // 转子/输出轴传动比；非正数或无效值使用型号默认值
+    float gear_ratio = 0.0f;           // 转子/输出轴传动比；非正数或无效值使用型号默认值
     uint32_t feedback_timeout_ms = 20; // 反馈超时阈值，须大于 0；Control/Send 检查时清零超时指令
-    bool reverse = false; // 同时反转内置运动反馈和输出指令，current_raw 保留报文符号
+    bool reverse = false;              // 同时反转内置运动反馈和输出指令，current_raw 保留报文符号
     Enum_DJIMotor_Feedback angle_feedback = DJI_MOTOR_FEEDBACK_MOTOR;
     Enum_DJIMotor_Feedback speed_feedback = DJI_MOTOR_FEEDBACK_MOTOR;
-    const float *external_angle = nullptr; // 外部角度反馈，rad，调用者统一零点和正方向
-    const float *external_speed = nullptr; // 外部速度反馈，rad/s，调用者统一正方向
+    const float *external_angle = nullptr;      // 外部角度反馈，rad，调用者统一零点和正方向
+    const float *external_speed = nullptr;      // 外部速度反馈，rad/s，调用者统一正方向
     const float *current_feedforward = nullptr; // 电流环目标前馈；无电流环时为最终协议指令前馈
-    const float *speed_feedforward = nullptr; // 速度环目标前馈，rad/s；未执行速度环时不使用
-};
-
-/** @brief kp/ki/kd 支持调试器修改并在 Control 时同步；其余字段用于观察。 */
-struct Struct_DJIMotor_PID_Debug
-{
-    float kp = 0.0f;
-    float ki = 0.0f;
-    float kd = 0.0f;
-    float kf = 0.0f;
-    float integral_out_max = 0.0f;
-    float out_max = 0.0f;
-    float target = 0.0f;
-    float now = 0.0f;
-    float error = 0.0f; // 最近一次 PID 计算经过死区处理后的误差
-    float integral_error = 0.0f;
-    float out = 0.0f; // PID 自身输出，未包含后级环和电机协议限幅
-    bool active = false; // 本次控制是否执行该环；停止时为 false
-};
-
-struct Struct_DJIMotor_PID_Feedback
-{
-    Struct_DJIMotor_PID_Debug current;
-    Struct_DJIMotor_PID_Debug speed;
-    Struct_DJIMotor_PID_Debug angle;
+    const float *speed_feedforward = nullptr;   // 速度环目标前馈，rad/s；未执行速度环时不使用
 };
 
 struct Struct_DJIMotor_Feedback
 {
-    uint16_t encoder = 0; // 协议原始编码器值，0~8191
-    float rotor_angle = 0.0f; // 转子侧单圈角度，rad，含方向配置
-    float rotor_total_angle = 0.0f; // 转子侧累计角度，rad
-    float rotor_speed = 0.0f; // 转子侧滤波速度，rad/s
-    float output_angle = 0.0f; // 输出侧单圈对应角度，rad
-    float output_total_angle = 0.0f; // 输出侧累计角度，rad
-    float output_speed = 0.0f; // 输出侧速度，rad/s
-    float rotor_angle_degree = 0.0f; // 转子侧单圈角度，deg
-    float rotor_total_angle_degree = 0.0f; // 转子侧累计角度，deg
-    float rotor_speed_degree_per_second = 0.0f; // 转子侧速度，deg/s
-    float output_angle_degree = 0.0f; // 输出侧单圈对应角度，deg
-    float output_total_angle_degree = 0.0f; // 输出侧累计角度，deg
+    uint16_t encoder = 0;                        // 协议原始编码器值，0~8191
+    float rotor_angle = 0.0f;                    // 转子侧单圈角度，rad，含方向配置
+    float rotor_total_angle = 0.0f;              // 转子侧累计角度，rad
+    float rotor_speed = 0.0f;                    // 转子侧滤波速度，rad/s
+    float output_angle = 0.0f;                   // 输出侧单圈对应角度，rad
+    float output_total_angle = 0.0f;             // 输出侧累计角度，rad
+    float output_speed = 0.0f;                   // 输出侧速度，rad/s
+    float rotor_angle_degree = 0.0f;             // 转子侧单圈角度，deg
+    float rotor_total_angle_degree = 0.0f;       // 转子侧累计角度，deg
+    float rotor_speed_degree_per_second = 0.0f;  // 转子侧速度，deg/s
+    float output_angle_degree = 0.0f;            // 输出侧单圈对应角度，deg
+    float output_total_angle_degree = 0.0f;      // 输出侧累计角度，deg
     float output_speed_degree_per_second = 0.0f; // 输出侧速度，deg/s
-    int16_t current_raw = 0; // 协议原始电流值，不是 A
-    uint8_t temperature = 0; // 温度，摄氏度；M2006 不提供
-    Struct_DJIMotor_PID_Feedback pid;
+    int16_t current_raw = 0;                     // 协议原始电流值，不是 A
+    uint8_t temperature = 0;                     // 温度，摄氏度；M2006 不提供
 };
 
 struct Struct_DJIMotor_Health
@@ -133,7 +108,7 @@ struct Struct_DJIMotor_Health
 
 class Class_DJIMotor
 {
-public:
+  public:
     bool Init(const Struct_DJIMotor_Init_Config &config);
     // 角度环为 rad，速度环为 rad/s；开环/电流环仍为协议控制量。
     void SetRef(float ref);
@@ -148,7 +123,7 @@ public:
     uint64_t Get_Last_Feedback_Timestamp_Us() const;
     static bool Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot);
 
-    // 接收中断更新运动反馈，Control 更新 PID 状态；整个结构不是原子快照。
+    // 运动反馈由接收中断逐项更新。
     Struct_DJIMotor_Feedback feedback;
     // 32 位 MCU 跨上下文读取时使用 Get_Last_Feedback_Timestamp_Us()。
     volatile uint64_t last_feedback_timestamp_us = 0;
@@ -158,7 +133,7 @@ public:
     Class_PID speed_pid;
     Class_PID angle_pid;
 
-protected:
+  protected:
     friend class Class_DJIMotor_Group;
     static void CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t id,
                                    uint8_t *data, uint32_t len, void *context);
@@ -166,8 +141,6 @@ protected:
     bool Check_Feedback_Timeout();
     void Clear_Command();
     bool Publish_Group();
-    void Apply_PID_Debug_Gains();
-    void Update_PID_Debug();
 
     FDCAN_HandleTypeDef *hfdcan = nullptr;
     uint32_t rx_id = 0;
@@ -181,7 +154,6 @@ protected:
     const float *external_speed = nullptr;
     const float *current_feedforward = nullptr;
     const float *speed_feedforward = nullptr;
-    float pid_debug_gains[3][3]{}; // current/speed/angle 上次同步的 kp/ki/kd
     float reference = 0.0f;
     float command_limit = 0.0f;
     uint64_t command_timestamp_us = 0;
@@ -202,7 +174,7 @@ protected:
  */
 class Class_DJIMotor_Group
 {
-public:
+  public:
     bool Init(Class_DJIMotor *motor1,
               Class_DJIMotor *motor2 = nullptr,
               Class_DJIMotor *motor3 = nullptr,
@@ -232,7 +204,7 @@ public:
     void Enable();
     bool Disable();
 
-protected:
+  protected:
     Class_DJIMotor *motors[4]{};
     uint8_t motor_count = 0;
     uint8_t physical_group = 0;

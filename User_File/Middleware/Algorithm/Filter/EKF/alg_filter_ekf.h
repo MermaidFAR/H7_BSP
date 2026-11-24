@@ -35,10 +35,10 @@
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
  */
-template<uint32_t State_Dimension = 2, uint32_t Input_Dimension = 1, uint32_t Measurement_Dimension = 2>
+template <uint32_t State_Dimension = 2, uint32_t Input_Dimension = 1, uint32_t Measurement_Dimension = 2>
 class Class_Filter_EKF
 {
-public:
+  public:
     // 随着系统确定的
     // 系统状态函数
     Class_Matrix_f32<State_Dimension, 1> (*Function_F)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T) = nullptr;
@@ -94,7 +94,7 @@ public:
 
     bool TIM_Update_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -133,7 +133,7 @@ protected:
  * @param vector_x 初始状态向量
  * @param matrix_u 初始输入向量
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Init(const Class_Matrix_f32<Input_Dimension, Input_Dimension> &matrix_q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &matrix_r, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_p, const Class_Matrix_f32<State_Dimension, 1> &vector_x, const Class_Matrix_f32<Input_Dimension, 1> &matrix_u)
 {
     Matrix_Q = matrix_q;
@@ -154,18 +154,11 @@ void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::
  * @param function_jacobian_f_x 系统状态函数对状态的雅可比矩阵
  * @param function_jacobian_f_w 系统状态函数对过程噪声的雅可比矩阵
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_State_Model(Class_Matrix_f32 < State_Dimension, 1 > (*function_f)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X,
-const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, 
-float D_T
-)
-,
-Class_Matrix_f32<State_Dimension, State_Dimension> (*function_jacobian_f_x)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T), Class_Matrix_f32<State_Dimension, Input_Dimension>(*function_jacobian_f_w)(
-const Class_Matrix_f32<State_Dimension, 1> &Vector_X, 
-const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, 
-float D_T
-)
-)
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_State_Model(Class_Matrix_f32<State_Dimension, 1> (*function_f)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X,
+                                                                                                                                                                       const Class_Matrix_f32<Input_Dimension, 1> &Vector_U,
+                                                                                                                                                                       float D_T),
+                                                                                                                    Class_Matrix_f32<State_Dimension, State_Dimension> (*function_jacobian_f_x)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T), Class_Matrix_f32<State_Dimension, Input_Dimension> (*function_jacobian_f_w)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, const Class_Matrix_f32<Input_Dimension, 1> &Vector_U, float D_T))
 {
     Function_F = function_f;
     Function_Jacobian_F_X = function_jacobian_f_x;
@@ -182,8 +175,8 @@ float D_T
  * @param function_jacobian_h_x 系统测量函数对状态的雅可比矩阵
  * @param function_jacobian_h_v 系统测量函数对测量噪声的雅可比矩阵
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
-inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_Measurement_Model(Class_Matrix_f32 < Measurement_Dimension, 1 > (*function_h)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, float D_T), Class_Matrix_f32 < Measurement_Dimension, State_Dimension > (*function_jacobian_h_x)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, float D_T), Class_Matrix_f32 < Measurement_Dimension, Measurement_Dimension > (*function_jacobian_h_v)(const Class_Matrix_f32 < State_Dimension, 1 > &Vector_X, float D_T))
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Config_Nonlinear_Measurement_Model(Class_Matrix_f32<Measurement_Dimension, 1> (*function_h)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T), Class_Matrix_f32<Measurement_Dimension, State_Dimension> (*function_jacobian_h_x)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T), Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> (*function_jacobian_h_v)(const Class_Matrix_f32<State_Dimension, 1> &Vector_X, float D_T))
 {
     Function_H = function_h;
     Function_Jacobian_H_X = function_jacobian_h_x;
@@ -194,7 +187,7 @@ inline void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimen
  * @brief 设置计算周期
  *
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::Set_D_T(float d_t)
 {
     D_T = d_t;
@@ -207,7 +200,7 @@ void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::TIM_Predict_PeriodElapsedCallback()
 {
     if (Function_F == nullptr || Function_Jacobian_F_X == nullptr ||
@@ -217,8 +210,8 @@ void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::
     }
 
     // 计算Jacobi矩阵
-    Class_Matrix_f32 < State_Dimension, State_Dimension > matrix_f_x = Function_Jacobian_F_X(Vector_X, Vector_U, D_T);
-    Class_Matrix_f32 < State_Dimension, Input_Dimension > matrix_f_w = Function_Jacobian_F_W(Vector_X, Vector_U, D_T);
+    Class_Matrix_f32<State_Dimension, State_Dimension> matrix_f_x = Function_Jacobian_F_X(Vector_X, Vector_U, D_T);
+    Class_Matrix_f32<State_Dimension, Input_Dimension> matrix_f_w = Function_Jacobian_F_W(Vector_X, Vector_U, D_T);
 
     // 预测状态向量
     Vector_X_Prior = Function_F(Vector_X, Vector_U, D_T);
@@ -241,7 +234,7 @@ void Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 bool Class_Filter_EKF<State_Dimension, Input_Dimension, Measurement_Dimension>::TIM_Update_PeriodElapsedCallback()
 {
     if (Function_H == nullptr || Function_Jacobian_H_X == nullptr ||

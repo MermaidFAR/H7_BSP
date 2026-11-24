@@ -6,13 +6,13 @@ ColumnLimit: 0
 
 BreakBeforeBraces: Allman
 
-PointerAlignment: Left
+PointerAlignment: Right
 
 SpaceAfterCStyleCast: true
 SpaceBeforeParens: ControlStatements
 
 SortIncludes: true
-IncludeBlocks: Regroup
+IncludeBlocks: Preserve
 
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never

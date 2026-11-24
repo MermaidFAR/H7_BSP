@@ -53,12 +53,18 @@ static Struct_SPI_Manage_Object *SPI_Get_Manage_Object(SPI_HandleTypeDef *hspi)
         return nullptr;
     }
 
-    if (hspi->Instance == SPI1) return &SPI1_Manage_Object;
-    if (hspi->Instance == SPI2) return &SPI2_Manage_Object;
-    if (hspi->Instance == SPI3) return &SPI3_Manage_Object;
-    if (hspi->Instance == SPI4) return &SPI4_Manage_Object;
-    if (hspi->Instance == SPI5) return &SPI5_Manage_Object;
-    if (hspi->Instance == SPI6) return &SPI6_Manage_Object;
+    if (hspi->Instance == SPI1)
+        return &SPI1_Manage_Object;
+    if (hspi->Instance == SPI2)
+        return &SPI2_Manage_Object;
+    if (hspi->Instance == SPI3)
+        return &SPI3_Manage_Object;
+    if (hspi->Instance == SPI4)
+        return &SPI4_Manage_Object;
+    if (hspi->Instance == SPI5)
+        return &SPI5_Manage_Object;
+    if (hspi->Instance == SPI6)
+        return &SPI6_Manage_Object;
     return nullptr;
 }
 
@@ -73,11 +79,11 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
     DMA_HandleTypeDef *rx_dma = hspi->hdmarx;
     DMA_HandleTypeDef *tx_dma = hspi->hdmatx;
     DMA_Stream_TypeDef *rx_stream = rx_dma != nullptr
-                                         ? (DMA_Stream_TypeDef *)rx_dma->Instance
-                                         : nullptr;
+                                        ? (DMA_Stream_TypeDef *) rx_dma->Instance
+                                        : nullptr;
     DMA_Stream_TypeDef *tx_stream = tx_dma != nullptr
-                                         ? (DMA_Stream_TypeDef *)tx_dma->Instance
-                                         : nullptr;
+                                        ? (DMA_Stream_TypeDef *) tx_dma->Instance
+                                        : nullptr;
     const uint32_t next_capture_count = SPI2_Timeout_Snapshot.Capture_Count + 1U;
 
     uint8_t pending_bits = 0U;
@@ -91,7 +97,7 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
     active_bits |= NVIC_GetActive(DMA1_Stream1_IRQn) != 0U ? 0x04U : 0U;
 
     SPI2_Timeout_Snapshot.Timestamp_Low32_Us =
-        (uint32_t)SYS_Timestamp.Get_Now_Microsecond();
+        (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
     SPI2_Timeout_Snapshot.Elapsed_Us = Elapsed_Us;
     SPI2_Timeout_Snapshot.SPI_CR1 = hspi->Instance->CR1;
     SPI2_Timeout_Snapshot.SPI_CR2 = hspi->Instance->CR2;
@@ -114,12 +120,12 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
         manage_object != nullptr ? manage_object->Tx_Buffer_Length : 0U;
     SPI2_Timeout_Snapshot.Manager_Rx_Length =
         manage_object != nullptr ? manage_object->Rx_Buffer_Length : 0U;
-    SPI2_Timeout_Snapshot.HAL_State = (uint8_t)hspi->State;
-    SPI2_Timeout_Snapshot.HAL_Lock = (uint8_t)hspi->Lock;
+    SPI2_Timeout_Snapshot.HAL_State = (uint8_t) hspi->State;
+    SPI2_Timeout_Snapshot.HAL_Lock = (uint8_t) hspi->Lock;
     SPI2_Timeout_Snapshot.RX_DMA_State =
-        rx_dma != nullptr ? (uint8_t)rx_dma->State : 0U;
+        rx_dma != nullptr ? (uint8_t) rx_dma->State : 0U;
     SPI2_Timeout_Snapshot.TX_DMA_State =
-        tx_dma != nullptr ? (uint8_t)tx_dma->State : 0U;
+        tx_dma != nullptr ? (uint8_t) tx_dma->State : 0U;
     SPI2_Timeout_Snapshot.Transaction_Active =
         manage_object != nullptr && manage_object->Transaction_Active ? 1U : 0U;
     SPI2_Timeout_Snapshot.NVIC_Pending_Bits = pending_bits;
@@ -234,22 +240,22 @@ uint8_t SPI_Transmit_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, uint16_t
         if (status != HAL_OK)
         {
             manage_object->Start_Failure_Count++;
-            manage_object->Last_Start_Failure_Status = (uint8_t)status;
+            manage_object->Last_Start_Failure_Status = (uint8_t) status;
         }
         SPI_Deactivate_Chip_Select(manage_object);
         SPI_Release_Transaction(manage_object);
-        return (uint8_t)status;
+        return (uint8_t) status;
     }
 
     const HAL_StatusTypeDef status = HAL_SPI_Transmit_DMA(hspi, manage_object->Tx_Buffer, Tx_Length);
     if (status != HAL_OK)
     {
         manage_object->Start_Failure_Count++;
-        manage_object->Last_Start_Failure_Status = (uint8_t)status;
+        manage_object->Last_Start_Failure_Status = (uint8_t) status;
         SPI_Deactivate_Chip_Select(manage_object);
         SPI_Release_Transaction(manage_object);
     }
-    return (uint8_t)status;
+    return (uint8_t) status;
 }
 
 /**
@@ -269,7 +275,7 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
                                   uint16_t Tx_Length, uint16_t Rx_Length, bool Blocking)
 {
     Struct_SPI_Manage_Object *manage_object = SPI_Get_Manage_Object(hspi);
-    const uint32_t transfer_length = (uint32_t)Tx_Length + Rx_Length;
+    const uint32_t transfer_length = (uint32_t) Tx_Length + Rx_Length;
     if (manage_object == nullptr || Tx_Data == nullptr || Tx_Length == 0 || Rx_Length == 0 ||
         transfer_length > SPI_BUFFER_SIZE)
     {
@@ -298,11 +304,11 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
     {
         const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(
             hspi, manage_object->Tx_Buffer, manage_object->Rx_Buffer,
-            (uint16_t)transfer_length, 1);
+            (uint16_t) transfer_length, 1);
         if (status != HAL_OK)
         {
             manage_object->Start_Failure_Count++;
-            manage_object->Last_Start_Failure_Status = (uint8_t)status;
+            manage_object->Last_Start_Failure_Status = (uint8_t) status;
         }
         SPI_Deactivate_Chip_Select(manage_object);
         if (status == HAL_OK)
@@ -316,19 +322,19 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
             }
         }
         SPI_Release_Transaction(manage_object);
-        return (uint8_t)status;
+        return (uint8_t) status;
     }
 
     const HAL_StatusTypeDef status = HAL_SPI_TransmitReceive_DMA(
-        hspi, manage_object->Tx_Buffer, manage_object->Rx_Buffer, (uint16_t)transfer_length);
+        hspi, manage_object->Tx_Buffer, manage_object->Rx_Buffer, (uint16_t) transfer_length);
     if (status != HAL_OK)
     {
         manage_object->Start_Failure_Count++;
-        manage_object->Last_Start_Failure_Status = (uint8_t)status;
+        manage_object->Last_Start_Failure_Status = (uint8_t) status;
         SPI_Deactivate_Chip_Select(manage_object);
         SPI_Release_Transaction(manage_object);
     }
-    return (uint8_t)status;
+    return (uint8_t) status;
 }
 
 /**

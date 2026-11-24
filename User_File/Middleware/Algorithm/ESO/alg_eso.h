@@ -42,18 +42,33 @@
  */
 class Class_ESO_First_Order
 {
-public:
+  public:
     bool Init(float b0, float omega_o, float d_t = 0.001f);
     void Reset(float initial_y = 0.0f);
-    void Set_Now(float now_y) { Now = now_y; }
-    void Set_Input(float last_u) { Input = last_u; }
+    void Set_Now(float now_y)
+    {
+        Now = now_y;
+    }
+    void Set_Input(float last_u)
+    {
+        Input = last_u;
+    }
     void TIM_Calculate_PeriodElapsedCallback();
 
-    float Get_State() const { return Z1; }
-    float Get_Disturbance() const { return Z2; }
-    float Get_Compensation() const { return Compensation; }
+    float Get_State() const
+    {
+        return Z1;
+    }
+    float Get_Disturbance() const
+    {
+        return Z2;
+    }
+    float Get_Compensation() const
+    {
+        return Compensation;
+    }
 
-private:
+  private:
     float B0 = 0.0f;
     float B0_Inverse = 0.0f;
     float D_T = 0.0f;
@@ -95,22 +110,40 @@ private:
  */
 class Class_ESO_Second_Order
 {
-public:
+  public:
     bool Init(float b0, float omega_o, float d_t = 0.001f);
     void Reset(float initial_y = 0.0f, float initial_dy = 0.0f);
-    void Set_Now(float now_y) { Now = now_y; }
-    void Set_Input(float last_u) { Input = last_u; }
+    void Set_Now(float now_y)
+    {
+        Now = now_y;
+    }
+    void Set_Input(float last_u)
+    {
+        Input = last_u;
+    }
     void TIM_Calculate_PeriodElapsedCallback();
 
     bool Try_Reset(float initial_y, float initial_dy);
     bool Update(float measurement, float applied_input);
 
-    float Get_Position() const { return Z1; }
-    float Get_Velocity() const { return Z2; }
-    float Get_Disturbance() const { return Z3; }
-    float Get_Compensation() const { return Compensation; }
+    float Get_Position() const
+    {
+        return Z1;
+    }
+    float Get_Velocity() const
+    {
+        return Z2;
+    }
+    float Get_Disturbance() const
+    {
+        return Z3;
+    }
+    float Get_Compensation() const
+    {
+        return Compensation;
+    }
 
-private:
+  private:
     float B0 = 0.0f;
     float B0_Inverse = 0.0f;
     float D_T = 0.0f;

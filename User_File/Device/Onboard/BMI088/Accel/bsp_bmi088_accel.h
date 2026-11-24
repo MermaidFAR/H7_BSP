@@ -14,13 +14,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "bsp_bmi088_accel_register.h"
-#include "sys_critical.h"
-#include "bsp_power.h"
-#include "alg_pid.h"
-#include "bsp_spi.h"
 #include "alg_matrix.h"
+#include "alg_pid.h"
+#include "bsp_bmi088_accel_register.h"
+#include "bsp_power.h"
+#include "bsp_spi.h"
 #include "stm32h7xx_hal.h"
+#include "sys_critical.h"
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ struct Struct_BMI088_Accel_Temperature_State
  */
 class Class_BMI088_Accel
 {
-public:
+  public:
     // 温控PID
     Class_PID PID_Temperature;
 
@@ -96,7 +96,7 @@ public:
 
     void TIM_128ms_Heater_PID_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 绑定的SPI
@@ -166,7 +166,8 @@ protected:
     // 当前加速度是否有效
     bool Valid_Flag = true;
     // 当前加速度
-    Class_Matrix_f32<3, 1> Vector_Raw_Accel;;
+    Class_Matrix_f32<3, 1> Vector_Raw_Accel;
+    ;
 
     // 写变量
 
@@ -188,7 +189,7 @@ protected:
 
     void Write_Multi_Register(uint8_t Register_Address, const uint8_t *Tx_Data_Buffer, uint32_t Tx_Length) const;
 
-private:
+  private:
     bool Check_Chip_Id(uint8_t Max_Attempts) const;
 };
 

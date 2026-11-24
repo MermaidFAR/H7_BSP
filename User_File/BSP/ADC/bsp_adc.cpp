@@ -34,10 +34,14 @@ Struct_ADC_Manage_Object ADC3_Manage_Object = {};
 
 static Struct_ADC_Manage_Object *ADC_Get_Manage_Object(ADC_HandleTypeDef *hadc)
 {
-    if (hadc == nullptr) return nullptr;
-    if (hadc->Instance == ADC1) return &ADC1_Manage_Object;
-    if (hadc->Instance == ADC2) return &ADC2_Manage_Object;
-    if (hadc->Instance == ADC3) return &ADC3_Manage_Object;
+    if (hadc == nullptr)
+        return nullptr;
+    if (hadc->Instance == ADC1)
+        return &ADC1_Manage_Object;
+    if (hadc->Instance == ADC2)
+        return &ADC2_Manage_Object;
+    if (hadc->Instance == ADC3)
+        return &ADC3_Manage_Object;
     return nullptr;
 }
 
@@ -50,7 +54,8 @@ static Struct_ADC_Manage_Object *ADC_Get_Manage_Object(ADC_HandleTypeDef *hadc)
 bool ADC_Init(ADC_HandleTypeDef *hadc, uint16_t Sample_Number)
 {
     Struct_ADC_Manage_Object *manage = ADC_Get_Manage_Object(hadc);
-    if (manage == nullptr) return false;
+    if (manage == nullptr)
+        return false;
     memset(manage, 0, sizeof(*manage));
     if (Sample_Number == 0 || Sample_Number > ADC_BUFFER_SIZE ||
         HAL_ADCEx_Calibration_Start(hadc, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
@@ -58,7 +63,7 @@ bool ADC_Init(ADC_HandleTypeDef *hadc, uint16_t Sample_Number)
         return false;
     }
     manage->ADC_Handler = hadc;
-    return HAL_ADC_Start_DMA(hadc, (uint32_t *)manage->ADC_Data, Sample_Number) == HAL_OK;
+    return HAL_ADC_Start_DMA(hadc, (uint32_t *) manage->ADC_Data, Sample_Number) == HAL_OK;
 }
 
 extern "C" void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
@@ -83,7 +88,8 @@ extern "C" void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 void ADC_TIM_10ms_PeriodElapsedCallback(void)
 {
     ADC_HandleTypeDef *hadc = ADC1_Manage_Object.ADC_Handler;
-    if (hadc == nullptr) return;
+    if (hadc == nullptr)
+        return;
     if (HAL_ADC_GetError(hadc) != HAL_ADC_ERROR_NONE ||
         __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_OVR) != RESET ||
         HAL_DMA_GetState(hadc->DMA_Handle) != HAL_DMA_STATE_BUSY)
@@ -93,7 +99,7 @@ void ADC_TIM_10ms_PeriodElapsedCallback(void)
         {
             // HAL Start_DMA 不清除这些错误状态，残留时完成回调仍会转入错误分支。
             CLEAR_BIT(hadc->State, HAL_ADC_STATE_ERROR_INTERNAL | HAL_ADC_STATE_ERROR_DMA);
-            HAL_ADC_Start_DMA(hadc, (uint32_t *)ADC1_Manage_Object.ADC_Data, 1);
+            HAL_ADC_Start_DMA(hadc, (uint32_t *) ADC1_Manage_Object.ADC_Data, 1);
         }
         return;
     }

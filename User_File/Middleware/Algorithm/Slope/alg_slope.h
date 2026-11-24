@@ -39,7 +39,7 @@ enum Enum_Slope_First
  */
 class Class_Slope
 {
-public:
+  public:
     void Init(float increase_value, float decrease_value, Enum_Slope_First slope_first = Slope_First_REAL);
 
     inline float Get_Out() const;
@@ -54,7 +54,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量

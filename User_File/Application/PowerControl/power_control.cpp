@@ -92,10 +92,10 @@ bool PowerControl::TIM_Calculate_PeriodElapsedCallback()
         }
     }
 
-    const double a = (double)Copper_Coefficient * torque_square_sum;
+    const double a = (double) Copper_Coefficient * torque_square_sum;
     const double b = motoring_power;
-    const double baseline = (double)Config.static_power_w + (double)Friction_Coefficient * speed_sum;
-    const double available = fmax(0.0, (double)Input.power_limit_w - (double)Config.reserve_power_w);
+    const double baseline = (double) Config.static_power_w + (double) Friction_Coefficient * speed_sum;
+    const double available = fmax(0.0, (double) Input.power_limit_w - (double) Config.reserve_power_w);
     double scale = 1.0;
     if (a + b + baseline > available)
     {
@@ -118,13 +118,13 @@ bool PowerControl::TIM_Calculate_PeriodElapsedCallback()
     scale = fmax(0.0, fmin(1.0, scale));
 
     PowerControlOutput_t next = {};
-    next.scale = (float)scale;
+    next.scale = (float) scale;
     next.limited = scale < 1.0;
     next.budget_below_baseline = baseline > available;
-    next.estimated_power_w = (float)fmin((double)FLT_MAX, baseline + b * scale + a * scale * scale);
+    next.estimated_power_w = (float) fmin((double) FLT_MAX, baseline + b * scale + a * scale * scale);
     for (uint8_t i = 0; i < Config.motor_count; i++)
     {
-        next.torque_nm[i] = (float)((double)Input.desired_torque_nm[i] * scale);
+        next.torque_nm[i] = (float) ((double) Input.desired_torque_nm[i] * scale);
     }
     Output = next;
     return true;
@@ -166,16 +166,16 @@ bool PowerControl::Update_Identification(float measured_power_w,
         torque_square_sum += torque * torque;
     }
 
-    const double residual = (double)measured_power_w - (double)Config.static_power_w - mechanical_power;
-    if (residual < 0.0 || !isfinite(residual) || residual > (double)FLT_MAX ||
-        !isfinite(speed_sum) || speed_sum > (double)FLT_MAX ||
-        !isfinite(torque_square_sum) || torque_square_sum > (double)FLT_MAX ||
+    const double residual = (double) measured_power_w - (double) Config.static_power_w - mechanical_power;
+    if (residual < 0.0 || !isfinite(residual) || residual > (double) FLT_MAX ||
+        !isfinite(speed_sum) || speed_sum > (double) FLT_MAX ||
+        !isfinite(torque_square_sum) || torque_square_sum > (double) FLT_MAX ||
         speed_sum + torque_square_sum <= 0.0)
     {
         return false;
     }
-    const float features[2] = {(float)speed_sum, (float)torque_square_sum};
-    if (!Estimator.Update(features, (float)residual))
+    const float features[2] = {(float) speed_sum, (float) torque_square_sum};
+    if (!Estimator.Update(features, (float) residual))
     {
         return false;
     }

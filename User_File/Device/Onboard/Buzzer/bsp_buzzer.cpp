@@ -218,8 +218,8 @@ void Class_Buzzer::Apply_PWM()
         arr = Frequency <= timer_hz / arr_max ? arr_max : timer_hz / Frequency;
     }
     const float ccr = arr * Loudness * 0.5f;
-    __HAL_TIM_SetAutoreload(htim, (uint32_t)arr);
-    __HAL_TIM_SetCompare(htim, TIM_Channel, (uint32_t)ccr);
+    __HAL_TIM_SetAutoreload(htim, (uint32_t) arr);
+    __HAL_TIM_SetCompare(htim, TIM_Channel, (uint32_t) ccr);
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

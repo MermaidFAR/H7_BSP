@@ -1,6 +1,5 @@
 #include "sys_init.h"
 
-#include "com.h"
 #include "SEGGER_SYSVIEW.h"
 #include "bsp_adc.h"
 #include "bsp_bmi088.h"
@@ -14,8 +13,8 @@
 #include "bsp_w25q64jv.h"
 #include "bsp_ws2812.h"
 #include "callback.h"
+#include "com.h"
 #include "erictool.h"
-#include "sys_debug.h"
 #include "sys_imu.h"
 #include "sys_timestamp.h"
 #include "usart.h"
@@ -78,6 +77,6 @@ extern "C" void System_Init(void)
     {
         BSP_BMI088.BMI088_Gyro.Start_FIFO_Acquisition();
     }
-    
+
     init_finished = true;
 }

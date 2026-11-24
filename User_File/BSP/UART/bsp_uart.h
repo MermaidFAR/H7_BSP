@@ -17,9 +17,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "stm32h7xx_hal.h"
 #include "sys_timestamp.h"
 #include "usart.h"
-#include "stm32h7xx_hal.h"
 #include <string.h>
 
 /* Exported macros -----------------------------------------------------------*/

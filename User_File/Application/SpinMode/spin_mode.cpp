@@ -88,7 +88,7 @@ SpinOutput_t SpinMode::Get_Output() const
 
 SpinMode_e SpinMode::Get_Spin_Mode() const
 {
-    return (SpinMode_e)SpinMode_FSM.Get_Now_Status_Serial();
+    return (SpinMode_e) SpinMode_FSM.Get_Now_Status_Serial();
 }
 
 float SpinMode::Get_WorldTarget() const

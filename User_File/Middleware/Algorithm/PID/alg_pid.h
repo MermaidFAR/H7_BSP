@@ -21,7 +21,6 @@
 
 /* Exported types ------------------------------------------------------------*/
 
-
 /**
  * @brief 微分先行：对测量值微分以避开目标阶跃；与可选 D 低通独立。
  *
@@ -61,7 +60,7 @@ typedef struct
  */
 class Class_PID
 {
-public:
+  public:
     // D_Filter_Cutoff: Hz，0 关闭；非正/非有限值按关闭处理，上限由 IIR 限为采样频率的一半。
     // 首次启用或切换 D_First 时滤波状态从 0 开始；持续启用且 D_First 不变时保留滤波值。
     // 低通不对齐 Pre_Now/Pre_Error，不能替代停机恢复时的历史对齐。
@@ -125,7 +124,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // PID计时器周期, s
@@ -181,7 +180,7 @@ protected:
     float I_Separate_Threshold = 0.0f;
 
     // 目标值
-    float Target = 0.0f; 
+    float Target = 0.0f;
     // 当前值
     float Now = 0.0f;
 
@@ -337,29 +336,65 @@ inline void Class_PID::Set_Integral_Error(float integral_error)
     Integral_Error = integral_error;
 }
 
-inline float Class_PID::Get_K_P() const { return K_P; }
+inline float Class_PID::Get_K_P() const
+{
+    return K_P;
+}
 
-inline float Class_PID::Get_K_I() const { return K_I; }
+inline float Class_PID::Get_K_I() const
+{
+    return K_I;
+}
 
-inline float Class_PID::Get_K_D() const { return K_D; }
+inline float Class_PID::Get_K_D() const
+{
+    return K_D;
+}
 
-inline float Class_PID::Get_K_F() const { return K_F; }
+inline float Class_PID::Get_K_F() const
+{
+    return K_F;
+}
 
-inline float Class_PID::Get_I_Out_Max() const { return I_Out_Max; }
+inline float Class_PID::Get_I_Out_Max() const
+{
+    return I_Out_Max;
+}
 
-inline float Class_PID::Get_Out_Max() const { return Out_Max; }
+inline float Class_PID::Get_Out_Max() const
+{
+    return Out_Max;
+}
 
-inline float Class_PID::Get_I_Variable_Speed_A() const { return I_Variable_Speed_A; }
+inline float Class_PID::Get_I_Variable_Speed_A() const
+{
+    return I_Variable_Speed_A;
+}
 
-inline float Class_PID::Get_I_Variable_Speed_B() const { return I_Variable_Speed_B; }
+inline float Class_PID::Get_I_Variable_Speed_B() const
+{
+    return I_Variable_Speed_B;
+}
 
-inline float Class_PID::Get_I_Separate_Threshold() const { return I_Separate_Threshold; }
+inline float Class_PID::Get_I_Separate_Threshold() const
+{
+    return I_Separate_Threshold;
+}
 
-inline float Class_PID::Get_D_T() const { return D_T; }
+inline float Class_PID::Get_D_T() const
+{
+    return D_T;
+}
 
-inline Enum_PID_D_First Class_PID::Get_D_First() const { return D_First; }
+inline Enum_PID_D_First Class_PID::Get_D_First() const
+{
+    return D_First;
+}
 
-inline float Class_PID::Get_D_Filter_Cutoff() const { return D_Filter_Cutoff; }
+inline float Class_PID::Get_D_Filter_Cutoff() const
+{
+    return D_Filter_Cutoff;
+}
 
 #endif
 

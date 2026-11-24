@@ -44,7 +44,8 @@
 void Class_PID::Init(float k_p, float k_i, float k_d, float k_f, float i_out_max, float out_max, float d_t, float dead_zone, float i_variable_speed_a, float i_variable_speed_b, float i_separate_threshold, Enum_PID_D_First d_first, float d_filter_cutoff)
 {
     const float d_filter_out = D_Filter_Cutoff > 0.0f && D_First == d_first
-                                   ? D_Filter.Get_Out() : 0.0f;
+                                   ? D_Filter.Get_Out()
+                                   : 0.0f;
     K_P = k_p;
     K_I = k_i;
     K_D = k_d;
@@ -58,7 +59,8 @@ void Class_PID::Init(float k_p, float k_i, float k_d, float k_f, float i_out_max
     I_Separate_Threshold = i_separate_threshold;
     D_First = d_first;
     D_Filter_Cutoff = !Basic_Math_Is_Invalid_Float(d_filter_cutoff) && d_filter_cutoff > 0.0f
-                          ? d_filter_cutoff : 0.0f;
+                          ? d_filter_cutoff
+                          : 0.0f;
     if (D_Filter_Cutoff > 0.0f)
     {
         D_Filter.Init(D_Filter_Cutoff, 1.0f / D_T);
@@ -167,7 +169,8 @@ void Class_PID::TIM_Calculate_PeriodElapsedCallback()
     // 计算d项
 
     const float d_delta = D_First == PID_D_First_DISABLE
-                              ? error - Pre_Error : Pre_Now - Now;
+                              ? error - Pre_Error
+                              : Pre_Now - Now;
     const bool filter_d = D_Filter_Cutoff > 0.0f;
     Class_Filter_IIR_First_Order next_filter;
     float d_out;

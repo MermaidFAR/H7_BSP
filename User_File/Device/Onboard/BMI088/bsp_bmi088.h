@@ -10,12 +10,13 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "Accel/bsp_bmi088_accel.h"
-#include "sys_critical.h"
 #include "Gyro/bsp_bmi088_gyro.h"
 #include "alg_filter_vqf.h"
 #include "alg_quaternion.h"
+#include "sys_critical.h"
 
-extern "C" {
+extern "C"
+{
 #include "cmsis_os2.h"
 }
 
@@ -51,9 +52,30 @@ struct Struct_BMI088_VQF_Config
     float Accel_D_T = 0.004f;
 };
 
+struct Struct_BMI088_Health_Snapshot
+{
+    uint64_t Published_At_Us;
+    uint32_t SPI2_Error_Counter;
+    uint32_t SPI_Transfer_Timeout_Counter;
+    uint32_t SPI_Recovery_Counter;
+    uint32_t Gyro_Queue_Drop_Count;
+    uint32_t Gyro_FIFO_Overrun_Count;
+    uint32_t Gyro_Outlier_Counter;
+    uint32_t Accel_Update_Rejected_Counter;
+    uint32_t Timestamp_Anomaly_Counter;
+    uint32_t VQF_Reset_Counter;
+};
+
+struct Struct_BMI088_Euler_Telemetry
+{
+    volatile float Yaw_rad;
+    volatile float Pitch_rad;
+    volatile float Roll_rad;
+};
+
 class Class_BMI088
 {
-public:
+  public:
     Class_BMI088_Accel BMI088_Accel;
     Class_BMI088_Gyro BMI088_Gyro;
 
@@ -64,8 +86,18 @@ public:
      */
     void Set_VQF_Config(const Struct_BMI088_VQF_Config &config);
     bool Init();
-    bool Is_Initialized() const { return Init_Finished_Flag; }
+    bool Is_Initialized() const
+    {
+        return Init_Finished_Flag;
+    }
     void Calculate();
+    void Publish_Health_And_Telemetry();
+    // 同时读取最近发布的诊断和最新样本时间，两者都就绪时返回 true。
+    bool Get_Health_Snapshot(Struct_BMI088_Health_Snapshot &snapshot, uint64_t &sample_us) const;
+    const Struct_BMI088_Euler_Telemetry &Get_Euler_Telemetry() const
+    {
+        return Euler_Telemetry;
+    }
 
     void SPI_RxCpltCallback();
     void EXTI_Flag_Callback(uint16_t gpio_pin);
@@ -109,14 +141,15 @@ public:
     inline Class_Matrix_f32<2, 1> Get_VQF_Relative_Rest_Deviation() const;
     inline float Get_VQF_Accel_Correction_Rate() const;
 
-protected:
-    template<typename Data_Type>
+  protected:
+    template <typename Data_Type>
     inline Data_Type Get_Atomic_Copy(const Data_Type &source) const;
 
     Struct_SPI_Manage_Object *SPI_Manage_Object = nullptr;
 
     static constexpr uint32_t TRANSFERING_TIMEOUT = 1000U;
     static constexpr float D_T_TIMEOUT_THRESHOLD = 0.1f;
+    static constexpr uint32_t PUBLICATION_INTERVAL_US = 5000;
 
     const float ACCEL_AFFINE_DATA[9] = {
         0.9813826498493404f, 0.17232440504057203f, 0.027984325323801115f,
@@ -133,6 +166,9 @@ protected:
     Class_Filter_VQF Filter_VQF;
     uint32_t VQF_Reset_Counter = 0U;
     uint64_t VQF_Pre_Timestamp = 0U;
+    Struct_BMI088_Health_Snapshot Health_Snapshot = {};
+    bool Health_Snapshot_Valid = false;
+    Struct_BMI088_Euler_Telemetry Euler_Telemetry = {};
 
     enum Enum_BMI088_Sensor : uint8_t
     {
@@ -207,7 +243,7 @@ extern Class_BMI088 BSP_BMI088;
 
 /* Exported functions --------------------------------------------------------*/
 
-template<typename Data_Type>
+template <typename Data_Type>
 inline Data_Type Class_BMI088::Get_Atomic_Copy(const Data_Type &source) const
 {
     const uint32_t primask = SYS_Enter_Critical();
@@ -389,11 +425,12 @@ inline float Class_BMI088::Get_VQF_Accel_Correction_Rate() const
 }
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void BMI088_TIM_128ms_Calculate_PeriodElapsedCallback();
-void BMI088_TIM_1ms_Service_PeriodElapsedCallback();
+    void BMI088_TIM_128ms_Calculate_PeriodElapsedCallback();
+    void BMI088_TIM_1ms_Service_PeriodElapsedCallback();
 
 #ifdef __cplusplus
 }

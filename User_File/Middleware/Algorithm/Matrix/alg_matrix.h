@@ -26,10 +26,10 @@ extern float Matrix_Compare_Epsilon;
  * @brief Reusable, 矩阵运算
  *
  */
-template<int row, int column>
+template <int row, int column>
 class Class_Matrix_f32
 {
-public:
+  public:
     // 矩阵数据区域
     float Data[row * column] = {0.0f};
 
@@ -164,7 +164,7 @@ public:
         return (result);
     }
 
-    template<int tmp>
+    template <int tmp>
     inline Class_Matrix_f32<row, tmp> operator*(const Class_Matrix_f32<column, tmp> &Matrix) const
     {
         Class_Matrix_f32<row, tmp> result;
@@ -248,7 +248,7 @@ public:
         return (*this);
     }
 
-    inline Class_Matrix_f32<row, column>& operator/=(float Value)
+    inline Class_Matrix_f32<row, column> &operator/=(float Value)
     {
         // 除零用 NaN 显式传播；非零小数仍按实际值参与运算。
         const float divisor = Value == 0.0f ? NAN : Value;
@@ -259,7 +259,7 @@ public:
         return (*this);
     }
 
-    template<int tmp_row, int tmp_column>
+    template <int tmp_row, int tmp_column>
     inline bool operator==(const Class_Matrix_f32<tmp_row, tmp_column> &Matrix) const
     {
         if (row == tmp_row && column == tmp_column)
@@ -279,7 +279,7 @@ public:
         }
     }
 
-    template<int tmp_row, int tmp_column>
+    template <int tmp_row, int tmp_column>
     inline bool operator!=(const Class_Matrix_f32<tmp_row, tmp_column> &Matrix) const
     {
         return (!(*this == Matrix));
@@ -295,7 +295,7 @@ public:
 
     // 方阵特有
 
-    template<int tmp_row = row, int tmp_column = column>
+    template <int tmp_row = row, int tmp_column = column>
     inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> &operator*=(const Class_Matrix_f32<tmp_row, tmp_row> &Matrix)
     {
         Class_Matrix_f32<tmp_row, tmp_row> result;
@@ -317,28 +317,28 @@ public:
     }
 
     // 按原始行尺度选择主元；失败返回零矩阵，调用者应检查可选的 success。
-    template<int tmp_row = row, int tmp_column = column>
+    template <int tmp_row = row, int tmp_column = column>
     inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> Get_Inverse(bool *success = NULL) const;
 
     // 列向量特有
 
-    template<int tmp_row = row, int tmp_column = column>
+    template <int tmp_row = row, int tmp_column = column>
     inline std::enable_if_t<tmp_column == 1, float> Get_Modulus() const;
 
-    template<int tmp_row = row, int tmp_column = column>
+    template <int tmp_row = row, int tmp_column = column>
     inline std::enable_if_t<tmp_column == 1, Class_Matrix_f32<tmp_row, 1>> Get_Normalization() const;
 
     // 三维列向量特有
 
-    template<int tmp_row = row, int tmp_column = column>
+    template <int tmp_row = row, int tmp_column = column>
     inline std::enable_if_t<tmp_row == 3 && tmp_column == 1, Class_Matrix_f32<3, 3>> Get_Cross_Matrix() const;
 
     // 单个元素特有
 
-    template<int tmp_row = row, int tmp_column = column>
+    template <int tmp_row = row, int tmp_column = column>
     inline std::enable_if_t<tmp_row == 1 && tmp_column == 1, float> Get_Single_Value() const;
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -358,38 +358,38 @@ protected:
 
 namespace Namespace_ALG_Matrix
 {
-    Class_Matrix_f32<2, 1> Axis_X_2d();
+Class_Matrix_f32<2, 1> Axis_X_2d();
 
-    Class_Matrix_f32<2, 1> Axis_Y_2d();
+Class_Matrix_f32<2, 1> Axis_Y_2d();
 
-    Class_Matrix_f32<3, 1> Axis_X_3d();
+Class_Matrix_f32<3, 1> Axis_X_3d();
 
-    Class_Matrix_f32<3, 1> Axis_Y_3d();
+Class_Matrix_f32<3, 1> Axis_Y_3d();
 
-    Class_Matrix_f32<3, 1> Axis_Z_3d();
+Class_Matrix_f32<3, 1> Axis_Z_3d();
 
-    Class_Matrix_f32<2, 2> From_Angle(float Angle);
+Class_Matrix_f32<2, 2> From_Angle(float Angle);
 
-    Class_Matrix_f32<3, 3> From_Axis_Angle(float Angle, const Class_Matrix_f32<3, 1> &Axis);
+Class_Matrix_f32<3, 3> From_Axis_Angle(float Angle, const Class_Matrix_f32<3, 1> &Axis);
 
-    Class_Matrix_f32<3, 3> From_Euler_Angle(float Yaw, float Pitch, float Roll);
+Class_Matrix_f32<3, 3> From_Euler_Angle(float Yaw, float Pitch, float Roll);
 
-    template<int row, int column>
-    Class_Matrix_f32<row, column> Zero();
+template <int row, int column>
+Class_Matrix_f32<row, column> Zero();
 
-    template<int row, int column>
-    Class_Matrix_f32<row, column> Identity();
+template <int row, int column>
+Class_Matrix_f32<row, column> Identity();
 
-    template<int row, int column>
-    Class_Matrix_f32<row, column> Constant(float Value);
+template <int row, int column>
+Class_Matrix_f32<row, column> Constant(float Value);
 
-    template<int row>
-    float Operator_Dot(const Class_Matrix_f32<row, 1> &Vector_1, const Class_Matrix_f32<row, 1> &Vector_2);
+template <int row>
+float Operator_Dot(const Class_Matrix_f32<row, 1> &Vector_1, const Class_Matrix_f32<row, 1> &Vector_2);
 
-    Class_Matrix_f32<3, 1> Operator_Cross_3d(const Class_Matrix_f32<3, 1> &Vector_1, const Class_Matrix_f32<3, 1> &Vector_2);
+Class_Matrix_f32<3, 1> Operator_Cross_3d(const Class_Matrix_f32<3, 1> &Vector_1, const Class_Matrix_f32<3, 1> &Vector_2);
 
-    float Operator_Cross_2d(const Class_Matrix_f32<2, 1> &Vector_1, const Class_Matrix_f32<2, 1> &Vector_2);
-}
+float Operator_Cross_2d(const Class_Matrix_f32<2, 1> &Vector_1, const Class_Matrix_f32<2, 1> &Vector_2);
+} // namespace Namespace_ALG_Matrix
 
 /* Exported function declarations --------------------------------------------*/
 
@@ -400,7 +400,7 @@ namespace Namespace_ALG_Matrix
  * @tparam column 列数
  * @return Class_Matrix_f32<column, row> 转置矩阵
  */
-template<int row, int column>
+template <int row, int column>
 inline Class_Matrix_f32<column, row> Class_Matrix_f32<row, column>::Get_Transpose() const
 {
     Class_Matrix_f32<column, row> result;
@@ -423,7 +423,7 @@ inline Class_Matrix_f32<column, row> Class_Matrix_f32<row, column>::Get_Transpos
  * @tparam column 列数
  * @return float 矩阵迹
  */
-template<int row, int column>
+template <int row, int column>
 inline float Class_Matrix_f32<row, column>::Get_Trace() const
 {
     float result = 0.0f;
@@ -442,7 +442,7 @@ inline float Class_Matrix_f32<row, column>::Get_Trace() const
  * @param Row_Index 行索引
  * @return Class_Matrix_f32<row, 1> 行向量
  */
-template<int row, int column>
+template <int row, int column>
 inline Class_Matrix_f32<1, column> Class_Matrix_f32<row, column>::Get_Row(int Row_Index) const
 {
     Class_Matrix_f32<1, column> result;
@@ -460,7 +460,7 @@ inline Class_Matrix_f32<1, column> Class_Matrix_f32<row, column>::Get_Row(int Ro
  * @param Column_Index 列索引
  * @return Class_Matrix_f32<1, column> 列向量
  */
-template<int row, int column>
+template <int row, int column>
 inline Class_Matrix_f32<row, 1> Class_Matrix_f32<row, column>::Get_Column(int Column_Index) const
 {
     Class_Matrix_f32<row, 1> result;
@@ -488,8 +488,8 @@ inline Class_Matrix_f32<row, 1> Class_Matrix_f32<row, column>::Get_Column(int Co
  *       Matrix_Compare_Epsilon 须有限且非负；仅本函数将其作为无量纲主元阈值。
  *       零矩阵是求逆失败的占位结果; 需要区分失败时应传入__Success。
  */
-template<int row, int column>
-template<int tmp_row, int tmp_column>
+template <int row, int column>
+template <int tmp_row, int tmp_column>
 inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row>> Class_Matrix_f32<row, column>::Get_Inverse(bool *success) const
 {
     if (success != NULL)
@@ -536,11 +536,11 @@ inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row
     // 高斯消元法；以 double 比较比例，避免 float 除法及阈值乘尺度溢出/下溢。
     for (int i = 0; i < tmp_row; i++)
     {
-        double max_ratio = fabs((double)extended_matrix[i][i]) / (double)row_scale[i];
+        double max_ratio = fabs((double) extended_matrix[i][i]) / (double) row_scale[i];
         int max_index = i;
         for (int j = i + 1; j < tmp_row; j++)
         {
-            const double ratio = fabs((double)extended_matrix[j][i]) / (double)row_scale[j];
+            const double ratio = fabs((double) extended_matrix[j][i]) / (double) row_scale[j];
             if (ratio > max_ratio)
             {
                 max_ratio = ratio;
@@ -634,8 +634,8 @@ inline std::enable_if_t<tmp_row == tmp_column, Class_Matrix_f32<tmp_row, tmp_row
  * @tparam tmp_column 列数
  * @return Class_Matrix_f32<tmp_row, tmp_column> 模长
  */
-template<int row, int column>
-template<int tmp_row, int tmp_column>
+template <int row, int column>
+template <int tmp_row, int tmp_column>
 inline std::enable_if_t<tmp_column == 1, float> Class_Matrix_f32<row, column>::Get_Modulus() const
 {
     float norm = 0.0f;
@@ -656,8 +656,8 @@ inline std::enable_if_t<tmp_column == 1, float> Class_Matrix_f32<row, column>::G
  * @tparam tmp_column 列数
  * @return Class_Matrix_f32<tmp_row, tmp_column> 归一化结果
  */
-template<int row, int column>
-template<int tmp_row, int tmp_column>
+template <int row, int column>
+template <int tmp_row, int tmp_column>
 inline std::enable_if_t<tmp_column == 1, Class_Matrix_f32<tmp_row, 1>> Class_Matrix_f32<row, column>::Get_Normalization() const
 {
     Class_Matrix_f32<tmp_row, 1> result;
@@ -684,8 +684,8 @@ inline std::enable_if_t<tmp_column == 1, Class_Matrix_f32<tmp_row, 1>> Class_Mat
  * @tparam tmp_column 列数
  * @return Class_Matrix_f32<tmp_row, tmp_column> 叉乘矩阵
  */
-template<int row, int column>
-template<int tmp_row, int tmp_column>
+template <int row, int column>
+template <int tmp_row, int tmp_column>
 inline std::enable_if_t<tmp_row == 3 && tmp_column == 1, Class_Matrix_f32<3, 3>> Class_Matrix_f32<row, column>::Get_Cross_Matrix() const
 {
     Class_Matrix_f32<3, 3> result;
@@ -710,8 +710,8 @@ inline std::enable_if_t<tmp_row == 3 && tmp_column == 1, Class_Matrix_f32<3, 3>>
  * @tparam tmp_column 列数
  * @return float 元素值
  */
-template<int row, int column>
-template<int tmp_row, int tmp_column>
+template <int row, int column>
+template <int tmp_row, int tmp_column>
 inline std::enable_if_t<tmp_row == 1 && tmp_column == 1, float> Class_Matrix_f32<row, column>::Get_Single_Value() const
 {
     return (Data[0]);
@@ -724,7 +724,7 @@ inline std::enable_if_t<tmp_row == 1 && tmp_column == 1, float> Class_Matrix_f32
  * @tparam column 列数
  * @return Class_Matrix_f32<row, column> 零矩阵
  */
-template<int row, int column>
+template <int row, int column>
 Class_Matrix_f32<row, column> Namespace_ALG_Matrix::Zero()
 {
     Class_Matrix_f32<row, column> result;
@@ -738,7 +738,7 @@ Class_Matrix_f32<row, column> Namespace_ALG_Matrix::Zero()
  * @tparam column 列数
  * @return Class_Matrix_f32<row, column> 单位矩阵
  */
-template<int row, int column>
+template <int row, int column>
 Class_Matrix_f32<row, column> Namespace_ALG_Matrix::Identity()
 {
     Class_Matrix_f32<row, column> result;
@@ -756,7 +756,7 @@ Class_Matrix_f32<row, column> Namespace_ALG_Matrix::Identity()
  * @tparam column 列数
  * @return Class_Matrix_f32<row, column> 常量矩阵
  */
-template<int row, int column>
+template <int row, int column>
 Class_Matrix_f32<row, column> Namespace_ALG_Matrix::Constant(float Value)
 {
     Class_Matrix_f32<row, column> result;
@@ -778,7 +778,7 @@ Class_Matrix_f32<row, column> Namespace_ALG_Matrix::Constant(float Value)
  * @param Vector_2 向量2
  * @return Class_Matrix_f32<1, 1> 点乘结果
  */
-template<int row>
+template <int row>
 float Namespace_ALG_Matrix::Operator_Dot(const Class_Matrix_f32<row, 1> &Vector_1, const Class_Matrix_f32<row, 1> &Vector_2)
 {
     float result = 0.0f;

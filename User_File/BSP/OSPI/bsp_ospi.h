@@ -15,9 +15,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "sys_timestamp.h"
 #include "octospi.h"
 #include "stm32h7xx_hal.h"
+#include "sys_timestamp.h"
 #include <string.h>
 
 /* Exported macros -----------------------------------------------------------*/
@@ -66,13 +66,13 @@ extern struct Struct_OSPI_Manage_Object OSPI2_Manage_Object;
 void OSPI_Init(OSPI_HandleTypeDef *hospi, OSPI_Status_Match_Callback Auto_Polling_Callback_Function, OSPI_Rx_Callback Rx_Callback_Function, OSPI_Tx_Callback Tx_Callback_Function);
 
 // 返回提交结果；HAL_OK 仅表示已提交，DMA/轮询完成仍通过回调通知。
-HAL_StatusTypeDef OSPI_Auto_Polling(OSPI_HandleTypeDef * hospi, OSPI_AutoPollingTypeDef * Config);
+HAL_StatusTypeDef OSPI_Auto_Polling(OSPI_HandleTypeDef *hospi, OSPI_AutoPollingTypeDef *Config);
 
-HAL_StatusTypeDef OSPI_Command(OSPI_HandleTypeDef * hospi, OSPI_RegularCmdTypeDef * Command);
+HAL_StatusTypeDef OSPI_Command(OSPI_HandleTypeDef *hospi, OSPI_RegularCmdTypeDef *Command);
 
-HAL_StatusTypeDef OSPI_Command_Transmit_Data(OSPI_HandleTypeDef * hospi, OSPI_RegularCmdTypeDef * Command);
+HAL_StatusTypeDef OSPI_Command_Transmit_Data(OSPI_HandleTypeDef *hospi, OSPI_RegularCmdTypeDef *Command);
 
-HAL_StatusTypeDef OSPI_Command_Receive_Data(OSPI_HandleTypeDef * hospi, OSPI_RegularCmdTypeDef * Command);
+HAL_StatusTypeDef OSPI_Command_Receive_Data(OSPI_HandleTypeDef *hospi, OSPI_RegularCmdTypeDef *Command);
 
 // OSPI 一条指令只有一个数据方向；此旧接口拒绝提交，返回 HAL_ERROR。
 #endif

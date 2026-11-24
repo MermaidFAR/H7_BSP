@@ -13,7 +13,10 @@
 
 #include "bsp_bmi088.h"
 
-extern "C" { extern osThreadId_t BMI088TaskHandle; }
+extern "C"
+{
+    extern osThreadId_t BMI088TaskHandle;
+}
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -55,7 +58,7 @@ void Class_BMI088::Set_VQF_Config(const Struct_BMI088_VQF_Config &config)
         return;
     }
     VQF_Config = config;
-    Accel_Interval_Us = (uint64_t)accel_interval_us;
+    Accel_Interval_Us = (uint64_t) accel_interval_us;
 }
 
 /**
@@ -106,9 +109,9 @@ void Class_BMI088::SPI_RxCpltCallback()
     const bool valid_transfer = SPI_State == BMI088_SPI_STATE_STARTING ||
                                 SPI_State == BMI088_SPI_STATE_IN_FLIGHT;
     const bool valid_frame = sensor == BMI088_SENSOR_GYRO
-        ? !accel_chip
-        : accel_chip && SPI_Manage_Object->Rx_Buffer_Length ==
-                            (sensor == BMI088_SENSOR_ACCEL ? 6U : 2U);
+                                 ? !accel_chip
+                                 : accel_chip && SPI_Manage_Object->Rx_Buffer_Length ==
+                                                     (sensor == BMI088_SENSOR_ACCEL ? 6U : 2U);
     if (!valid_transfer || !valid_frame)
     {
         SPI_Manage_Object->Callback_Anomaly_Count++;
@@ -154,7 +157,8 @@ void Class_BMI088::SPI_RxCpltCallback()
  */
 void Class_BMI088::EXTI_Flag_Callback(uint16_t GPIO_Pin)
 {
-    if (!Init_Finished_Flag) return;
+    if (!Init_Finished_Flag)
+        return;
 
     uint64_t now_timestamp = SYS_Timestamp.Get_Now_Microsecond();
 
@@ -209,8 +213,8 @@ void Class_BMI088::BMI088_Recover_SPI(uint8_t reason)
     SPI_Recovery_Counter++;
     SPI_Recovery_Last_Reason = reason;
     if ((reason & (BMI088_SPI_RECOVERY_ACCEL_TIMEOUT |
-                     BMI088_SPI_RECOVERY_GYRO_TIMEOUT |
-                     BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT)) != 0U)
+                   BMI088_SPI_RECOVERY_GYRO_TIMEOUT |
+                   BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT)) != 0U)
     {
         SPI_Transfer_Timeout_Counter++;
     }
@@ -260,12 +264,10 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
 
     static constexpr uint8_t timeout_reasons[BMI088_SENSOR_COUNT] = {
         BMI088_SPI_RECOVERY_ACCEL_TIMEOUT, BMI088_SPI_RECOVERY_GYRO_TIMEOUT,
-        BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT
-    };
+        BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT};
     static constexpr uint8_t start_failure_reasons[BMI088_SENSOR_COUNT] = {
         BMI088_SPI_RECOVERY_ACCEL_START_FAILURE, BMI088_SPI_RECOVERY_GYRO_START_FAILURE,
-        BMI088_SPI_RECOVERY_TEMPERATURE_START_FAILURE
-    };
+        BMI088_SPI_RECOVERY_TEMPERATURE_START_FAILURE};
 
     uint32_t primask = SYS_Enter_Critical();
     if (SPI_State == BMI088_SPI_STATE_STARTING ||
@@ -282,7 +284,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
         SPI_HandleTypeDef *spi_handler = SPI_Manage_Object->SPI_Handler;
         if (SPI_State == BMI088_SPI_STATE_IN_FLIGHT)
         {
-            const uint32_t now = (uint32_t)SYS_Timestamp.Get_Now_Microsecond();
+            const uint32_t now = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
             const uint32_t elapsed = now - Transfer_Start_Timestamp_Low32;
             if (elapsed >= TRANSFERING_TIMEOUT)
             {
@@ -327,7 +329,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
             continue;
         }
 
-        const Enum_BMI088_Sensor sensor = (Enum_BMI088_Sensor)index;
+        const Enum_BMI088_Sensor sensor = (Enum_BMI088_Sensor) index;
         Active_Sensor = sensor;
         Active_Ready_Timestamp = Ready_Timestamps[index];
         Ready_Timestamps[index] = 0U;
@@ -358,7 +360,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
             }
             else
             {
-                Transfer_Start_Timestamp_Low32 = (uint32_t)SYS_Timestamp.Get_Now_Microsecond();
+                Transfer_Start_Timestamp_Low32 = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
                 SPI_State = BMI088_SPI_STATE_IN_FLIGHT;
             }
         }
@@ -468,7 +470,7 @@ void Class_BMI088::Calculate()
     }
     else
     {
-        D_T = (float)(gyro_sample.Timestamp_Us - VQF_Pre_Timestamp) /
+        D_T = (float) (gyro_sample.Timestamp_Us - VQF_Pre_Timestamp) /
               1000000.0f;
         VQF_Pre_Timestamp = gyro_sample.Timestamp_Us;
         if (D_T > D_T_TIMEOUT_THRESHOLD)
@@ -518,6 +520,44 @@ void Class_BMI088::Calculate()
                        calculate_start_timestamp;
 }
 
+// 仅在一批 FIFO 样本处理完毕后发布，USB 和健康监控共用 5 ms 刷新节拍。
+void Class_BMI088::Publish_Health_And_Telemetry()
+{
+    const uint64_t now_us = SYS_Timestamp.Get_Now_Microsecond();
+    if (now_us - Health_Snapshot.Published_At_Us < PUBLICATION_INTERVAL_US)
+    {
+        return;
+    }
+
+    const uint32_t primask = SYS_Enter_Critical();
+    Health_Snapshot.Published_At_Us = now_us;
+    Health_Snapshot.SPI2_Error_Counter = SPI2_Manage_Object.Error_Count;
+    Health_Snapshot.SPI_Transfer_Timeout_Counter = SPI_Transfer_Timeout_Counter;
+    Health_Snapshot.SPI_Recovery_Counter = SPI_Recovery_Counter;
+    Health_Snapshot.Gyro_Queue_Drop_Count = BMI088_Gyro.Get_Queue_Drop_Count();
+    Health_Snapshot.Gyro_FIFO_Overrun_Count = BMI088_Gyro.Get_FIFO_Overrun_Count();
+    Health_Snapshot.Gyro_Outlier_Counter = BMI088_Gyro.Get_Outlier_Counter();
+    Health_Snapshot.Accel_Update_Rejected_Counter = Accel_Update_Rejected_Counter;
+    Health_Snapshot.Timestamp_Anomaly_Counter = Timestamp_Anomaly_Counter;
+    Health_Snapshot.VQF_Reset_Counter = VQF_Reset_Counter;
+    Health_Snapshot_Valid = true;
+
+    Euler_Telemetry.Yaw_rad = Vector_Euler_Angle[0][0];
+    Euler_Telemetry.Pitch_rad = Vector_Euler_Angle[1][0];
+    Euler_Telemetry.Roll_rad = Vector_Euler_Angle[2][0];
+    SYS_Exit_Critical(primask);
+}
+
+bool Class_BMI088::Get_Health_Snapshot(Struct_BMI088_Health_Snapshot &snapshot, uint64_t &sample_us) const
+{
+    const uint32_t primask = SYS_Enter_Critical();
+    snapshot = Health_Snapshot;
+    sample_us = VQF_Pre_Timestamp;
+    const bool received = Health_Snapshot_Valid && sample_us != 0;
+    SYS_Exit_Critical(primask);
+    return received;
+}
+
 void Class_BMI088::Mark_Ready(Enum_BMI088_Sensor sensor, uint64_t timestamp, bool replace)
 {
     const uint32_t primask = SYS_Enter_Critical();
@@ -531,7 +571,7 @@ void Class_BMI088::Mark_Ready(Enum_BMI088_Sensor sensor, uint64_t timestamp, boo
 
 void Class_BMI088::Set_Accel_Update_Result(bool accepted, uint8_t reject_reason)
 {
-    Accel_Update_Result = (accepted ? 1U : 0U) | ((uint32_t)reject_reason << 8U);
+    Accel_Update_Result = (accepted ? 1U : 0U) | ((uint32_t) reject_reason << 8U);
     Accel_Update_Attempt_Counter++;
     if (!accepted)
     {
@@ -539,18 +579,19 @@ void Class_BMI088::Set_Accel_Update_Result(bool accepted, uint8_t reject_reason)
     }
 }
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void BMI088_TIM_128ms_Calculate_PeriodElapsedCallback()
-{
-    BSP_BMI088.TIM_128ms_Calculate_PeriodElapsedCallback();
-}
+    void BMI088_TIM_128ms_Calculate_PeriodElapsedCallback()
+    {
+        BSP_BMI088.TIM_128ms_Calculate_PeriodElapsedCallback();
+    }
 
-void BMI088_TIM_1ms_Service_PeriodElapsedCallback()
-{
-    BSP_BMI088.TIM_1ms_Service_PeriodElapsedCallback();
-}
+    void BMI088_TIM_1ms_Service_PeriodElapsedCallback()
+    {
+        BSP_BMI088.TIM_1ms_Service_PeriodElapsedCallback();
+    }
 
 #ifdef __cplusplus
 }

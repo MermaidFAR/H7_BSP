@@ -39,7 +39,7 @@ enum Enum_BSP_Key_Status
  */
 class Class_Key
 {
-public:
+  public:
     void Init();
 
     inline Enum_BSP_Key_Status Get_Key_Status() const;
@@ -48,7 +48,7 @@ public:
 
     void TIM_50ms_Read_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -93,11 +93,12 @@ inline Enum_BSP_Key_Status Class_Key::Get_Key_Status() const
 
 #endif
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-void BSP_Key_TIM_1ms_Process_PeriodElapsedCallback();
-void BSP_Key_TIM_50ms_Process_PeriodElapsedCallback();
+    void BSP_Key_TIM_1ms_Process_PeriodElapsedCallback();
+    void BSP_Key_TIM_50ms_Process_PeriodElapsedCallback();
 #ifdef __cplusplus
 }
 #endif
-    /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
+/************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

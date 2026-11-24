@@ -19,7 +19,7 @@
 /* Function prototypes -------------------------------------------------------*/
 
 bool Class_Trajectory::Init(float velocity_max, float acceleration_max,
-                           float jerk_max, float d_t)
+                            float jerk_max, float d_t)
 {
     if (Basic_Math_Is_Invalid_Float(velocity_max) || velocity_max <= 0.0f ||
         Basic_Math_Is_Invalid_Float(acceleration_max) || acceleration_max <= 0.0f ||
@@ -45,12 +45,12 @@ bool Class_Trajectory::Reset(float position, float velocity, float acceleration)
 {
     if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(position) ||
         Basic_Math_Is_Invalid_Float(velocity) || Basic_Math_Is_Invalid_Float(acceleration) ||
-        (double)fabsf(velocity) > Velocity_Max || (double)fabsf(acceleration) > Acceleration_Max)
+        (double) fabsf(velocity) > Velocity_Max || (double) fabsf(acceleration) > Acceleration_Max)
     {
         return (false);
     }
     double initial_acceleration = acceleration;
-    double peak_velocity = (double)velocity + initial_acceleration * fabs(initial_acceleration) / (2.0 * Jerk_Max);
+    double peak_velocity = (double) velocity + initial_acceleration * fabs(initial_acceleration) / (2.0 * Jerk_Max);
     if (fabs(peak_velocity) > Velocity_Max)
     {
         return (false);
@@ -92,7 +92,7 @@ bool Class_Trajectory::Set_Target_Position(float position)
     {
         return (false);
     }
-    if (Target_Type != TARGET_POSITION || Target != (double)position || Status == TRAJECTORY_ERROR)
+    if (Target_Type != TARGET_POSITION || Target != (double) position || Status == TRAJECTORY_ERROR)
     {
         Target_Type = TARGET_POSITION;
         Target = position;
@@ -105,11 +105,11 @@ bool Class_Trajectory::Set_Target_Position(float position)
 bool Class_Trajectory::Set_Target_Velocity(float velocity)
 {
     if (Status == TRAJECTORY_UNINITIALIZED || Basic_Math_Is_Invalid_Float(velocity) ||
-        (double)fabsf(velocity) > Velocity_Max)
+        (double) fabsf(velocity) > Velocity_Max)
     {
         return (false);
     }
-    if (Target_Type != TARGET_VELOCITY || Target != (double)velocity || Status == TRAJECTORY_ERROR)
+    if (Target_Type != TARGET_VELOCITY || Target != (double) velocity || Status == TRAJECTORY_ERROR)
     {
         Target_Type = TARGET_VELOCITY;
         Target = velocity;
@@ -124,7 +124,7 @@ Class_Trajectory::Struct_State Class_Trajectory::Integrate(
 {
     Struct_State out;
     out.Position = state->Position + time * (state->Velocity +
-        time * (state->Acceleration / 2.0 + time * jerk / 6.0));
+                                             time * (state->Acceleration / 2.0 + time * jerk / 6.0));
     out.Velocity = state->Velocity + time * (state->Acceleration + time * jerk / 2.0);
     out.Acceleration = state->Acceleration + time * jerk;
     return (out);
@@ -134,7 +134,7 @@ Class_Trajectory::Struct_State Class_Trajectory::Integrate(
  * @brief 从任意合法 v/a 过渡到目标速度及零加速度, 最多三个恒 jerk 段
  */
 void Class_Trajectory::Build_Velocity(double velocity, double acceleration,
-                                     double target, Struct_Segment segment[3]) const
+                                      double target, Struct_Segment segment[3]) const
 {
     double delta = target - velocity;
     double natural_delta = acceleration * fabs(acceleration) / (2.0 * Jerk_Max);
@@ -147,7 +147,8 @@ void Class_Trajectory::Build_Velocity(double velocity, double acceleration,
     {
         peak = Acceleration_Max;
         hold_time = (direction * delta -
-            (peak * peak - acceleration * acceleration / 2.0) / Jerk_Max) / peak;
+                     (peak * peak - acceleration * acceleration / 2.0) / Jerk_Max) /
+                    peak;
     }
     segment[0].Duration = fmax(0.0, (peak - oriented_acceleration) / Jerk_Max);
     segment[0].Jerk = direction * Jerk_Max;
@@ -158,7 +159,7 @@ void Class_Trajectory::Build_Velocity(double velocity, double acceleration,
 }
 
 double Class_Trajectory::Build_Position(double middle_velocity, double cruise_time,
-                                       Struct_Profile *profile) const
+                                        Struct_Profile *profile) const
 {
     Build_Velocity(State.Velocity, State.Acceleration, middle_velocity, profile->Segment);
     profile->Segment[3].Duration = cruise_time;

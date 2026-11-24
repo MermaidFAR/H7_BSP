@@ -128,8 +128,8 @@ void Class_Filter_VQF::Update_Gyro(const Class_Matrix_f32<3, 1> &gyro)
 
         const Class_Matrix_f32<3, 1> deviation = gyro - Rest_Last_Gyro_Low_Pass;
         Rest_Gyro_Squared_Deviation = deviation[0][0] * deviation[0][0] +
-                                         deviation[1][0] * deviation[1][0] +
-                                         deviation[2][0] * deviation[2][0];
+                                      deviation[1][0] * deviation[1][0] +
+                                      deviation[2][0] * deviation[2][0];
 
         const float gyro_threshold = Parameter.Rest_Threshold_Gyro_Deg_S * PI / 180.0f;
         const float bias_clip = Parameter.Bias_Clip_Deg_S * PI / 180.0f;
@@ -191,8 +191,8 @@ void Class_Filter_VQF::Update_Accel(const Class_Matrix_f32<3, 1> &accel)
 
         const Class_Matrix_f32<3, 1> deviation = accel - Rest_Last_Accel_Low_Pass;
         Rest_Accel_Squared_Deviation = deviation[0][0] * deviation[0][0] +
-                                         deviation[1][0] * deviation[1][0] +
-                                         deviation[2][0] * deviation[2][0];
+                                       deviation[1][0] * deviation[1][0] +
+                                       deviation[2][0] * deviation[2][0];
 
         if (Rest_Accel_Squared_Deviation >=
             Parameter.Rest_Threshold_Accel * Parameter.Rest_Threshold_Accel)
@@ -321,14 +321,14 @@ void Class_Filter_VQF::Set_Bias_Estimation_Enable(bool motion_enable,
 float Class_Filter_VQF::Get_Bias_Sigma() const
 {
     const float row_sum_0 = fabsf(Bias_Covariance[0][0]) +
-                              fabsf(Bias_Covariance[0][1]) +
-                              fabsf(Bias_Covariance[0][2]);
+                            fabsf(Bias_Covariance[0][1]) +
+                            fabsf(Bias_Covariance[0][2]);
     const float row_sum_1 = fabsf(Bias_Covariance[1][0]) +
-                              fabsf(Bias_Covariance[1][1]) +
-                              fabsf(Bias_Covariance[1][2]);
+                            fabsf(Bias_Covariance[1][1]) +
+                            fabsf(Bias_Covariance[1][2]);
     const float row_sum_2 = fabsf(Bias_Covariance[2][0]) +
-                              fabsf(Bias_Covariance[2][1]) +
-                              fabsf(Bias_Covariance[2][2]);
+                            fabsf(Bias_Covariance[2][1]) +
+                            fabsf(Bias_Covariance[2][2]);
     const float covariance = Basic_Math_Constrain(
         fmaxf(row_sum_0, fmaxf(row_sum_1, row_sum_2)),
         0.0f,
@@ -546,9 +546,9 @@ void Class_Filter_VQF::Calculate_Filter_Coefficient(float tau,
     }
 
     const double cutoff_frequency =
-        sqrt(2.0) / (2.0 * (double)PI * (double)tau);
+        sqrt(2.0) / (2.0 * (double) PI * (double) tau);
     const double coefficient =
-        tan((double)PI * cutoff_frequency * (double)d_t);
+        tan((double) PI * cutoff_frequency * (double) d_t);
     const double denominator = coefficient * coefficient +
                                sqrt(2.0) * coefficient + 1.0;
     const double b0 = coefficient * coefficient / denominator;
@@ -557,8 +557,8 @@ void Class_Filter_VQF::Calculate_Filter_Coefficient(float tau,
     b[2] = b0;
     a[0] = 2.0 * (coefficient * coefficient - 1.0) / denominator;
     a[1] = (1.0 - sqrt(2.0) * coefficient +
-              coefficient * coefficient) /
-             denominator;
+            coefficient * coefficient) /
+           denominator;
 }
 
 /**
@@ -567,7 +567,7 @@ void Class_Filter_VQF::Calculate_Filter_Coefficient(float tau,
 void Class_Filter_VQF::Reset_Filter_State(uint32_t length,
                                           double state[])
 {
-    const double invalid = (double)NAN;
+    const double invalid = (double) NAN;
     for (uint32_t i = 0U; i < 2U * length; i++)
     {
         state[i] = invalid;
@@ -600,18 +600,18 @@ void Class_Filter_VQF::Filter_Vector(const float input[],
         state[1] += 1.0;
         for (uint32_t i = 0U; i < length; i++)
         {
-            state[2U + i] += (double)input[i];
-            output[i] = (float)(state[2U + i] / state[1]);
+            state[2U + i] += (double) input[i];
+            output[i] = (float) (state[2U + i] / state[1]);
         }
 
-        if ((float)state[1] * d_t >= tau)
+        if ((float) state[1] * d_t >= tau)
         {
             for (uint32_t i = 0U; i < length; i++)
             {
                 state[2U * i] =
-                    (double)output[i] * (1.0 - b[0]);
+                    (double) output[i] * (1.0 - b[0]);
                 state[2U * i + 1U] =
-                    (double)output[i] * (b[2] - a[1]);
+                    (double) output[i] * (b[2] - a[1]);
             }
         }
         return;
@@ -619,12 +619,12 @@ void Class_Filter_VQF::Filter_Vector(const float input[],
 
     for (uint32_t i = 0U; i < length; i++)
     {
-        const double input_value = (double)input[i];
+        const double input_value = (double) input[i];
         const double output_value = b[0] * input_value + state[2U * i];
         state[2U * i] = b[1] * input_value - a[0] * output_value +
-                          state[2U * i + 1U];
+                        state[2U * i + 1U];
         state[2U * i + 1U] = b[2] * input_value - a[1] * output_value;
-        output[i] = (float)output_value;
+        output[i] = (float) output_value;
     }
 }
 
@@ -664,14 +664,14 @@ bool Class_Filter_VQF::Inverse_Matrix_3x3(
     }
 
     const double inverse_determinant = 1.0 / determinant;
-    output[0][0] = (float)(cofactor_a * inverse_determinant);
-    output[0][1] = (float)(cofactor_b * inverse_determinant);
-    output[0][2] = (float)(cofactor_c * inverse_determinant);
-    output[1][0] = (float)(cofactor_d * inverse_determinant);
-    output[1][1] = (float)(cofactor_e * inverse_determinant);
-    output[1][2] = (float)(cofactor_f * inverse_determinant);
-    output[2][0] = (float)(cofactor_g * inverse_determinant);
-    output[2][1] = (float)(cofactor_h * inverse_determinant);
-    output[2][2] = (float)(cofactor_i * inverse_determinant);
+    output[0][0] = (float) (cofactor_a * inverse_determinant);
+    output[0][1] = (float) (cofactor_b * inverse_determinant);
+    output[0][2] = (float) (cofactor_c * inverse_determinant);
+    output[1][0] = (float) (cofactor_d * inverse_determinant);
+    output[1][1] = (float) (cofactor_e * inverse_determinant);
+    output[1][2] = (float) (cofactor_f * inverse_determinant);
+    output[2][0] = (float) (cofactor_g * inverse_determinant);
+    output[2][1] = (float) (cofactor_h * inverse_determinant);
+    output[2][2] = (float) (cofactor_i * inverse_determinant);
     return (true);
 }

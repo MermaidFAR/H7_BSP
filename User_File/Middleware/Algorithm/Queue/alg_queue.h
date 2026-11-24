@@ -24,10 +24,10 @@
  * @brief Reusable, 循环队列本体
  *
  */
-template<typename Type, uint32_t Max_Size = 200>
+template <typename Type, uint32_t Max_Size = 200>
 class Class_Queue
 {
-public:
+  public:
     void Init();
 
     inline uint32_t Get_Length() const;
@@ -42,7 +42,7 @@ public:
 
     inline void Clear();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -79,7 +79,7 @@ protected:
  * @tparam Type 类型
  * @tparam Max_Size 队列长度最大值
  */
-template<typename Type, uint32_t Max_Size>
+template <typename Type, uint32_t Max_Size>
 void Class_Queue<Type, Max_Size>::Init()
 {
     Front = 0;
@@ -88,26 +88,26 @@ void Class_Queue<Type, Max_Size>::Init()
 }
 
 /**
-* @brief 获取队列长度
+ * @brief 获取队列长度
  *
-* @tparam Type 类型
-* @tparam Max_Size 队列长度最大值
-* @return 队首元素
-*/
-template<typename Type, uint32_t Max_Size>
+ * @tparam Type 类型
+ * @tparam Max_Size 队列长度最大值
+ * @return 队首元素
+ */
+template <typename Type, uint32_t Max_Size>
 inline uint32_t Class_Queue<Type, Max_Size>::Get_Length() const
 {
     return (Length);
 }
 
 /**
-* @brief 获取队首元素
+ * @brief 获取队首元素
  *
-* @tparam Type 类型
-* @tparam Max_Size 队列长度最大值
-* @return 队首元素
-*/
-template<typename Type, uint32_t Max_Size>
+ * @tparam Type 类型
+ * @tparam Max_Size 队列长度最大值
+ * @return 队首元素
+ */
+template <typename Type, uint32_t Max_Size>
 inline Type Class_Queue<Type, Max_Size>::Get_Front() const
 {
     return (Queue[Front]);
@@ -120,20 +120,20 @@ inline Type Class_Queue<Type, Max_Size>::Get_Front() const
  * @tparam Max_Size 队列长度最大值
  * @return 队尾元素
  */
-template<typename Type, uint32_t Max_Size>
+template <typename Type, uint32_t Max_Size>
 inline Type Class_Queue<Type, Max_Size>::Get_Rear() const
 {
     return (Queue[Rear]);
 }
 
 /**
-* @brief 送入队列
-*
-* @tparam Type 类型
-* @tparam Max_Size 队列长度最大值
-* @param data 传入值
-*/
-template<typename Type, uint32_t Max_Size>
+ * @brief 送入队列
+ *
+ * @tparam Type 类型
+ * @tparam Max_Size 队列长度最大值
+ * @param data 传入值
+ */
+template <typename Type, uint32_t Max_Size>
 inline void Class_Queue<Type, Max_Size>::Push(const Type &data)
 {
     if (Length == Max_Size)
@@ -158,13 +158,13 @@ inline void Class_Queue<Type, Max_Size>::Push(const Type &data)
 }
 
 /**
-* @brief 弹出队列
-*
-* @tparam Type 类型
-* @tparam Max_Size 队列长度最大值
-* @return 弹出值
-*/
-template<typename Type, uint32_t Max_Size>
+ * @brief 弹出队列
+ *
+ * @tparam Type 类型
+ * @tparam Max_Size 队列长度最大值
+ * @return 弹出值
+ */
+template <typename Type, uint32_t Max_Size>
 inline Type Class_Queue<Type, Max_Size>::Pop()
 {
     Type temp = Queue[Front];
@@ -182,12 +182,12 @@ inline Type Class_Queue<Type, Max_Size>::Pop()
 }
 
 /**
-* @brief 清空队列
-*
-* @tparam Type 类型
-* @tparam Max_Size 队列长度最大值
-*/
-template<typename Type, uint32_t Max_Size>
+ * @brief 清空队列
+ *
+ * @tparam Type 类型
+ * @tparam Max_Size 队列长度最大值
+ */
+template <typename Type, uint32_t Max_Size>
 inline void Class_Queue<Type, Max_Size>::Clear()
 {
     Front = 0;

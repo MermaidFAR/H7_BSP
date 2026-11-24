@@ -21,7 +21,7 @@
 /* Private macros ------------------------------------------------------------*/
 
 /** 周期发送槽总数；每个不同的 (FDCAN, CAN ID) 占用一个槽。 */
-#define CAN_TX_SLOT_COUNT  (32)
+#define CAN_TX_SLOT_COUNT (32)
 
 /** 每条总线的插入发送队列深度。 */
 #define CAN_TX_QUEUE_DEPTH (16)
@@ -48,12 +48,12 @@ typedef struct
  */
 typedef struct
 {
-    Struct_CAN_Tx_Msg message; /*!< 当前键最近一次发布的完整消息。 */
-    uint64_t timestamp_us;     /*!< 最近一次发布时间。 */
-    uint32_t version;          /*!< 发布版本；每次更新消息时递增。 */
-    uint32_t sent_version;     /*!< 最近一次已发送或已作废的版本。 */
+    Struct_CAN_Tx_Msg message;  /*!< 当前键最近一次发布的完整消息。 */
+    uint64_t timestamp_us;      /*!< 最近一次发布时间。 */
+    uint32_t version;           /*!< 发布版本；每次更新消息时递增。 */
+    uint32_t sent_version;      /*!< 最近一次已发送或已作废的版本。 */
     uint32_t motion_generation; /*!< 指定 ID 被停用时递增。 */
-    bool safe_stop;            /*!< 当前版本为全零停机帧。 */
+    bool safe_stop;             /*!< 当前版本为全零停机帧。 */
 } Struct_CAN_Tx_Slot;
 
 typedef struct
@@ -232,9 +232,8 @@ bool BSP_CAN_RegisterCallback(uint32_t can_id,
         return false;
     }
 
-    Can_RxCallbacks[count] = (CAN_CallbackEntry_t){
-        .ID = can_id, .hfdcan = hfdcan, .func = callback, .context = context
-    };
+    Can_RxCallbacks[count] = (CAN_CallbackEntry_t) {
+        .ID = can_id, .hfdcan = hfdcan, .func = callback, .context = context};
     __DMB();
     Can_RxCallbackCount = count + 1;
 
@@ -279,8 +278,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan,
         {
             continue;
         }
-        rx_length = rx_header.DataLength <= FDCAN_MAX_PAYLOAD ?
-                    rx_header.DataLength : FDCAN_MAX_PAYLOAD;
+        rx_length = rx_header.DataLength <= FDCAN_MAX_PAYLOAD ? rx_header.DataLength : FDCAN_MAX_PAYLOAD;
 
         const uint32_t count = Can_RxCallbackCount;
         __DMB();
@@ -487,7 +485,7 @@ static bool BSP_CAN_SendMsg(CAN_Bus_t *bus, const Struct_CAN_Tx_Msg *message,
             bus->motion_buffers &= ~buffer;
             if (motion)
             {
-                bus->motion_id[index] = (uint16_t)message->id;
+                bus->motion_id[index] = (uint16_t) message->id;
                 bus->motion_buffers |= buffer;
             }
         }
@@ -506,7 +504,7 @@ static void BSP_CAN_DiscardSlots(FDCAN_HandleTypeDef *hfdcan, uint32_t id, bool 
             continue;
         }
         if (hfdcan == NULL || (slot->message.hfdcan == hfdcan &&
-                              (id == CAN_ALL_IDS || slot->message.id == id)))
+                               (id == CAN_ALL_IDS || slot->message.id == id)))
         {
             slot->sent_version = slot->version;
             if (id != CAN_ALL_IDS)

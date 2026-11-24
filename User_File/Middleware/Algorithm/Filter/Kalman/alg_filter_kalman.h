@@ -35,10 +35,10 @@
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
  */
-template<uint32_t State_Dimension = 2, uint32_t Input_Dimension = 1, uint32_t Measurement_Dimension = 2>
+template <uint32_t State_Dimension = 2, uint32_t Input_Dimension = 1, uint32_t Measurement_Dimension = 2>
 class Class_Filter_Kalman
 {
-public:
+  public:
     // 随着系统确定的
     // 系统状态矩阵
     Class_Matrix_f32<State_Dimension, State_Dimension> Matrix_A;
@@ -76,7 +76,7 @@ public:
 
     bool TIM_Update_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -113,7 +113,7 @@ protected:
  * @param vector_x 初始状态向量
  * @param matrix_u 初始输入向量
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 void Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension>::Init(const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_a, const Class_Matrix_f32<State_Dimension, Input_Dimension> &matrix_b, const Class_Matrix_f32<Measurement_Dimension, State_Dimension> &matrix_h, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_q, const Class_Matrix_f32<Measurement_Dimension, Measurement_Dimension> &matrix_r, const Class_Matrix_f32<State_Dimension, State_Dimension> &matrix_p, const Class_Matrix_f32<State_Dimension, 1> &vector_x, const Class_Matrix_f32<Input_Dimension, 1> &matrix_u)
 {
     Matrix_A = matrix_a;
@@ -136,7 +136,7 @@ void Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 void Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension>::TIM_Predict_PeriodElapsedCallback()
 {
     // 预测状态向量
@@ -159,7 +159,7 @@ void Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension
  * @tparam Input_Dimension 输入维度
  * @tparam Measurement_Dimension 测量维度
  */
-template<uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
+template <uint32_t State_Dimension, uint32_t Input_Dimension, uint32_t Measurement_Dimension>
 bool Class_Filter_Kalman<State_Dimension, Input_Dimension, Measurement_Dimension>::TIM_Update_PeriodElapsedCallback()
 {
     bool success = false;

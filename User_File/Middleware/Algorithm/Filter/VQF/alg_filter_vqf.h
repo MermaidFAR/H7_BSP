@@ -62,7 +62,7 @@ struct Struct_VQF_Parameter
  */
 class Class_Filter_VQF
 {
-public:
+  public:
     /**
      * @brief 初始化VQF参数和滤波状态
      * @param parameter 姿态修正、零偏估计和静止检测参数
@@ -111,7 +111,7 @@ public:
 
     inline Class_Matrix_f32<3, 1> Get_Last_Corrected_Gyro() const;
 
-protected:
+  protected:
     /* 初始化相关常量 --------------------------------------------------------*/
 
     Struct_VQF_Parameter Parameter;

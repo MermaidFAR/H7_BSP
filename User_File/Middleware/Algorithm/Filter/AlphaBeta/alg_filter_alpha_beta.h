@@ -22,7 +22,7 @@
  */
 class Class_Filter_Alpha_Beta
 {
-public:
+  public:
     bool Init(float tau, float d_t = 0.001f);
 
     bool Init_Gain(float alpha, float beta, float d_t = 0.001f);
@@ -47,16 +47,16 @@ public:
 
     inline bool Get_Initialized_Flag() const;
 
-private:
+  private:
     bool Update_State(float measurement, float d_t, float alpha, float velocity_gain);
 
-    float Tau = 0.0f;  // 零表示手动增益模式。
-    float D_T = 0.0f;  // 零表示尚未配置。
+    float Tau = 0.0f; // 零表示手动增益模式。
+    float D_T = 0.0f; // 零表示尚未配置。
     float Alpha = 0.0f;
     float Beta = 0.0f;
-    float Velocity_Gain = 0.0f;  // 固定周期的 Beta / D_T。
+    float Velocity_Gain = 0.0f; // 固定周期的 Beta / D_T。
 
-    float Now = NAN;  // 等待 Set_Now 提供周期测量。
+    float Now = NAN; // 等待 Set_Now 提供周期测量。
     float Position = 0.0f;
     float Velocity = 0.0f;
     bool Initialized_Flag = false;

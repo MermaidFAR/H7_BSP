@@ -11,17 +11,29 @@
 /** @brief 保留原 LESO 接口，观测状态和计算全部由 Class_ESO_Second_Order 持有。 */
 class Class_LESO_Second_Order
 {
-public:
+  public:
     bool Init(float b0, float omega_o, float d_t);
     bool Reset(float position = 0.0f, float velocity = 0.0f);
     bool Update(float measurement, float applied_input);
 
-    float Get_Z1() const { return ESO.Get_Position(); }
-    float Get_Z2() const { return ESO.Get_Velocity(); }
-    float Get_Z3() const { return ESO.Get_Disturbance(); }
-    float Get_Compensation() const { return ESO.Get_Compensation(); }
+    float Get_Z1() const
+    {
+        return ESO.Get_Position();
+    }
+    float Get_Z2() const
+    {
+        return ESO.Get_Velocity();
+    }
+    float Get_Z3() const
+    {
+        return ESO.Get_Disturbance();
+    }
+    float Get_Compensation() const
+    {
+        return ESO.Get_Compensation();
+    }
 
-private:
+  private:
     Class_ESO_Second_Order ESO;
 };
 
@@ -43,15 +55,21 @@ private:
  */
 class Class_TD
 {
-public:
+  public:
     bool Init(float omega, float d_t);
     bool Reset(float position = 0.0f);
     bool Update(float target);
 
-    float Get_Position() const { return Position; }
-    float Get_Velocity() const { return Velocity; }
+    float Get_Position() const
+    {
+        return Position;
+    }
+    float Get_Velocity() const
+    {
+        return Velocity;
+    }
 
-private:
+  private:
     float Position_Gain = 0.0f;
     float Position_From_Velocity = 0.0f;
     float Velocity_Gain = 0.0f;
@@ -91,7 +109,7 @@ private:
  */
 class Class_LADRC_Second_Order
 {
-public:
+  public:
     bool Init(float b0, float omega_o, float omega_c, float out_max, float d_t);
     bool Reset(float position = 0.0f, float velocity = 0.0f);
     void Set_Ref(float position, float velocity = 0.0f);
@@ -99,10 +117,16 @@ public:
     bool TIM_Calculate_PeriodElapsedCallback(float measurement);
     bool TIM_Calculate_PeriodElapsedCallback(float measurement, float applied_input);
 
-    float Get_Out() const { return Out; }
-    const Class_LESO_Second_Order &Get_Observer() const { return Observer; }
+    float Get_Out() const
+    {
+        return Out;
+    }
+    const Class_LESO_Second_Order &Get_Observer() const
+    {
+        return Observer;
+    }
 
-private:
+  private:
     Class_LESO_Second_Order Observer;
     float K_Position = 0.0f;
     float K_Velocity = 0.0f;

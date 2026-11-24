@@ -66,7 +66,7 @@ uint64_t Class_Timestamp::Calculate_Timestamp() const
         overflow++;
     }
     SYS_Exit_Critical(primask);
-    return (uint64_t)overflow * TIM_PERIOD_US + counter;
+    return (uint64_t) overflow * TIM_PERIOD_US + counter;
 }
 
 /**
@@ -78,7 +78,7 @@ void Namespace_SYS_Timestamp::Delay_Second(uint32_t Second)
 {
     volatile uint64_t start_time = SYS_Timestamp.Get_Current_Timestamp();
 
-    while ((uint64_t)(Second) * 1000000ULL + start_time > SYS_Timestamp.Get_Current_Timestamp())
+    while ((uint64_t) (Second) * 1000000ULL + start_time > SYS_Timestamp.Get_Current_Timestamp())
     {
     }
 }
@@ -92,7 +92,7 @@ void Namespace_SYS_Timestamp::Delay_Millisecond(uint32_t Millisecond)
 {
     volatile uint64_t start_time = SYS_Timestamp.Get_Current_Timestamp();
 
-    while ((uint64_t)(Millisecond) * 1000ULL + start_time > SYS_Timestamp.Get_Current_Timestamp())
+    while ((uint64_t) (Millisecond) * 1000ULL + start_time > SYS_Timestamp.Get_Current_Timestamp())
     {
     }
 }
@@ -106,7 +106,7 @@ void Namespace_SYS_Timestamp::Delay_Microsecond(uint32_t Microsecond)
 {
     volatile uint64_t start_time = SYS_Timestamp.Get_Current_Timestamp();
 
-    while ((uint64_t)(Microsecond) + start_time > SYS_Timestamp.Get_Current_Timestamp())
+    while ((uint64_t) (Microsecond) + start_time > SYS_Timestamp.Get_Current_Timestamp())
     {
     }
 }

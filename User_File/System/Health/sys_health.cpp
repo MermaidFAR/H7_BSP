@@ -1,18 +1,18 @@
 /** @file sys_health.cpp @author zzm @brief 低频设备健康采集与状态发布 */
 #include "sys_health.h"
-#include "sys_critical.h"
 #include "bsp_bmi088.h"
 #include "bsp_power.h"
 #include "bsp_w25q64jv.h"
+#include "sys_critical.h"
 #include "sys_init.h"
-#include "sys_debug.h"
 #include "sys_timestamp.h"
 #include <stddef.h>
 #include <string.h>
 
-extern "C" {
-volatile Struct_Sys_Health SYS_Health __attribute__((used)) = {};
-volatile uint8_t SYS_Health_Buzzer_Mute __attribute__((used)) = 0U;
+extern "C"
+{
+    volatile Struct_Sys_Health SYS_Health __attribute__((used)) = {};
+    volatile uint8_t SYS_Health_Buzzer_Mute __attribute__((used)) = 0U;
 }
 
 struct Health_Tracking
@@ -40,7 +40,7 @@ static bool Previous_IMU_Valid;
 static uint32_t Health_Age_ms(uint64_t now, uint64_t timestamp)
 {
     uint64_t age = now >= timestamp ? (now - timestamp) / 1000 : 0;
-    return age > UINT32_MAX ? UINT32_MAX : (uint32_t)age;
+    return age > UINT32_MAX ? UINT32_MAX : (uint32_t) age;
 }
 
 static void Health_Publish()
@@ -53,7 +53,7 @@ static void Health_Publish()
     __DMB();
     const size_t begin = offsetof(Struct_Sys_Health, ABI_Version);
     const size_t end = offsetof(Struct_Sys_Health, Sequence_End);
-    memcpy((uint8_t *)(void *)&SYS_Health + begin, (const uint8_t *)&Health_Next + begin, end - begin);
+    memcpy((uint8_t *) (void *) &SYS_Health + begin, (const uint8_t *) &Health_Next + begin, end - begin);
     __DMB();
     SYS_Health.Sequence_End = sequence + 1;
     __DMB();
@@ -78,8 +78,8 @@ static void Health_Set_State(Health_Tracking *tracking, Enum_Sys_Health_State st
 }
 
 static Enum_Sys_Health_State Health_Data_State(Health_Tracking *tracking, bool received,
-                                              uint64_t timestamp_us, uint64_t timeout_us,
-                                              uint64_t now_us, uint32_t *reason)
+                                               uint64_t timestamp_us, uint64_t timeout_us,
+                                               uint64_t now_us, uint32_t *reason)
 {
     if (tracking->Item.State == HEALTH_DISABLED)
     {
@@ -89,7 +89,8 @@ static Enum_Sys_Health_State Health_Data_State(Health_Tracking *tracking, bool r
     {
         *reason |= HEALTH_REASON_NO_DATA;
         return now_us - tracking->First_Seen_us >= SYS_HEALTH_STARTUP_TIMEOUT_MS * 1000ULL
-                   ? HEALTH_OFFLINE : HEALTH_STARTING;
+                   ? HEALTH_OFFLINE
+                   : HEALTH_STARTING;
     }
     if (timestamp_us > now_us)
     {
@@ -105,7 +106,7 @@ static Enum_Sys_Health_State Health_Data_State(Health_Tracking *tracking, bool r
 }
 
 static Enum_Sys_Health_State Health_Worse_State(Enum_Sys_Health_State first,
-                                               Enum_Sys_Health_State second)
+                                                Enum_Sys_Health_State second)
 {
     if (first == HEALTH_FAULT || second == HEALTH_FAULT)
     {
@@ -127,7 +128,7 @@ static Enum_Sys_Health_State Health_Worse_State(Enum_Sys_Health_State first,
 }
 
 static Struct_Sys_Health_Item Health_Init_Item(uint32_t error_bit, bool initialized,
-                                              Enum_Sys_Health_State ready_state)
+                                               Enum_Sys_Health_State ready_state)
 {
     if ((Health_Next.Init_Errors & error_bit) != 0U)
     {
@@ -154,20 +155,29 @@ static Enum_Sys_Health_State Health_Board_State(void)
                               Health_Next.Flash.State);
 }
 
-static uint32_t Health_IMU_Reasons(const Sys_Debug_IMU_Data_t *imu)
+static uint32_t Health_IMU_Reasons(const Struct_BMI088_Health_Snapshot *imu)
 {
     const uint32_t counters[] = {
-        imu->SPI2_Error_Counter, imu->BMI088_Transfer_Timeout_Counter,
-        imu->BMI088_SPI_Recovery_Counter, imu->Gyro_Queue_Drop_Count,
-        imu->Gyro_FIFO_Overrun_Count, imu->Gyro_Outlier_Counter,
-        imu->Accel_Update_Rejected_Counter, imu->Timestamp_Anomaly_Counter,
+        imu->SPI2_Error_Counter,
+        imu->SPI_Transfer_Timeout_Counter,
+        imu->SPI_Recovery_Counter,
+        imu->Gyro_Queue_Drop_Count,
+        imu->Gyro_FIFO_Overrun_Count,
+        imu->Gyro_Outlier_Counter,
+        imu->Accel_Update_Rejected_Counter,
+        imu->Timestamp_Anomaly_Counter,
         imu->VQF_Reset_Counter,
     };
     const uint32_t reasons[] = {
-        HEALTH_REASON_SPI, HEALTH_REASON_SPI, HEALTH_REASON_RECOVERY,
-        HEALTH_REASON_SAMPLE_LOSS, HEALTH_REASON_SAMPLE_LOSS,
-        HEALTH_REASON_INVALID_SAMPLE, HEALTH_REASON_INVALID_SAMPLE,
-        HEALTH_REASON_TIMESTAMP, HEALTH_REASON_FILTER_RESET,
+        HEALTH_REASON_SPI,
+        HEALTH_REASON_SPI,
+        HEALTH_REASON_RECOVERY,
+        HEALTH_REASON_SAMPLE_LOSS,
+        HEALTH_REASON_SAMPLE_LOSS,
+        HEALTH_REASON_INVALID_SAMPLE,
+        HEALTH_REASON_INVALID_SAMPLE,
+        HEALTH_REASON_TIMESTAMP,
+        HEALTH_REASON_FILTER_RESET,
     };
     uint32_t reason = 0;
     for (uint32_t i = 0; i < sizeof(counters) / sizeof(counters[0]); ++i)
@@ -189,21 +199,16 @@ static void Health_Update_IMU(void)
         return;
     }
 
-    Sys_Debug_IMU_Data_t imu;
-    const uint32_t primask = SYS_Enter_Critical();
-    memcpy(&imu, (const void *)&Debug_IMU_Data, sizeof(imu));
-    const uint64_t sample_us = BSP_BMI088.Get_Last_Sample_Timestamp_Us();
-    SYS_Exit_Critical(primask);
-
+    Struct_BMI088_Health_Snapshot imu;
+    uint64_t sample_us;
+    const bool received = BSP_BMI088.Get_Health_Snapshot(imu, sample_us);
     const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
-    const bool received = sample_us != 0U && imu.Debug_ABI_Size == sizeof(imu) &&
-                          imu.sequence == imu.sequence_end && (imu.sequence & 1U) == 0U;
-    const uint64_t timestamp_us = sample_us < imu.timestamp_us ? sample_us : imu.timestamp_us;
+    const uint64_t timestamp_us = sample_us < imu.Published_At_Us ? sample_us : imu.Published_At_Us;
     Health_IMU.Item.Data_Age_ms = received ? Health_Age_ms(now_us, timestamp_us) : UINT32_MAX;
     uint32_t reason = received ? Health_IMU_Reasons(&imu) : 0U;
     Enum_Sys_Health_State state = Health_Data_State(&Health_IMU, received, timestamp_us,
-        SYS_HEALTH_IMU_TIMEOUT_MS * 1000ULL, now_us, &reason);
-    if (received && (sample_us > now_us || imu.timestamp_us > now_us))
+                                                    SYS_HEALTH_IMU_TIMEOUT_MS * 1000ULL, now_us, &reason);
+    if (received && (sample_us > now_us || imu.Published_At_Us > now_us))
     {
         state = HEALTH_FAULT;
         reason |= HEALTH_REASON_TIMESTAMP;
@@ -371,7 +376,7 @@ bool Sys_Health_GetSnapshot(Struct_Sys_Health *snapshot)
         return false;
     }
     const uint32_t primask = SYS_Enter_Critical();
-    memcpy(snapshot, (const void *)&SYS_Health, sizeof(*snapshot));
+    memcpy(snapshot, (const void *) &SYS_Health, sizeof(*snapshot));
     SYS_Exit_Critical(primask);
     return snapshot->ABI_Version == SYS_HEALTH_ABI_VERSION && snapshot->ABI_Size == sizeof(*snapshot) &&
            snapshot->Sequence == snapshot->Sequence_End && (snapshot->Sequence & 1U) == 0U;

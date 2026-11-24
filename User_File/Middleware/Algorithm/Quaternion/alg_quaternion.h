@@ -26,7 +26,7 @@
  */
 class Class_Quaternion_f32 : public Class_Matrix_f32<4, 1>
 {
-public:
+  public:
     // 构造函数
     using Class_Matrix_f32<4, 1>::Class_Matrix_f32;
 
@@ -236,7 +236,7 @@ public:
 
     inline Class_Matrix_f32<4, 1> Get_Axis_Angle() const;
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -256,24 +256,24 @@ protected:
 
 namespace Namespace_ALG_Quaternion
 {
-    Class_Quaternion_f32 Zero();
+Class_Quaternion_f32 Zero();
 
-    Class_Quaternion_f32 Unit_Real();
+Class_Quaternion_f32 Unit_Real();
 
-    Class_Quaternion_f32 Unit_Imaginary_X();
+Class_Quaternion_f32 Unit_Imaginary_X();
 
-    Class_Quaternion_f32 Unit_Imaginary_Y();
+Class_Quaternion_f32 Unit_Imaginary_Y();
 
-    Class_Quaternion_f32 Unit_Imaginary_Z();
+Class_Quaternion_f32 Unit_Imaginary_Z();
 
-    Class_Quaternion_f32 From_Vector(const Class_Matrix_f32<3, 1> &Vector);
+Class_Quaternion_f32 From_Vector(const Class_Matrix_f32<3, 1> &Vector);
 
-    Class_Quaternion_f32 From_Euler_Angle(const Class_Matrix_f32<3, 1> &Euler_Angle);
+Class_Quaternion_f32 From_Euler_Angle(const Class_Matrix_f32<3, 1> &Euler_Angle);
 
-    Class_Quaternion_f32 From_Rotation_Matrix(const Class_Matrix_f32<3, 3> &Rotation_Matrix);
+Class_Quaternion_f32 From_Rotation_Matrix(const Class_Matrix_f32<3, 3> &Rotation_Matrix);
 
-    Class_Quaternion_f32 From_Axis_Angle(const Class_Matrix_f32<3, 1> &Axis, float Angle);
-}
+Class_Quaternion_f32 From_Axis_Angle(const Class_Matrix_f32<3, 1> &Axis, float Angle);
+} // namespace Namespace_ALG_Quaternion
 
 /* Exported function declarations --------------------------------------------*/
 
@@ -294,7 +294,7 @@ inline float Class_Quaternion_f32::Get_Real() const
  */
 inline Class_Matrix_f32<3, 1> Class_Quaternion_f32::Get_Imaginary() const
 {
-    return (Class_Matrix_f32 < 3, 1 > (&Data[1]));
+    return (Class_Matrix_f32<3, 1>(&Data[1]));
 }
 
 /**
@@ -341,7 +341,7 @@ inline Class_Quaternion_f32 Class_Quaternion_f32::Get_Inverse() const
  */
 inline Class_Matrix_f32<3, 1> Class_Quaternion_f32::Get_Euler_Angle() const
 {
-    Class_Matrix_f32 < 3, 1 > result;
+    Class_Matrix_f32<3, 1> result;
     float modulus_square = Data[0] * Data[0] + Data[1] * Data[1] + Data[2] * Data[2] + Data[3] * Data[3];
     if (modulus_square <= Matrix_Compare_Epsilon)
     {
@@ -380,7 +380,7 @@ inline Class_Matrix_f32<3, 1> Class_Quaternion_f32::Get_Euler_Angle() const
  */
 inline Class_Matrix_f32<4, 4> Class_Quaternion_f32::Get_Self_Matrix() const
 {
-    Class_Matrix_f32 < 4, 4 > result;
+    Class_Matrix_f32<4, 4> result;
     result[0][0] = Data[0];
     result[0][1] = -Data[1];
     result[0][2] = -Data[2];
@@ -407,7 +407,7 @@ inline Class_Matrix_f32<4, 4> Class_Quaternion_f32::Get_Self_Matrix() const
  */
 inline Class_Matrix_f32<3, 3> Class_Quaternion_f32::Get_Rotation_Matrix() const
 {
-    Class_Matrix_f32 < 3, 3 > result;
+    Class_Matrix_f32<3, 3> result;
     float modulus_square = Data[0] * Data[0] + Data[1] * Data[1] + Data[2] * Data[2] + Data[3] * Data[3];
     if (modulus_square <= Matrix_Compare_Epsilon)
     {
@@ -447,7 +447,7 @@ inline Class_Matrix_f32<3, 3> Class_Quaternion_f32::Get_Rotation_Matrix() const
  */
 inline Class_Matrix_f32<4, 1> Class_Quaternion_f32::Get_Axis_Angle() const
 {
-    Class_Matrix_f32 < 4, 1 > result;
+    Class_Matrix_f32<4, 1> result;
     float modulus_square = Data[0] * Data[0] + Data[1] * Data[1] + Data[2] * Data[2] + Data[3] * Data[3];
     if (modulus_square <= Matrix_Compare_Epsilon)
     {

@@ -14,7 +14,7 @@ CAT_BSP (`H7_BSP` on GitHub) provides reusable board support, device drivers, co
 - **STM32H7 memory and DMA** — A project-owned linker script and MPU configuration reserve `RAM_DMA` as a 64 KiB non-cacheable region. DMA1/DMA2 transmit and receive buffers live in `.dma_buffer`, which avoids D-cache coherency issues and placement in DTCM, which these controllers cannot access.
 - **Low-jitter CAN** — Each of the three buses has an independent asynchronous command queue, avoiding head-of-line blocking across buses. Periodic transmit slots keep the latest payload. Multiple receive callbacks can share the same `(FDCAN, ID)` key, so several Damiao motors can share a `master_id`. `Can_Tx_Task` wakes on events and has a 1 ms fallback timeout.
 - **Tiered NVIC priorities** — The control and timestamp timers, IMU SPI/DMA/EXTI, FDCAN, auxiliary timers, UART DMA, OSPI/MDMA, and USB run at distinct priority levels that match `H7_BSP.ioc`.
-- **System health and live debugging** — `SYS_Health` reports initialization errors, IMU and flash health, supply voltage, and DJI, DM, and QD4310 motor health at 20 Hz. `Sys_Health_Is_Safe()` lets the control loop select its safety branch. The WS2812 and buzzer indicate system health, and Ozone and GDB can read a consistent snapshot using the sequence counters.
+- **System health and live debugging** — `SYS_Health` reports initialization errors, IMU and flash health, supply voltage, and DJI, DM, and QD4310 motor health at 20 Hz. `Sys_Health_Is_Safe()` lets the control loop select its safety branch. The WS2812 and buzzer indicate system health, and EmberProbe and GDB can read a consistent snapshot using the sequence counters.
 - **C with Classes** — C++ builds disable exceptions and RTTI. Timing-critical control and driver paths use fixed-size data structures. FreeRTOS allocates tasks and message queues from `heap_5` during startup.
 
 ## Quick Start
@@ -41,7 +41,7 @@ cmake --build --preset Release --parallel
 ### 2. Flashing and Debugging
 
 - **Flashing** — [User_Config/](User_Config) contains OpenOCD configurations and scripts for DAPLink and ST-Link probes.
-- **Source debugging** — Open [H7_BSP.jdebug](H7_BSP.jdebug) in SEGGER Ozone, adjust the firmware path for your machine, and expand `SYS_Health` and `Debug_IMU_Data` in the Watch window.
+- **Source debugging** — Load the Debug ELF in EmberProbe. Expand `SYS_Health` for system health and `BSP_BMI088` for attitude and sensor state.
 - **Scheduling analysis** — Open [H7_BSP.SVPrj](H7_BSP.SVPrj) in SEGGER SystemView to inspect task preemption, interrupt timing, and stack high-water marks.
 - **Telemetry** — `EricTool_USB` and `EricTool_UART` support JustFloat plotting and `variable:value#` commands for parameter tuning. See [Transport_Task.cpp](User_File/Task/Transport_Task.cpp) for an example.
 
@@ -102,7 +102,6 @@ User_File/
 ├── System/
 │   ├── Callback/           Shared HAL weak callback dispatch for TIM, EXTI, SPI, and OSPI
 │   ├── Critical/           Shared critical-section primitives in sys_critical.h
-│   ├── Debug/              Fixed-ABI IMU debug snapshot in Debug_IMU_Data
 │   ├── Health/             20 Hz system health monitoring and safety queries in SYS_Health
 │   ├── IMU/                VQF attitude and bias estimation settings
 │   ├── Init/               Peripheral and device initialization and error flags
@@ -178,8 +177,8 @@ Lower numbers take precedence. Each interrupt below has subpriority `0`. See [H7
 | `HEALTH_OFFLINE` | Slow blinking yellow | Brief 800 Hz tone on entry | A motor or sensor has yet to send data (`NO_DATA`) or has timed out (`STALE`). |
 | `HEALTH_FAULT` | Fast blinking red | 50 ms burst at 2400 Hz once per second | Hardware initialization failure (`INIT_FAILED`), undervoltage, a motor fault, or a timestamp anomaly. |
 
-- **Mute for debugging** — Set `SYS_Health_Buzzer_Mute` to `1` in the Ozone or GDB Watch window, or call `Sys_Health_Set_Buzzer_Mute(true)`. The LED and safety decision keep operating independently of the mute setting.
-- **Telemetry channels** — Both `EricTool_USB` and `EricTool_UART` accept arrays of float pointers via `Set_Data(channels, count)`. For example, bind `&SYS_Health.Power_Voltage_V` or `&Debug_IMU_Data.Euler_Yaw_rad` as a channel.
+- **Mute for debugging** — Set `SYS_Health_Buzzer_Mute` to `1` in EmberProbe or GDB, or call `Sys_Health_Set_Buzzer_Mute(true)`. The LED and safety decision keep operating independently of the mute setting.
+- **Telemetry channels** — Both `EricTool_USB` and `EricTool_UART` accept arrays of float pointers via `Set_Data(channels, count)`. For example, bind `&SYS_Health.Power_Voltage_V` as a channel. The default USB channels carry BMI088 yaw, pitch, and roll in radians, in that order. Their values refresh at most once every 5 ms.
 
 ### 4. FreeRTOS Task Responsibilities
 
@@ -187,7 +186,7 @@ FreeRTOS creates the application tasks with the priorities and stack sizes set i
 
 | Task | CMSIS Priority | Stack Size | Responsibility |
 | :--- | :--- | ---: | :--- |
-| [`BMI088Task`](User_File/Task/BMI088_Task.cpp) | `osPriorityHigh2` (42) | 8 KiB | Responds to SPI/FIFO events, processes gyro samples, runs VQF attitude estimation, and publishes the IMU debug snapshot |
+| [`BMI088Task`](User_File/Task/BMI088_Task.cpp) | `osPriorityHigh2` (42) | 8 KiB | Responds to SPI/FIFO events, processes gyro samples, runs VQF attitude estimation, and updates IMU health diagnostics and Euler telemetry |
 | [`ControlTask`](User_File/Task/Control_Task.cpp) | `osPriorityHigh1` (41) | 8 KiB | Wakes from TIM4 at 1 kHz, checks system safety, and provides hooks for application control and actuator disable |
 | [`CanTxTask`](User_File/Task/Can_Tx_Task.cpp) | `osPriorityHigh` (40) | 4 KiB | Handles asynchronous queues, periodic frames, and recovery on all three CAN buses, with event-driven wakeups and a 1 ms retry timeout |
 | [`TransportTask`](User_File/Task/Transport_Task.cpp) | `osPriorityNormal` (24) | 8 KiB | Initializes USB CDC and sends IMU telemetry through EricTool |

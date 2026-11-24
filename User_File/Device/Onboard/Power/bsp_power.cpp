@@ -64,7 +64,7 @@ bool Class_Power::Get_Power_Voltage(float *voltage, uint64_t *sample_timestamp_u
     SYS_Exit_Critical(primask);
 
     // 16 位采样，参考电压 3.3 V，分压比例 11:1。
-    *voltage = ((float)adc_value / 65536.0f) * 3.3f * 11.0f;
+    *voltage = ((float) adc_value / 65536.0f) * 3.3f * 11.0f;
     if (sample_timestamp_us != nullptr)
     {
         *sample_timestamp_us = timestamp_us;

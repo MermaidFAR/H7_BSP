@@ -66,7 +66,7 @@ float Basic_Math_Modulus_Normalization(float x, float modulus);
  * @param Max 最大值
  * @return 输出值
  */
-template<typename Type>
+template <typename Type>
 Type Basic_Math_Constrain(Type x, Type Min, Type Max)
 {
     if (x < Min)
@@ -89,7 +89,7 @@ Type Basic_Math_Constrain(Type x, Type Min, Type Max)
  * @param Max 最大值
  * @return 输出值
  */
-template<typename Type>
+template <typename Type>
 Type Basic_Math_Constrain(Type *x, Type Min, Type Max)
 {
     if (*x < Min)
@@ -110,7 +110,7 @@ Type Basic_Math_Constrain(Type *x, Type Min, Type Max)
  * @param x 传入数据
  * @return Type x的绝对值
  */
-template<typename Type>
+template <typename Type>
 Type Basic_Math_Abs(Type x)
 {
     return ((x > 0) ? x : -x);

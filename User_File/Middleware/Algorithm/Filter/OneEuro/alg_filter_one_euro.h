@@ -24,7 +24,7 @@
  */
 class Class_Filter_One_Euro
 {
-public:
+  public:
     bool Init(float min_cutoff_frequency, float beta = 0.0f,
               float derivative_cutoff_frequency = 1.0f, float d_t = 0.001f);
 
@@ -38,7 +38,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     /* 初始化相关常量 --------------------------------------------------------*/
 
     float Min_Cutoff_Frequency = 1.0f;

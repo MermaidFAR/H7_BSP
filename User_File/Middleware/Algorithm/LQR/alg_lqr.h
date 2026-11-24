@@ -36,12 +36,12 @@
  * }
  * @endcode
  */
-template<int State_Dim, int Control_Dim>
+template <int State_Dim, int Control_Dim>
 class Class_LQR
 {
     static_assert(State_Dim > 0 && Control_Dim > 0, "LQR dimensions must be positive");
 
-public:
+  public:
     bool Init(const Class_Matrix_f32<Control_Dim, State_Dim> &gain,
               const Class_Matrix_f32<Control_Dim, 1> &lower,
               const Class_Matrix_f32<Control_Dim, 1> &upper)
@@ -79,8 +79,14 @@ public:
         return true;
     }
 
-    void Set_Ref(const Class_Matrix_f32<State_Dim, 1> &reference) { X_Ref = reference; }
-    void Set_Now(const Class_Matrix_f32<State_Dim, 1> &state) { X_Now = state; }
+    void Set_Ref(const Class_Matrix_f32<State_Dim, 1> &reference)
+    {
+        X_Ref = reference;
+    }
+    void Set_Now(const Class_Matrix_f32<State_Dim, 1> &state)
+    {
+        X_Now = state;
+    }
 
     bool TIM_Calculate_PeriodElapsedCallback()
     {
@@ -97,9 +103,12 @@ public:
         return true;
     }
 
-    const Class_Matrix_f32<Control_Dim, 1> &Get_Out() const { return Out; }
+    const Class_Matrix_f32<Control_Dim, 1> &Get_Out() const
+    {
+        return Out;
+    }
 
-private:
+  private:
     void Set_Zero_Out()
     {
         for (int i = 0; i < Control_Dim; ++i)

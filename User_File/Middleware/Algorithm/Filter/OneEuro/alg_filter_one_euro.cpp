@@ -27,7 +27,7 @@
  * @return 参数及系数有效时返回true, 否则保留原配置和状态
  */
 bool Class_Filter_One_Euro::Init(float min_cutoff_frequency, float beta,
-                                float derivative_cutoff_frequency, float d_t)
+                                 float derivative_cutoff_frequency, float d_t)
 {
     if (Basic_Math_Is_Invalid_Float(min_cutoff_frequency) ||
         Basic_Math_Is_Invalid_Float(beta) ||
@@ -41,9 +41,9 @@ bool Class_Filter_One_Euro::Init(float min_cutoff_frequency, float beta,
 
     float sampling_frequency = 1.0f / d_t;
     float derivative_alpha = 1.0f / (1.0f + sampling_frequency /
-                                              (2.0f * PI * derivative_cutoff_frequency));
+                                                (2.0f * PI * derivative_cutoff_frequency));
     float min_alpha = 1.0f / (1.0f + sampling_frequency /
-                                       (2.0f * PI * min_cutoff_frequency));
+                                         (2.0f * PI * min_cutoff_frequency));
     if (Basic_Math_Is_Invalid_Float(sampling_frequency) ||
         Basic_Math_Is_Invalid_Float(derivative_alpha) || derivative_alpha <= 0.0f ||
         Basic_Math_Is_Invalid_Float(min_alpha) || min_alpha <= 0.0f)

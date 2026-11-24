@@ -26,7 +26,7 @@
  */
 class Class_Filter_IIR_First_Order
 {
-public:
+  public:
     void Init(float cutoff_frequency,
               float sampling_frequency);
 
@@ -42,7 +42,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     /* 初始化相关常量 --------------------------------------------------------*/
 
     float Alpha = 1.0f;
@@ -63,7 +63,7 @@ protected:
  */
 class Class_Filter_IIR_Second_Order_Notch
 {
-public:
+  public:
     void Init(float center_frequency,
               float sampling_frequency,
               float quality_factor);
@@ -78,7 +78,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     /* 初始化相关常量 --------------------------------------------------------*/
 
     float B_0 = 1.0f;
@@ -103,7 +103,7 @@ protected:
  */
 class Class_Filter_IIR_Second_Order_Low_Pass
 {
-public:
+  public:
     void Init(float cutoff_frequency,
               float sampling_frequency,
               float quality_factor);
@@ -118,7 +118,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     float B_0 = 1.0f;
     float B_1 = 0.0f;
     float B_2 = 0.0f;

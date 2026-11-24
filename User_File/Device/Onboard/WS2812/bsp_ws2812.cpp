@@ -96,12 +96,14 @@ void Class_WS2812::TIM_10ms_Write_PeriodElapsedCallback()
 }
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback() {
-  BSP_WS2812.TIM_10ms_Write_PeriodElapsedCallback();
-}
+    void BSP_WS2812_TIM_10ms_Write_PeriodElapsedCallback()
+    {
+        BSP_WS2812.TIM_10ms_Write_PeriodElapsedCallback();
+    }
 
 #ifdef __cplusplus
 }

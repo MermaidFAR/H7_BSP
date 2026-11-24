@@ -13,15 +13,15 @@ FDCAN 回调注册和周期发送接口，不使用动态内存。
 [麻神 MC02 BSP](https://github.com/yssickjgd/damiao_mc02_bsp) 的类型前缀、下划线命名、
 文件分区及协议与调度分层，继续使用本工程的 CAN 注册器、发送槽、PID 与系统时间服务。
 
-| 职责 | 函数名 |
-|---|---|
-| PID 参数初始化 | `PID_Init` |
-| 目标设置 | `SetRef` |
-| 外环选择 | `Set_Outer_Loop` |
-| 反馈源选择 | `Set_Feedback_Source` |
-| CAN 接收入口 | `CAN_RxCpltCallback` |
-| 反馈超时检查 | `Check_Feedback_Timeout` |
-| 清除本电机命令 | `Clear_Command` |
+| 职责           | 函数名                   |
+| -------------- | ------------------------ |
+| PID 参数初始化 | `PID_Init`               |
+| 目标设置       | `SetRef`                 |
+| 外环选择       | `Set_Outer_Loop`         |
+| 反馈源选择     | `Set_Feedback_Source`    |
+| CAN 接收入口   | `CAN_RxCpltCallback`     |
+| 反馈超时检查   | `Check_Feedback_Timeout` |
+| 清除本电机命令 | `Clear_Command`          |
 
 `Init()` 接收配置结构体的只读引用，例如 `motor.Init(config)`；接口声明采用
 `Init(const Struct_DJIMotor_Init_Config &config)` 和 `SetRef(float ref)`，参数名简洁，
@@ -38,16 +38,16 @@ Private types、Private variables、Private function declarations、Function pro
 
 ## 协议配置
 
-| 设备 | ID | 反馈 ID | 控制 ID | 指令范围 |
-|---|---:|---:|---:|---:|
-| M2006/C610 | 1~4 | `0x200 + ID` | `0x200` | ±10000 |
-| M2006/C610 | 5~8 | `0x200 + ID` | `0x1FF` | ±10000 |
-| M3508/C620 | 1~4 | `0x200 + ID` | `0x200` | ±16384 |
-| M3508/C620 | 5~8 | `0x200 + ID` | `0x1FF` | ±16384 |
-| GM6020 电压 | 1~4 | `0x204 + ID` | `0x1FF` | ±25000 |
-| GM6020 电压 | 5~7 | `0x204 + ID` | `0x2FF` | ±25000 |
-| GM6020 电流 | 1~4 | `0x204 + ID` | `0x1FE` | ±16384 |
-| GM6020 电流 | 5~7 | `0x204 + ID` | `0x2FE` | ±16384 |
+| 设备        |   ID |      反馈 ID | 控制 ID | 指令范围 |
+| ----------- | ---: | -----------: | ------: | -------: |
+| M2006/C610  |  1~4 | `0x200 + ID` | `0x200` |   ±10000 |
+| M2006/C610  |  5~8 | `0x200 + ID` | `0x1FF` |   ±10000 |
+| M3508/C620  |  1~4 | `0x200 + ID` | `0x200` |   ±16384 |
+| M3508/C620  |  5~8 | `0x200 + ID` | `0x1FF` |   ±16384 |
+| GM6020 电压 |  1~4 | `0x204 + ID` | `0x1FF` |   ±25000 |
+| GM6020 电压 |  5~7 | `0x204 + ID` | `0x2FF` |   ±25000 |
+| GM6020 电流 |  1~4 | `0x204 + ID` | `0x1FE` |   ±16384 |
+| GM6020 电流 |  5~7 | `0x204 + ID` | `0x2FE` |   ±16384 |
 
 GM6020 电流模式要求固件版本不低于 1.0.11.2，并通过 RoboMaster Assistant
 2.7 或更高版本开启电流环。
@@ -258,25 +258,7 @@ Group 的 `Enable()` 依次使能所有成员，`Disable()` 批量清零后一�
 
 ## PID 调试
 
-在调试器中展开 `motor.feedback.pid.current`、`speed`、`angle`，分别查看电流、速度和角度环。
-原有 `motor.current_pid`、`motor.speed_pid`、`motor.angle_pid` 仍负责计算。
-
-```c
-motor.feedback.pid.speed.kp = 2.0f;
-motor.feedback.pid.speed.ki = 0.1f;
-motor.feedback.pid.speed.kd = 0.0f;
-// 下一次 motor.Control() 或电机组 Control()/Update() 时应用。
-```
-
-- `kp/ki/kd`：可调入口，初始化时从配置载入，下一次 `Control()` 开始时写入实际 PID。
-  没有改调试入口时，原 PID setter 的修改会同步回来；两处同时修改同一增益时，调试入口优先。
-  NaN/Inf 不写入 PID，调试字段恢复为实际值；修改增益不重置积分和历史状态。
-- `kf/integral_out_max/out_max`：实际 PID 的前馈增益和限幅观察值。
-- `target/now/error`：实际 PID 的目标、反馈和最近一次计算经过死区处理后的误差。
-- `integral_error/out`：积分状态和 PID 自身输出；`out` 尚未包含后级环和最终电机指令限幅。
-- `active`：最近一次控制是否执行该环；关闭、掉线或本轮跳过时为 false。
-  未执行的环保留最近一次计算值，因此不能把此时的 `out` 当作当前发给电机的指令。
-
-除 `kp/ki/kd` 外均为观察字段，修改不会用于控制，并在下次刷新覆盖。停止时调用 `Control()`
-也能应用增益，但不会因此使能电机；只调用 `Send()` 不应用新增益。调试快照不保证跨中断或
-跨控制周期读取的一致性，需要一次改齐多个增益时应暂停目标后修改，再恢复运行。
+在 EmberProbe 中展开 `motor.current_pid`、`motor.speed_pid` 或 `motor.angle_pid`，
+可直接读取各环的目标、反馈、积分及输出，也可修改 `K_P`、`K_I` 和 `K_D`。
+代码中通过现有 Setter 调参，例如 `motor.speed_pid.Set_K_P(2.0f)`。
+各环的输出表示该环最近一次计算结果，最终 CAN 指令还受后级控制环和协议限幅影响。

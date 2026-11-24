@@ -1,10 +1,10 @@
-#include "user_task.h"
 #include "bsp_can.h"
 #include "sys_health.h"
+#include "user_task.h"
 
-extern "C" void Control_Task(void* argument)
+extern "C" void Control_Task(void *argument)
 {
-    (void)argument;
+    (void) argument;
     // RTOS 以 osPriorityHigh1 创建本任务，调度优先级介于 BMI088 解算与 CAN 发送之间。
 
     // 在此初始化应用控制模块。
@@ -23,4 +23,3 @@ extern "C" void Control_Task(void* argument)
         // 在此计算并更新本周期的控制输出。
     }
 }
-

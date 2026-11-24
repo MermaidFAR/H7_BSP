@@ -13,11 +13,11 @@
  *   - 128 ms 处理 BMI088 温度读取与加热温控。
  */
 
-#include "user_task.h"
+#include "bsp_adc.h"
 #include "bsp_key.h"
 #include "bsp_uart.h"
-#include "bsp_adc.h"
 #include "bsp_w25q64jv.h"
+#include "user_task.h"
 
 /**
  * @brief W25Q64JV 自动轮询超时检测回调 (1ms)
@@ -25,10 +25,12 @@
  * @note  检测 OSPI 硬件自动轮询是否超时, 防止 Busy_Flag 永久锁死
  * @note  extern "C" 链路: TIM1msTask → Pulse_Dispatch → 本函数 → BSP_W25Q64JV.TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback()
  */
-extern "C" {
-void W25Q64JV_AutoPolling_Callback(void) {
-    BSP_W25Q64JV.TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback();
-}
+extern "C"
+{
+    void W25Q64JV_AutoPolling_Callback(void)
+    {
+        BSP_W25Q64JV.TIM_1ms_AutoPollingTimeout_PeriodElapsedCallback();
+    }
 }
 
 static const PulseEntry_t TIM_1ms_Callback_Table[] = {
@@ -48,17 +50,19 @@ static const PulseEntry_t TIM_1ms_Callback_Table[] = {
  * @note  每 1ms 执行一次, 通过固定回调表分发给各周期回调
  * @note  使用 osDelayUntil 按绝对节拍延时; 回调执行超时仍会导致任务晚点
  */
-extern "C" void TIM1msTask(void *argument) {
-  (void)argument;
-  uint32_t xLastWakeTime = osKernelGetTickCount();
-  uint32_t pulse_tick_ms = 0;
-  while (1) {
-      Pulse_Dispatch(TIM_1ms_Callback_Table,
-                     sizeof(TIM_1ms_Callback_Table) / sizeof(TIM_1ms_Callback_Table[0]),
-                     pulse_tick_ms);
-      pulse_tick_ms++;
+extern "C" void TIM1msTask(void *argument)
+{
+    (void) argument;
+    uint32_t xLastWakeTime = osKernelGetTickCount();
+    uint32_t pulse_tick_ms = 0;
+    while (1)
+    {
+        Pulse_Dispatch(TIM_1ms_Callback_Table,
+                       sizeof(TIM_1ms_Callback_Table) / sizeof(TIM_1ms_Callback_Table[0]),
+                       pulse_tick_ms);
+        pulse_tick_ms++;
 
-      xLastWakeTime += 1;
-      osDelayUntil(xLastWakeTime);
-  }
+        xLastWakeTime += 1;
+        osDelayUntil(xLastWakeTime);
+    }
 }

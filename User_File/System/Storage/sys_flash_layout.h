@@ -31,6 +31,6 @@ static_assert((IMU_BIAS_SLOT_B_ADDRESS % W25Q64_SECTOR_SIZE) == 0U,
               "IMU bias slot B must be sector aligned");
 static_assert((IMU_BIAS_SLOT_B_ADDRESS + W25Q64_SECTOR_SIZE) == W25Q64_SIZE,
               "IMU bias slots must end at the flash boundary");
-}
+} // namespace Namespace_SYS_Flash_Layout
 
 #endif /* SYS_FLASH_LAYOUT_H */

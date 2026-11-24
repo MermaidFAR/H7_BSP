@@ -33,7 +33,7 @@ enum Enum_Trajectory_Status
  */
 class Class_Trajectory
 {
-public:
+  public:
     bool Init(float velocity_max, float acceleration_max, float jerk_max,
               float d_t = 0.001f);
     bool Reset(float position, float velocity = 0.0f, float acceleration = 0.0f);
@@ -48,7 +48,7 @@ public:
     inline float Get_Acceleration() const;
     inline Enum_Trajectory_Status Get_Status() const;
 
-protected:
+  protected:
     struct Struct_State
     {
         double Position;
@@ -109,17 +109,17 @@ protected:
 
 inline float Class_Trajectory::Get_Position() const
 {
-    return ((float)State.Position);
+    return ((float) State.Position);
 }
 
 inline float Class_Trajectory::Get_Velocity() const
 {
-    return ((float)State.Velocity);
+    return ((float) State.Velocity);
 }
 
 inline float Class_Trajectory::Get_Acceleration() const
 {
-    return ((float)State.Acceleration);
+    return ((float) State.Acceleration);
 }
 
 inline Enum_Trajectory_Status Class_Trajectory::Get_Status() const

@@ -10,52 +10,53 @@
 
 /* Includes ------------------------------------------------------------------*/
 
+#include "stm32h7xx_hal.h"
 #include "sys_timestamp.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
-#include "stm32h7xx_hal.h"
 #include <stdbool.h>
 #include <string.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* Exported macros -----------------------------------------------------------*/
+    /* Exported macros -----------------------------------------------------------*/
 
 #define USB_BUFFER_SIZE 512
 
-/* Exported types ------------------------------------------------------------*/
+    /* Exported types ------------------------------------------------------------*/
 
-typedef void (*USB_Callback)(uint8_t *Buffer, uint16_t Length);
+    typedef void (*USB_Callback)(uint8_t *Buffer, uint16_t Length);
 
-struct Struct_USB_Manage_Object
-{
-    USB_Callback Callback_Function;
+    struct Struct_USB_Manage_Object
+    {
+        USB_Callback Callback_Function;
 
-    uint8_t Rx_Buffer_0[USB_BUFFER_SIZE];
-    uint8_t Rx_Buffer_1[USB_BUFFER_SIZE];
-    uint8_t *Rx_Buffer_Active;
-    uint8_t *Rx_Buffer_Ready;
+        uint8_t Rx_Buffer_0[USB_BUFFER_SIZE];
+        uint8_t Rx_Buffer_1[USB_BUFFER_SIZE];
+        uint8_t *Rx_Buffer_Active;
+        uint8_t *Rx_Buffer_Ready;
 
-    // CDC 异步发送期间持有数据；当前 USB PCD 未启用 DMA。
-    uint8_t Tx_Buffer[USB_BUFFER_SIZE];
+        // CDC 异步发送期间持有数据；当前 USB PCD 未启用 DMA。
+        uint8_t Tx_Buffer[USB_BUFFER_SIZE];
 
-    uint64_t Rx_Timestamp;
-};
+        uint64_t Rx_Timestamp;
+    };
 
-/* Exported variables --------------------------------------------------------*/
+    /* Exported variables --------------------------------------------------------*/
 
-extern struct Struct_USB_Manage_Object USB0_Manage_Object;
+    extern struct Struct_USB_Manage_Object USB0_Manage_Object;
 
-/* Exported function declarations --------------------------------------------*/
+    /* Exported function declarations --------------------------------------------*/
 
-void USB_Init(USB_Callback Callback_Function);
+    void USB_Init(USB_Callback Callback_Function);
 
-// 复制 1..USB_BUFFER_SIZE 字节；忙时立即返回 USBD_BUSY，不覆盖在途帧。
-uint8_t USB_Transmit_Data(uint8_t *Data, uint16_t Length);
+    // 复制 1..USB_BUFFER_SIZE 字节；忙时立即返回 USBD_BUSY，不覆盖在途帧。
+    uint8_t USB_Transmit_Data(uint8_t *Data, uint16_t Length);
 
-void USB_ReceiveCallback(uint8_t *Buffer, uint16_t Size);
+    void USB_ReceiveCallback(uint8_t *Buffer, uint16_t Size);
 
 #ifdef __cplusplus
 }

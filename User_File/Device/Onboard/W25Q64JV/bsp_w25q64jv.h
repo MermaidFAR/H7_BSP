@@ -15,8 +15,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "bsp_w25q64jv_register.h"
 #include "bsp_ospi.h"
+#include "bsp_w25q64jv_register.h"
 #include "cmsis_os2.h"
 
 /* Private macros ------------------------------------------------------------*/
@@ -39,10 +39,13 @@ enum Enum_W25Q64JV_Mode
  */
 class Class_W25Q64JV
 {
-public:
+  public:
     // JEDEC ID 最多尝试 5 次；失败后读写接口保持不可用。
     bool Init(Enum_W25Q64JV_Mode flash_mode = W25Q64JV_Mode_Normal);
-    bool Is_Initialized() const { return Initialized; }
+    bool Is_Initialized() const
+    {
+        return Initialized;
+    }
 
     void Enable_Quad_Mode();
 
@@ -60,9 +63,15 @@ public:
 
     inline bool Set_Buffer(const uint8_t *Buffer, uint32_t Address, uint16_t Length);
 
-    bool Is_Ready() { return Initialized && !Is_Busy(); }
+    bool Is_Ready()
+    {
+        return Initialized && !Is_Busy();
+    }
 
-    uint32_t Get_Auto_Polling_Error_Count() { return Auto_Polling_Error_Count; }
+    uint32_t Get_Auto_Polling_Error_Count()
+    {
+        return Auto_Polling_Error_Count;
+    }
 
     inline bool Read_Data(void *Dest, uint32_t Address, uint32_t Length);
 
@@ -117,11 +126,11 @@ public:
     };
 
     // 轮询超时时间（微秒）
-    const uint64_t AUTOPOLLING_DEFAULT_TIMEOUT = 5000000;           // 5000ms
-    const uint64_t AUTOPOLLING_SECTOR_ERASED_TIMEOUT = 800000;      // 800ms (2x tSE_max=400ms)
-    const uint64_t AUTOPOLLING_BLOCK_ERASED_32K_TIMEOUT = 1600000;  // 1600ms
-    const uint64_t AUTOPOLLING_BLOCK_ERASED_64K_TIMEOUT = 2000000;  // 2000ms
-    const uint64_t AUTOPOLLING_CHIP_ERASED_TIMEOUT = 100000000;     // 100000ms
+    const uint64_t AUTOPOLLING_DEFAULT_TIMEOUT = 5000000;          // 5000ms
+    const uint64_t AUTOPOLLING_SECTOR_ERASED_TIMEOUT = 800000;     // 800ms (2x tSE_max=400ms)
+    const uint64_t AUTOPOLLING_BLOCK_ERASED_32K_TIMEOUT = 1600000; // 1600ms
+    const uint64_t AUTOPOLLING_BLOCK_ERASED_64K_TIMEOUT = 2000000; // 2000ms
+    const uint64_t AUTOPOLLING_CHIP_ERASED_TIMEOUT = 100000000;    // 100000ms
 
     // 写使能激活标志
     volatile bool Write_Enable_Activated_Flag = false;
@@ -176,7 +185,7 @@ public:
 
     bool Wait_Ready()
     {
-        const uint32_t timeout_ticks = (uint32_t)((500ULL * osKernelGetTickFreq() + 999ULL) / 1000ULL);
+        const uint32_t timeout_ticks = (uint32_t) ((500ULL * osKernelGetTickFreq() + 999ULL) / 1000ULL);
         const uint32_t start_tick = osKernelGetTickCount();
         while (!Is_Ready())
         {
@@ -441,14 +450,14 @@ inline bool Class_W25Q64JV::Read_Data(void *Dest, uint32_t Address, uint32_t Len
         return false;
     }
 
-    uint8_t *dst = (uint8_t *)Dest;
+    uint8_t *dst = (uint8_t *) Dest;
     uint32_t addr = Address;
     uint32_t remaining = Length;
     const uint32_t error_count = Get_Auto_Polling_Error_Count();
 
     while (remaining > 0)
     {
-        const uint16_t chunk = (uint16_t)((remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining);
+        const uint16_t chunk = (uint16_t) ((remaining > OSPI_BUFFER_SIZE) ? OSPI_BUFFER_SIZE : remaining);
 
         if (!Get_Buffer(addr, chunk))
         {
@@ -484,7 +493,7 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, uint32_t Address, uint32
         return false;
     }
 
-    const uint8_t *src = (const uint8_t *)Src;
+    const uint8_t *src = (const uint8_t *) Src;
     uint32_t addr = Address;
     uint32_t remaining = Length;
     const uint32_t error_count = Get_Auto_Polling_Error_Count();
@@ -492,7 +501,7 @@ inline bool Class_W25Q64JV::Write_Data(const void *Src, uint32_t Address, uint32
     while (remaining > 0)
     {
         const uint32_t page_remain = W25Q64JV_PAGE_SIZE - (addr % W25Q64JV_PAGE_SIZE);
-        const uint16_t chunk = (uint16_t)((remaining > page_remain) ? page_remain : remaining);
+        const uint16_t chunk = (uint16_t) ((remaining > page_remain) ? page_remain : remaining);
 
         if (!Set_Write_Enable())
         {

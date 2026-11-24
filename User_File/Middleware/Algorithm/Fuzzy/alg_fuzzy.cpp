@@ -31,7 +31,7 @@ bool Class_Fuzzy_Sugeno::Init(const Struct_Fuzzy_Sugeno_Config &config)
         return (false);
     }
 
-    uint64_t length = (uint64_t)config.Input_1_Count *
+    uint64_t length = (uint64_t) config.Input_1_Count *
                       config.Input_2_Count * config.Output_Count;
     if (length != config.Rule_Table_Length)
     {
@@ -66,12 +66,12 @@ bool Class_Fuzzy_Sugeno::Calculate(float input_1, float input_2, float *out) con
     float ratio_1;
     float ratio_2;
     uint16_t index_1 = Find_Interval(Config.Input_1_Nodes, Config.Input_1_Count,
-                                    input_1, &ratio_1);
+                                     input_1, &ratio_1);
     uint16_t index_2 = Find_Interval(Config.Input_2_Nodes, Config.Input_2_Count,
-                                    input_2, &ratio_2);
-    uint32_t offset = ((uint32_t)index_1 * Config.Input_2_Count + index_2) *
+                                     input_2, &ratio_2);
+    uint32_t offset = ((uint32_t) index_1 * Config.Input_2_Count + index_2) *
                       Config.Output_Count;
-    uint32_t stride = (uint32_t)Config.Input_2_Count * Config.Output_Count;
+    uint32_t stride = (uint32_t) Config.Input_2_Count * Config.Output_Count;
     const float *rule_00 = Config.Rule_Table + offset;
     const float *rule_01 = rule_00 + Config.Output_Count;
     const float *rule_10 = rule_00 + stride;
@@ -111,7 +111,7 @@ bool Class_Fuzzy_Sugeno::Check_Nodes(const float *nodes, uint16_t count)
 }
 
 uint16_t Class_Fuzzy_Sugeno::Find_Interval(const float *nodes, uint16_t count,
-                                         float input, float *ratio)
+                                           float input, float *ratio)
 {
     if (input <= nodes[0])
     {

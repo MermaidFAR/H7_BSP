@@ -6,14 +6,14 @@
 #ifndef ALG_RLS_H
 #define ALG_RLS_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define RLS_MAX_DIMENSION 6
 
 class Class_RLS
 {
-public:
+  public:
     bool Init(uint8_t dimension, float forgetting_factor, float initial_covariance,
               const float *initial_parameters = NULL);
     bool Update(const float *features, float measurement);
@@ -23,7 +23,7 @@ public:
     uint8_t Get_Dimension() const;
     bool Get_Initialized_Flag() const;
 
-protected:
+  protected:
     double Parameters[RLS_MAX_DIMENSION] = {};
     double Initial_Parameters[RLS_MAX_DIMENSION] = {};
     double Covariance[RLS_MAX_DIMENSION][RLS_MAX_DIMENSION] = {};

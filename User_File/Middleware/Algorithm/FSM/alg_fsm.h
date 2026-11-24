@@ -46,10 +46,10 @@ struct Struct_Status
  * 使用时请继承->声明友元后使用
  *
  */
-template<uint8_t Status_Max = 10>
+template <uint8_t Status_Max = 10>
 class Class_FSM
 {
-public:
+  public:
     Struct_Status Status[Status_Max];
 
     void Init(uint8_t now_status_serial = 0);
@@ -60,7 +60,7 @@ public:
 
     void TIM_Calculate_PeriodElapsedCallback();
 
-protected:
+  protected:
     // 初始化相关常量
 
     // 常量
@@ -89,7 +89,7 @@ protected:
  * @tparam Status_Max 状态机最大状态数量
  * @param now_status_serial 当前指定状态机初始编号
  */
-template<uint8_t Status_Max>
+template <uint8_t Status_Max>
 void Class_FSM<Status_Max>::Init(uint8_t now_status_serial)
 {
     Now_Status_Serial = now_status_serial;
@@ -111,7 +111,7 @@ void Class_FSM<Status_Max>::Init(uint8_t now_status_serial)
  *
  * @tparam Status_Max 状态机最大状态数量
  */
-template<uint8_t Status_Max>
+template <uint8_t Status_Max>
 void Class_FSM<Status_Max>::TIM_Calculate_PeriodElapsedCallback()
 {
     Status[Now_Status_Serial].Count_Time++;
@@ -125,7 +125,7 @@ void Class_FSM<Status_Max>::TIM_Calculate_PeriodElapsedCallback()
  * @tparam Status_Max 状态机最大状态数量
  * @return uint8_t FSM当前状态
  */
-template<uint8_t Status_Max>
+template <uint8_t Status_Max>
 inline uint8_t Class_FSM<Status_Max>::Get_Now_Status_Serial() const
 {
     return (Now_Status_Serial);
@@ -137,7 +137,7 @@ inline uint8_t Class_FSM<Status_Max>::Get_Now_Status_Serial() const
  * @tparam Status_Max 状态机最大状态数量
  * @param Next_Status_serial 下一个状态
  */
-template<uint8_t Status_Max>
+template <uint8_t Status_Max>
 inline void Class_FSM<Status_Max>::Set_Status(uint8_t Next_Status_serial)
 {
     // 失能当前状态, 计数器清零

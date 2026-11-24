@@ -95,7 +95,7 @@ void Class_Filter_Alpha_Beta::TIM_Calculate_PeriodElapsedCallback()
 {
     if (D_T > 0.0f && isfinite(Now))
     {
-        (void)Update_State(Now, D_T, Alpha, Velocity_Gain);
+        (void) Update_State(Now, D_T, Alpha, Velocity_Gain);
     }
 }
 

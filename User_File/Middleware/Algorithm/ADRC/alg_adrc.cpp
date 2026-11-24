@@ -1,6 +1,7 @@
 /** @file alg_adrc.cpp */
 
 #include "alg_adrc.h"
+
 #include "alg_basic.h"
 
 bool Class_LESO_Second_Order::Init(float b0, float omega_o, float d_t)

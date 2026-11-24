@@ -8,10 +8,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "sys_debug.h"
+#include "bsp_bmi088.h"
 #include "usb_device.h"
 #include "user_task.h"
-
 
 /* Private macros ------------------------------------------------------------*/
 
@@ -25,10 +24,11 @@
 
 extern "C" void Transport_Task(void *)
 {
-    static const volatile float *const imu_channels[] = {
-        &Debug_IMU_Data.Euler_Yaw_rad,
-        &Debug_IMU_Data.Euler_Pitch_rad,
-        &Debug_IMU_Data.Euler_Roll_rad,
+    const Struct_BMI088_Euler_Telemetry &euler = BSP_BMI088.Get_Euler_Telemetry();
+    const volatile float *const imu_channels[] = {
+        &euler.Yaw_rad,
+        &euler.Pitch_rad,
+        &euler.Roll_rad,
     };
 
     MX_USB_DEVICE_Init();

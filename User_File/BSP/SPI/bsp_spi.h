@@ -18,9 +18,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "sys_timestamp.h"
 #include "spi.h"
 #include "stm32h7xx_hal.h"
+#include "sys_timestamp.h"
 #include <string.h>
 
 /* Exported macros -----------------------------------------------------------*/
