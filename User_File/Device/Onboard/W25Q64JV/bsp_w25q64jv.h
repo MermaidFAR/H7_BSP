@@ -393,7 +393,7 @@ inline void Class_W25Q64JV::Set_Chip_Erased()
 
 /**
  * @brief 页写数据（1-1-4 Quad 页编程）
- *        写前必须调用 Set_Write_Enable()；写完在 TxCallback 中自动发起轮询
+ *        写前调用 Set_Write_Enable() 并等待就绪。DMA 发送完成后由 1 ms 任务启动 WIP 轮询。
  *
  * @param Buffer  源数据指针
  * @param Address 目标地址（不跨 Page，即 Address%256 + Length ≤ 256）
@@ -435,8 +435,8 @@ inline bool Class_W25Q64JV::Set_Buffer(const uint8_t *Buffer, uint32_t Address, 
 }
 
 /**
- * @brief 同步读取任意长度数据（分次 DMA 接收，自动等待）
- *
+ * @brief 在芯片地址范围内分块读取，等待每块 DMA 和状态轮询完成。
+ * @note 在可阻塞的任务中调用。返回 false 时，目标缓冲区可能已收到前几块。
  */
 inline bool Class_W25Q64JV::Read_Data(void *Dest, uint32_t Address, uint32_t Length)
 {
@@ -478,8 +478,8 @@ inline bool Class_W25Q64JV::Read_Data(void *Dest, uint32_t Address, uint32_t Len
 }
 
 /**
- * @brief 同步写入任意长度数据（自动处理页边界和写使能）
- *
+ * @brief 在芯片地址范围内分次编程，每页独立执行写使能和完成等待。
+ * @note 在可阻塞的任务中调用。扇区擦除由调用方安排，返回 false 时前几页可能已写入。
  */
 inline bool Class_W25Q64JV::Write_Data(const void *Src, uint32_t Address, uint32_t Length)
 {

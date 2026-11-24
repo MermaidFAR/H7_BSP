@@ -31,14 +31,18 @@
 /* Exported types ------------------------------------------------------------*/
 
 /**
- * @brief SPI通信接收回调函数数据类型
- *
+ * @brief SPI 全双工收发完成回调。
+ * @param Tx_Buffer 本次事务的发送缓冲区。
+ * @param Rx_Buffer 全双工接收缓冲区，读取段从偏移 Tx_Length 起取 Rx_Length 字节。
+ * @param Tx_Length 读取段前发送的字节数。
+ * @param Rx_Length 读取段的字节数。
+ * @note 轮询完成时在调用者上下文执行，DMA 完成时在中断上下文执行。
+ * @note 两个缓冲区借用至回调返回，此后 SPI 事务释放。
  */
 typedef void (*SPI_Callback)(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length, uint16_t Rx_Length);
 
 /**
- * @brief CAN通信处理结构体
- *
+ * @brief 单路 SPI 的收发缓冲区、片选状态与诊断计数。
  */
 struct Struct_SPI_Manage_Object
 {

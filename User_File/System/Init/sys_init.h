@@ -16,8 +16,9 @@ extern "C"
         SYSTEM_INIT_ERROR_ADC1 = 1 << 2,
     };
 
+    /** @brief 在 RTOS 内核初始化前配置板载驱动并放行应用回调。 @author zzm */
     void System_Init(void);
-    // 初始化流程结束不等于所有设备正常；位掩码用于上层诊断。
+    /** @brief 返回板载设备初始化失败的位掩码，供健康任务诊断。 @author zzm */
     unsigned int System_Get_Init_Errors(void);
 
 #ifdef __cplusplus

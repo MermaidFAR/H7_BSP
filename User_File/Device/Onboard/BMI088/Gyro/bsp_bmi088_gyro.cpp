@@ -211,6 +211,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(uint64_t ready_timestamp_us)
             return BMI088_GYRO_SPI_RESULT_NONE;
         }
 
+        // 用相邻批次的锚点时间差和上一批帧数估算周期，只吸收接近名义周期的结果。
         if (FIFO_Previous_Anchor_Timestamp_Us != 0U &&
             FIFO_Previous_Batch_Frame_Count != 0U &&
             ready_timestamp_us > FIFO_Previous_Anchor_Timestamp_Us)
@@ -286,7 +287,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(uint64_t ready_timestamp_us)
             Vector_Raw_Gyro = gyro;
             Valid_Flag = valid;
 
-            // The last FIFO frame is the newest frame at the batch anchor.
+            // 批次锚点对应最后一帧，分段读取时也按帧在整批中的位置回推时间。
             const uint8_t anchor_frame_index =
                 FIFO_Batch_Total_Frame_Count - 1U;
             const int32_t frame_offset =
@@ -312,8 +313,7 @@ uint8_t Class_BMI088_Gyro::SPI_RxCallback(uint64_t ready_timestamp_us)
             if (FIFO_Last_Enqueued_Timestamp_Us != 0U &&
                 sample_timestamp_us <= FIFO_Last_Enqueued_Timestamp_Us)
             {
-                // Preserve ordering without integrating a rounded sample period
-                // into the next batch's hardware-clock anchor.
+                // 回推时间重叠时保证入队时间递增，各批次分别使用自己的时间锚点。
                 sample_timestamp_us = FIFO_Last_Enqueued_Timestamp_Us + 1U;
             }
 
@@ -441,6 +441,7 @@ bool Class_BMI088_Gyro::Enqueue_Sample(
     sample.Reserved[0] = 0U;
     sample.Reserved[1] = 0U;
     sample.Reserved[2] = 0U;
+    // 完成中断写完样本再发布队头，解算任务据此读取完整数据。
     __DMB();
     Sample_Queue_Head = next_head;
     Sample_Queue_Enqueue_Count++;

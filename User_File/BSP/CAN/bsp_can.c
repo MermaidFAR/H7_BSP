@@ -348,6 +348,7 @@ static bool BSP_CAN_Submit(const Struct_CAN_Tx_Msg *tx_msg, bool motion)
         .motion_slot = slot,
         .motion_generation = motion ? slot->motion_generation : 0U,
     };
+    /* RTOS 入队在临界区外。发送前按代次作废跨总线恢复的帧及跨停机的运动帧。 */
     SYS_Exit_Critical(primask);
     if (osMessageQueuePut(bus->tx_queue, &queued, 0, 0) != osOK)
     {
@@ -446,6 +447,7 @@ bool CAN_Tx_PerformSafe(const Struct_CAN_Tx_Msg *tx_msg)
  * @param message 要发送的完整 CAN 消息。
  * @return true HAL 已接受该消息；false 总线不可用、FIFO 已满或 HAL 写入失败。
  * @note 返回 true 表示消息已经进入硬件发送 FIFO，不表示对端已经收到。
+ * @note 调用方持有临界区，使门控检查、硬件入队和缓冲区登记保持原子性。
  */
 static bool BSP_CAN_SendMsg(CAN_Bus_t *bus, const Struct_CAN_Tx_Msg *message,
                             uint64_t timestamp_us, bool motion)
@@ -588,6 +590,7 @@ void BSP_CAN_DiscardPendingSlot(FDCAN_HandleTypeDef *hfdcan, uint32_t id)
 
 static void BSP_CAN_ExpireHardwareRequests(CAN_Bus_t *bus, uint64_t now)
 {
+    /* 总线繁忙时帧可能仍在硬件中等待仲裁，入队后也要按原始时间检查龄期。 */
     FDCAN_GlobalTypeDef *instance = bus->handle->Instance;
     uint32_t pending = BSP_CAN_GetHardwareRequests(instance);
     bus->motion_buffers &= pending;

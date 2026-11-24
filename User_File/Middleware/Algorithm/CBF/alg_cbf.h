@@ -9,7 +9,9 @@
 #include "alg_matrix.h"
 
 /**
- * @details x、v 的单位分别为 U、U/s，alpha、alpha1、alpha2 的单位为 1/s。
+ * @brief 将名义指令投影到状态屏障与执行器限幅的交集。
+ * @details 一阶模型为 x' = drift_f0 + b0*u，二阶模型为 x' = v、v' = drift_f0 + b0*u。
+ * x、v 的单位分别为 U、U/s，alpha、alpha1、alpha2 的单位为 1/s。
  * 一阶 drift_f0、b0*u 的单位为 U/s，二阶为 U/s²。u 必须与执行器硬限幅同量纲。
  * 先核对模型增益方向和硬限幅，再从较小的正 alpha 开始调节接近边界的速度。
  * 二阶在连续模型下还要求初始状态满足两个高阶屏障的速度条件；控制周期、模型误差
@@ -140,6 +142,7 @@ class Class_CBF_Scalar
             return false;
         }
 
+        // 对离上下界的距离 h，一阶用 h' + alpha*h >= 0，二阶用 h'' + Rate*h' + Stiffness*h >= 0。
         const float offset = -Rate * v - drift;
         const float from_lower = (Stiffness * (X_Min - x) + offset) / Input_Gain;
         const float from_upper = (Stiffness * (X_Max - x) + offset) / Input_Gain;
@@ -150,6 +153,7 @@ class Class_CBF_Scalar
             return false;
         }
 
+        // 除以负输入增益会反转不等式方向，因此交换计算结果的上下界角色。
         const float safe_lower = Input_Gain > 0.0f ? from_lower : from_upper;
         const float safe_upper = Input_Gain > 0.0f ? from_upper : from_lower;
         const float lower = fmaxf(safe_lower, U_Min);
@@ -178,8 +182,11 @@ class Class_CBF_Scalar
 };
 
 /**
- * @details 每行表示 aᵀu ≥ b。建议先归一化输入和约束行，再从 slack_weight=1000
- * 开始调节；较大的权重减小软约束违例，同时可能增加达到容差所需的迭代数。
+ * @brief 在输入盒内求解带软屏障约束的最小改变量。
+ * @details 每行用独立的非负松弛量 δ_i 放宽为 a_iᵀu + δ_i ≥ b_i。
+ * 代价为 ||u-u_nom||²/2 + slack_weight*||δ||²/2。
+ * 建议先归一化输入和约束行，再从 slack_weight=1000 开始调节。
+ * 较大的权重减小软约束违例，同时可能增加达到容差所需的迭代数。
  * 对偶加速投影梯度使用 u=clip(u_nom+Aᵀλ)、δ=λ/slack_weight。收尾用小维度
  * Newton 步修正活动约束，尤其适合输入已贴住限幅的情形。硬输入盒始终生效。
  * Solve 返回 true 表示得到有限的盒内输出；用 Is_Converged() 判断求解精度。
@@ -238,6 +245,7 @@ class Class_CBF_QP
         return true;
     }
 
+    /** @brief 清空约束行，供调用方重建依赖当前状态的屏障约束。 @author zzm */
     void Clear_Constraints()
     {
         Count = 0;
@@ -407,6 +415,7 @@ class Class_CBF_QP
 
     float Residual(const float *dual, const float *residual) const
     {
+        // 对偶变量为正时要求残差趋零，为零时允许非正残差。
         float largest = 0.0f;
         for (int i = 0; i < Count; ++i)
         {
@@ -486,6 +495,7 @@ class Class_CBF_QP
             {
                 return false;
             }
+            // 贴住输入边界且下降方向朝外的分量固定，Newton 步只更新自由分量。
             bool locked[Control_Dim];
             float projected_residual = 0.0f;
             for (int i = 0; i < Control_Dim; ++i)

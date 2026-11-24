@@ -28,6 +28,7 @@ extern "C"
 
     /* Exported types ------------------------------------------------------------*/
 
+    /** @brief 接收回调运行在 USB 中断上下文，数据缓冲区借用至本次回调返回。 @author zzm */
     typedef void (*USB_Callback)(uint8_t *Buffer, uint16_t Length);
 
     struct Struct_USB_Manage_Object

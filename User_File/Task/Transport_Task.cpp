@@ -33,6 +33,7 @@ extern "C" void Transport_Task(void *)
 
     MX_USB_DEVICE_Init();
     EricTool_USB.Set_Data(imu_channels, sizeof(imu_channels) / sizeof(imu_channels[0]));
+    // 发送尝试后等待一个 RTOS 节拍，BMI088 通道值最多每 5 ms 刷新一次。
     for (;;)
     {
         EricTool_USB.TIM_1ms_Write_PeriodElapsedCallback();

@@ -1,7 +1,7 @@
 /**
  * @file bsp_bmi088.cpp
  * @author yssickjgd (1345578933@qq.com)
- * @brief BMI088组件之加速度计, 内含加热电阻
+ * @brief BMI088 双传感器采集调度、SPI 恢复与 VQF 姿态解算。
  * @version 0.1
  * @date 2025-08-26 0.1 新建文档
  *
@@ -142,6 +142,7 @@ void Class_BMI088::SPI_RxCpltCallback()
         }
     }
 
+    // DMA 完成中断可能早于启动函数返回，保留完成状态供启动方收尾。
     SPI_State = SPI_State == BMI088_SPI_STATE_STARTING ? BMI088_SPI_STATE_COMPLETED_DURING_START
                                                        : BMI088_SPI_STATE_IDLE;
     if (flags != 0U)
@@ -199,6 +200,7 @@ void Class_BMI088::TIM_1ms_Service_PeriodElapsedCallback()
         return;
     }
     const uint64_t now_timestamp = SYS_Timestamp.Get_Now_Microsecond();
+    // 一段时间未收到数据就绪中断时轮询 FIFO。已有读请求时保留其时间戳。
     if ((now_timestamp - BMI088_Gyro.Get_FIFO_Last_Interrupt_Timestamp_Us()) >= 2000U &&
         (now_timestamp - Gyro_FIFO_Last_Fallback_Poll_Timestamp) >= 1000U)
     {
@@ -300,6 +302,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
         {
             if (SPI_State == BMI088_SPI_STATE_IN_FLIGHT)
             {
+                // 将中止的请求放回待处理槽，新到达的请求时间优先保留。
                 uint64_t &ready = Ready_Timestamps[Active_Sensor];
                 if (ready == 0U)
                 {
@@ -321,6 +324,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
         return;
     }
 
+    // 共用 SPI2 的三类请求轮流获得总线，避免高频陀螺仪挤占加速度和温度读取。
     uint8_t index = Next_Sensor;
     for (uint8_t scanned = 0; scanned < BMI088_SENSOR_COUNT; scanned++, index = (index + 1) % BMI088_SENSOR_COUNT)
     {
@@ -407,6 +411,7 @@ void Class_BMI088::Calculate()
 
     if (!Accel_Observation_Pending)
     {
+        // 一次复制样本、有效标志及时间戳，避免混用两次 DMA 完成的数据。
         const uint32_t primask = SYS_Enter_Critical();
         const uint64_t accel_update = Accel_Update_Timestamp;
         const uint64_t accel_timestamp = Accel_Update_Ready_Timestamp;
@@ -426,6 +431,7 @@ void Class_BMI088::Calculate()
                 Accel_Observation_Pending = true;
             }
             const uint32_t clear_primask = SYS_Enter_Critical();
+            // 只清除已复制的更新，保留复制后中断登记的新样本。
             if (Accel_Update_Timestamp == accel_update && Accel_Update_Ready_Timestamp == accel_timestamp)
             {
                 Accel_Update_Timestamp = 0U;
@@ -458,6 +464,7 @@ void Class_BMI088::Calculate()
     }
     Accel_Norm = Vector_Original_Accel.Get_Modulus();
 
+    // 样本时间用于检测乱序和长间隙，VQF 按配置的名义周期积分。
     if (VQF_Pre_Timestamp == 0U)
     {
         D_T = VQF_Config.Gyro_D_T;
@@ -487,6 +494,7 @@ void Class_BMI088::Calculate()
         Filter_VQF.Update_Gyro(Vector_Fixed_Corrected_Gyro);
     }
 
+    // FIFO 可能仍在处理历史陀螺仪样本，等其采样时间追上再融合加速度观测。
     if (Accel_Observation_Pending &&
         Pending_Accel_Timestamp <= gyro_sample.Timestamp_Us)
     {
@@ -509,6 +517,7 @@ void Class_BMI088::Calculate()
     Matrix_Rotation = Quarternion.Get_Rotation_Matrix();
     Vector_Axis_Angle = Quarternion.Get_Axis_Angle();
 
+    // 先将世界系重力转回机体系，抵消加速度计的重力分量，再旋转到世界系。
     const Class_Matrix_f32<3, 1> vector_gravity_body =
         Matrix_Rotation.Get_Transpose() *
         (-Namespace_ALG_Matrix::Axis_Z_3d() * GRAVITY_ACCELERATION);

@@ -78,6 +78,7 @@ uint8_t USB_Transmit_Data(uint8_t *Data, uint16_t Length)
         SYS_Exit_Critical(primask);
         return USBD_BUSY;
     }
+    // 提交标志保护拷贝和启动阶段，CDC 的 TxState 随后保护在途缓冲区。
     USB_Tx_Submitting = true;
     SYS_Exit_Critical(primask);
 
@@ -119,6 +120,7 @@ void USB_ReceiveCallback(uint8_t *Buffer, uint16_t Size)
 
     USB0_Manage_Object.Rx_Timestamp = SYS_Timestamp.Get_Current_Timestamp();
 
+    // 先用另一块缓冲区启动接收，再把完成的数据交给上层回调。
     USBD_CDC_SetRxBuffer(&hUsbDeviceHS, USB0_Manage_Object.Rx_Buffer_Active);
     USBD_CDC_ReceivePacket(&hUsbDeviceHS);
 

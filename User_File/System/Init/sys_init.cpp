@@ -53,6 +53,7 @@ extern "C" void System_Init(void)
     // Flash 的 OSPI
     OSPI_Init(&hospi2, OSPI2_Polling_Callback, OSPI2_Rx_Callback, OSPI2_Tx_Callback);
 
+    // TIM5 为后续器件初始化提供微秒时间基准。TIM4 的控制唤醒由 init_finished 放行。
     HAL_TIM_Base_Start_IT(&htim4);
     HAL_TIM_Base_Start_IT(&htim5);
     System_IMU_Configure();
@@ -73,6 +74,7 @@ extern "C" void System_Init(void)
     }
     BSP_Power.Init(true, true, true);
     EricTool_USB.Init();
+    // 完成寄存器配置和 VQF 初始化后，再启动陀螺仪 FIFO 采集。
     if (BSP_BMI088.Is_Initialized())
     {
         BSP_BMI088.BMI088_Gyro.Start_FIFO_Acquisition();

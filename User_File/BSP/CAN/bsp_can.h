@@ -106,7 +106,11 @@ extern "C"
      */
     bool CAN_Tx_Submit(const Struct_CAN_Tx_Msg *tx_msg);
 
-    /** @brief 提交有序运动或使能命令，门控关闭时拒绝。 */
+    /**
+     * @brief 提交有序运动或使能命令，门控关闭时拒绝。
+     * @note 每个 (hfdcan, id) 占用一个周期槽，用于追踪单个 ID 的停用代次。
+     * @author zzm
+     */
     bool CAN_Tx_SubmitMotion(const Struct_CAN_Tx_Msg *tx_msg);
 
     /**
@@ -121,7 +125,12 @@ extern "C"
      */
     bool CAN_Tx_Perform(const Struct_CAN_Tx_Msg *tx_msg);
 
-    /** @brief 带原计算时间发布周期帧，拒绝清槽或总线恢复前生成的帧。 */
+    /**
+     * @brief 发布周期帧，按其计算时间处理总线恢复、全局停机和超时。
+     * @param tx_msg 要发布的最新周期消息。
+     * @param timestamp_us 计算指令时由 SYS_Timestamp 取得的微秒时间戳。
+     * @author zzm
+     */
     bool CAN_Tx_PerformStamped(const Struct_CAN_Tx_Msg *tx_msg, uint64_t timestamp_us);
 
     /** @brief 发布协议规定的全零停机帧，门控关闭时仍可发送。 */

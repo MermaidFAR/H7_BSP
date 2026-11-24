@@ -92,6 +92,7 @@ bool PowerControl::TIM_Calculate_PeriodElapsedCallback()
         }
     }
 
+    // 所有力矩乘同一比例 s，铜耗按 s²、驱动机械功率按 s 变化，基础损耗独立于力矩。
     const double a = (double) Copper_Coefficient * torque_square_sum;
     const double b = motoring_power;
     const double baseline = (double) Config.static_power_w + (double) Friction_Coefficient * speed_sum;
@@ -106,6 +107,7 @@ bool PowerControl::TIM_Calculate_PeriodElapsedCallback()
         else
         {
             const double remainder = available - baseline;
+            // 对 a*s² + b*s = remainder 的正根有理化，避免相近数相减丢失精度。
             const double denominator = b + sqrt(b * b + 4.0 * a * remainder);
             scale = denominator > 0.0 ? 2.0 * remainder / denominator : 0.0;
         }
@@ -166,6 +168,7 @@ bool PowerControl::Update_Identification(float measured_power_w,
         torque_square_sum += torque * torque;
     }
 
+    // 扣除静态与机械功率，剩余测量用于拟合速度相关损耗和力矩平方损耗。
     const double residual = (double) measured_power_w - (double) Config.static_power_w - mechanical_power;
     if (residual < 0.0 || !isfinite(residual) || residual > (double) FLT_MAX ||
         !isfinite(speed_sum) || speed_sum > (double) FLT_MAX ||
@@ -187,6 +190,7 @@ bool PowerControl::Update_Identification(float measured_power_w,
         Basic_Math_Is_Invalid_Float(copper) || copper <= 0.0f ||
         copper > Config.copper_coefficient_max)
     {
+        // 用最近可用的系数重建估计器，防止异常样本继续影响后续拟合。
         const float previous[2] = {Friction_Coefficient, Copper_Coefficient};
         Estimator.Init(2, Config.rls_forgetting_factor,
                        Config.rls_initial_covariance, previous);

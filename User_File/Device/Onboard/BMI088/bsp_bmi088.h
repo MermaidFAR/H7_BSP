@@ -103,6 +103,11 @@ class Class_BMI088
     void EXTI_Flag_Callback(uint16_t gpio_pin);
     void TIM_128ms_Calculate_PeriodElapsedCallback();
     void TIM_1ms_Service_PeriodElapsedCallback();
+    /**
+     * @brief 仲裁加速度计、陀螺仪和温度的 SPI 请求。
+     * @param allow_recovery 任务可传 true 执行超时和错误恢复。中断使用默认值，由任务接续恢复。
+     * @author zzm
+     */
     void BMI088_Service_Transfer(bool allow_recovery = false);
 
     inline Class_Matrix_f32<3, 1> Get_Original_Accel() const;

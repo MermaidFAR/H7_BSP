@@ -61,7 +61,7 @@ struct Struct_Sys_Health_Item
 {
     Enum_Sys_Health_State State;
     uint32_t Reason;
-    uint32_t Data_Age_ms;
+    uint32_t Data_Age_ms; ///< 龄期未知或超过范围时取 UINT32_MAX。
 };
 
 struct Struct_Sys_Health_Motor
@@ -73,6 +73,11 @@ struct Struct_Sys_Health_Motor
     Enum_Sys_Health_Motor_Type Type;
 };
 
+/**
+ * @brief 整车健康快照。
+ * @note 异步读取时核对 ABI 与首尾序号，并在读完后复查 Sequence，接受序号一致的偶数版本。
+ * @author zzm
+ */
 struct Struct_Sys_Health
 {
     uint32_t Sequence;
@@ -103,6 +108,7 @@ void Sys_Health_Init(void);
 void Sys_Health_Update(void);
 /** @brief 任务上下文获取一致副本；包含短暂关中断复制。 @author zzm */
 bool Sys_Health_GetSnapshot(Struct_Sys_Health *snapshot);
+/** @brief 读取运动许可，快照超时或更新时间异常时返回 false。 @author zzm */
 bool Sys_Health_Is_Safe(void);
 Enum_Sys_Health_State Sys_Health_Get_Overall_State(void);
 void Sys_Health_Set_Buzzer_Mute(bool mute);

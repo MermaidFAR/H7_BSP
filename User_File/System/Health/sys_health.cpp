@@ -47,6 +47,7 @@ static void Health_Publish()
 {
     Health_Next.Updated_At_us = SYS_Timestamp.Get_Now_Microsecond();
     uint32_t interrupt_state = SYS_Enter_Critical();
+    // 调试器可异步读取内存。复制期间首尾序号为奇数，完成后发布相同的偶数。
     uint32_t sequence = (SYS_Health.Sequence + 1) | 1;
     SYS_Health.Sequence = sequence;
     SYS_Health.Sequence_End = sequence;
@@ -66,6 +67,7 @@ static void Health_Set_State(Health_Tracking *tracking, Enum_Sys_Health_State st
 {
     if (state == HEALTH_OK && tracking->Item.State >= HEALTH_WARN)
     {
+        // 连续通过恢复检查后才回到 HEALTH_OK，期间保留原状态和故障原因。
         if (++tracking->Recovery_Count < SYS_HEALTH_RECOVERY_CHECKS)
         {
             tracking->Item.Reason |= HEALTH_REASON_RECOVERING;
@@ -108,6 +110,7 @@ static Enum_Sys_Health_State Health_Data_State(Health_Tracking *tracking, bool r
 static Enum_Sys_Health_State Health_Worse_State(Enum_Sys_Health_State first,
                                                 Enum_Sys_Health_State second)
 {
+    // 先按运行影响归并故障、离线、未初始化和启动中，再比较其余状态。
     if (first == HEALTH_FAULT || second == HEALTH_FAULT)
     {
         return HEALTH_FAULT;
@@ -180,6 +183,7 @@ static uint32_t Health_IMU_Reasons(const Struct_BMI088_Health_Snapshot *imu)
         HEALTH_REASON_FILTER_RESET,
     };
     uint32_t reason = 0;
+    // 累计计数只在相邻两次采集之间发生变化时触发新告警。
     for (uint32_t i = 0; i < sizeof(counters) / sizeof(counters[0]); ++i)
     {
         if (Previous_IMU_Valid && counters[i] != Previous_IMU_Counters[i])
@@ -203,6 +207,7 @@ static void Health_Update_IMU(void)
     uint64_t sample_us;
     const bool received = BSP_BMI088.Get_Health_Snapshot(imu, sample_us);
     const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
+    // 取较早的时间计算龄期，同时覆盖采样链和诊断发布停滞。
     const uint64_t timestamp_us = sample_us < imu.Published_At_Us ? sample_us : imu.Published_At_Us;
     Health_IMU.Item.Data_Age_ms = received ? Health_Age_ms(now_us, timestamp_us) : UINT32_MAX;
     uint32_t reason = received ? Health_IMU_Reasons(&imu) : 0U;
@@ -243,6 +248,7 @@ static void Health_Update_Power(void)
     }
     else
     {
+        // 上电时给 ADC 首帧留出等待窗口，进入运行态后丢失采样直接报故障。
         reason = HEALTH_REASON_ADC;
         state = Health_Data_State(&Health_Power, false, 0U, 0U, now_us, &reason);
         if (Health_Power.Item.State >= HEALTH_OK || state == HEALTH_OFFLINE)
@@ -275,6 +281,7 @@ static void Health_Add_Motor(uint8_t slot, Enum_Sys_Health_Motor_Type type, FDCA
                                                     timeout_us, now_us, &reason);
     if (state == HEALTH_OK)
     {
+        // 在线计数反映反馈链路，驱动器上报的故障单独进入整车状态。
         Health_Next.Online_Motor_Count++;
         if (drive_fault)
         {
@@ -363,6 +370,7 @@ void Sys_Health_Update(void)
     Health_Update_Power();
     Health_Next.Overall_State = Health_Board_State();
     Health_Update_Motors();
+    // 电源必须正常。其他设备处于可恢复告警时仍允许控制任务运行。
     Health_Next.Safe_To_Run = Health_Next.Power.State == HEALTH_OK &&
                               (Health_Next.Overall_State == HEALTH_OK ||
                                Health_Next.Overall_State == HEALTH_WARN);

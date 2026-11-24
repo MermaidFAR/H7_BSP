@@ -75,6 +75,7 @@ class Class_MPC
             return false;
         }
 
+        // 两套缓存全部构建成功后再替换配置，重配失败时保留旧配置。
         Riccati_Cache prepared[2];
         if (!Build_Cache(a, b, q, r, terminal_weight, rho, false, prepared[0]) ||
             !Build_Cache(a, b, q, r, terminal_weight, rho, true, prepared[1]))
@@ -169,6 +170,7 @@ class Class_MPC
         return true;
     }
 
+    /** @brief 求解当前控制周期的输入，找到满足预测盒约束的序列时返回 true。 @author zzm */
     bool TIM_Calculate_PeriodElapsedCallback()
     {
         Converged = false;
@@ -216,6 +218,7 @@ class Class_MPC
         Prediction_Valid = true;
         if (Warm_Start)
         {
+            // 给下一周期准备沿时域左移的初值，末步沿用本周期末项。
             for (int step = 0; step + 1 < Horizon; ++step)
             {
                 Projected_U[step] = Projected_U[step + 1];
@@ -232,8 +235,8 @@ class Class_MPC
 
     struct Riccati_Stage
     {
-        Gain K;
-        Input_Matrix C1;
+        Gain K;          ///< 反馈增益，控制律为 u = -K*x - Feedforward。
+        Input_Matrix C1; ///< 增广输入 Hessian 的逆，用于计算前馈。
     };
 
     struct Riccati_Cache
@@ -241,7 +244,7 @@ class Class_MPC
         Riccati_Stage Stages[Horizon];
         Riccati_Stage Steady;
         State_Matrix P_Infinity;
-        State_Matrix C2;
+        State_Matrix C2; ///< 稳态闭环矩阵 (A - B*K) 的转置，用于回推线性项。
         int Steady_Prefix;
     };
 
@@ -269,6 +272,7 @@ class Class_MPC
     template <int Dim>
     static bool Valid_Weight(const Class_Matrix_f32<Dim, Dim> &matrix, bool semidefinite)
     {
+        // 按对角尺度归一化，使分解的半正定容差适用于不同量纲的权重。
         double factor[Dim][Dim] = {};
         double scale[Dim];
         for (int i = 0; i < Dim; ++i)
@@ -452,6 +456,7 @@ class Class_MPC
                             const Input_Matrix &r, const State_Matrix &terminal_weight,
                             float rho, bool split_state, Riccati_Cache &cache)
     {
+        // 启用状态投影时为完整状态向量加入增广项，各分量的盒界在投影阶段应用。
         const double rho_x = split_state ? (double) rho : 0.0;
         const double rho_u = (double) rho;
         double next_p[State_Dim][State_Dim] = {};
@@ -504,7 +509,7 @@ class Class_MPC
             }
         }
 
-        // 保留有限时域的终端代价。只有递推到相同的单精度固定点时才复用稳态前缀。
+        // 从指定终端代价回推。代价矩阵进入稳态矩阵的逐元素相对容差后，较早各步复用稳态系数。
         cache.Steady_Prefix = 0;
         for (int step = Horizon - 1; step >= 0; --step)
         {
@@ -535,6 +540,7 @@ class Class_MPC
 
     bool Backward(const Riccati_Cache &cache, const State &reference, const State &terminal)
     {
+        // 二次项已缓存，在线回推参考与 ADMM 产生的线性项以更新各步前馈。
         State p = terminal;
         const bool split_state = State_Mask != 0U;
         if (split_state)
@@ -597,6 +603,7 @@ class Class_MPC
     bool Project(float value, float lower, float upper, bool bounded, float &projected,
                  float &scaled_dual, float &primal, float &dual) const
     {
+        // 状态投影启用时使用 1.5 倍过松弛。收敛检查仍比较动力学解与投影解。
         const float relaxed = State_Mask == 0U ? value : value + 0.5f * (value - projected);
         const float argument = relaxed + scaled_dual;
         if (!isfinite(argument))
@@ -619,6 +626,7 @@ class Class_MPC
 
     bool Forward(const Riccati_Cache &cache, float &primal, float &dual)
     {
+        // 沿动力学递推子问题轨迹，每步更新输入投影及对偶变量，状态约束启用时再更新状态投影。
         State state = X_Now;
         for (int step = 0; step < Horizon; ++step)
         {
@@ -746,6 +754,7 @@ class Class_MPC
 
     bool Certify_Prediction(const Riccati_Cache &cache)
     {
+        // 每条候选序列都从当前状态重算。逐步修复无解时先尝试左移上一可行序列，再尝试稳态反馈。
         Enum_MPC_Plan_Result result = Build_Plan(cache, MPC_PLAN_ADMM);
         const bool repaired_plan = result == MPC_PLAN_INFEASIBLE;
         if (result == MPC_PLAN_INFEASIBLE && Previous_Plan_Valid)
@@ -885,6 +894,7 @@ class Class_MPC
                 {
                     continue;
                 }
+                // 已知 base = A*x，下一步状态盒可直接写成输入 u 的线性约束。
                 float lower = X_Min.Data[i] - base.Data[i];
                 float upper = X_Max.Data[i] - base.Data[i];
                 if (!isfinite(lower) || !isfinite(upper))
@@ -893,7 +903,7 @@ class Class_MPC
                 }
                 if (attempt == 0)
                 {
-                    // 仅在修复舍入违例时给递推留数个 ULP，等式约束保留原宽度。
+                    // 首轮收紧状态盒以留出单精度复算裕量，等式约束保留原宽度。
                     const float margin = 8.0f * FLT_EPSILON *
                                          fmaxf(fabsf(base.Data[i]), fmaxf(fabsf(X_Min.Data[i]), fabsf(X_Max.Data[i])));
                     if (lower + margin < upper - margin)
