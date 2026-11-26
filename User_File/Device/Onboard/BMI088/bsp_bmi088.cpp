@@ -28,19 +28,6 @@ Class_BMI088 BSP_BMI088;
 
 /* Private function declarations ---------------------------------------------*/
 
-static void BMI088_Reset_DMA_Handle(DMA_HandleTypeDef *DMA_Handler)
-{
-    if (DMA_Handler == nullptr)
-    {
-        return;
-    }
-
-    HAL_DMA_Abort(DMA_Handler);
-    DMA_Handler->ErrorCode = HAL_DMA_ERROR_NONE;
-    DMA_Handler->State = HAL_DMA_STATE_READY;
-    DMA_Handler->Lock = HAL_UNLOCKED;
-}
-
 /* Function prototypes -------------------------------------------------------*/
 
 /**
@@ -232,27 +219,8 @@ void Class_BMI088::BMI088_Recover_SPI(uint8_t reason)
     {
         SPI_Temperature_Timeout_Counter++;
     }
-    SPI_HandleTypeDef *spi_handler = SPI_Manage_Object->SPI_Handler;
-
-    if (SPI_Manage_Object->Activate_GPIOx != nullptr)
-    {
-        HAL_GPIO_WritePin(SPI_Manage_Object->Activate_GPIOx, SPI_Manage_Object->Activate_GPIO_Pin,
-                          SPI_Manage_Object->Activate_Level == GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET);
-    }
-
-    HAL_SPI_Abort(spi_handler);
-    BMI088_Reset_DMA_Handle(spi_handler->hdmatx);
-    BMI088_Reset_DMA_Handle(spi_handler->hdmarx);
-    spi_handler->ErrorCode = HAL_SPI_ERROR_NONE;
-    spi_handler->State = HAL_SPI_STATE_READY;
-    spi_handler->Lock = HAL_UNLOCKED;
-    spi_handler->TxXferCount = 0;
-    spi_handler->RxXferCount = 0;
-    SPI_Manage_Object->Activate_GPIOx = nullptr;
-    SPI_Manage_Object->Tx_Buffer_Length = 0;
-    SPI_Manage_Object->Rx_Buffer_Length = 0;
+    SPI_Recover(SPI_Manage_Object->SPI_Handler);
     const uint32_t primask = SYS_Enter_Critical();
-    SPI_Manage_Object->Transaction_Active = false;
     SPI_State = BMI088_SPI_STATE_IDLE;
     SYS_Exit_Critical(primask);
 }
@@ -294,7 +262,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
                 recovery |= timeout_reasons[Active_Sensor];
             }
         }
-        if (spi_handler->ErrorCode != HAL_SPI_ERROR_NONE)
+        if (SPI_Has_Error(spi_handler))
         {
             recovery |= BMI088_SPI_RECOVERY_HAL_ERROR;
         }
@@ -540,7 +508,7 @@ void Class_BMI088::Publish_Health_And_Telemetry()
 
     const uint32_t primask = SYS_Enter_Critical();
     Health_Snapshot.Published_At_Us = now_us;
-    Health_Snapshot.SPI2_Error_Counter = SPI2_Manage_Object.Error_Count;
+    Health_Snapshot.SPI2_Error_Counter = SPI_Get_Error_Count(SPI_Manage_Object->SPI_Handler);
     Health_Snapshot.SPI_Transfer_Timeout_Counter = SPI_Transfer_Timeout_Counter;
     Health_Snapshot.SPI_Recovery_Counter = SPI_Recovery_Counter;
     Health_Snapshot.Gyro_Queue_Drop_Count = BMI088_Gyro.Get_Queue_Drop_Count();

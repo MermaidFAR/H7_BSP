@@ -46,7 +46,7 @@ Struct_SPI_Timeout_Snapshot SPI2_Timeout_Snapshot = {};
 
 /* Private function declarations ---------------------------------------------*/
 
-static Struct_SPI_Manage_Object *SPI_Get_Manage_Object(SPI_HandleTypeDef *hspi)
+static Struct_SPI_Manage_Object *SPI_Get_Manage_Object(const SPI_HandleTypeDef *hspi)
 {
     if (hspi == nullptr)
     {
@@ -66,6 +66,19 @@ static Struct_SPI_Manage_Object *SPI_Get_Manage_Object(SPI_HandleTypeDef *hspi)
     if (hspi->Instance == SPI6)
         return &SPI6_Manage_Object;
     return nullptr;
+}
+
+static void SPI_Reset_DMA_Handle(DMA_HandleTypeDef *dma_handler)
+{
+    if (dma_handler == nullptr)
+    {
+        return;
+    }
+
+    HAL_DMA_Abort(dma_handler);
+    dma_handler->ErrorCode = HAL_DMA_ERROR_NONE;
+    dma_handler->State = HAL_DMA_STATE_READY;
+    dma_handler->Lock = HAL_UNLOCKED;
 }
 
 void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
@@ -410,6 +423,40 @@ extern "C" void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     manage_object->Error_Count++;
     SPI_Deactivate_Chip_Select(manage_object);
     SPI_Release_Transaction(manage_object);
+}
+
+void SPI_Recover(SPI_HandleTypeDef *hspi)
+{
+    Struct_SPI_Manage_Object *manage_object = SPI_Get_Manage_Object(hspi);
+    if (manage_object == nullptr)
+    {
+        return;
+    }
+
+    SPI_Deactivate_Chip_Select(manage_object);
+    HAL_SPI_Abort(hspi);
+    SPI_Reset_DMA_Handle(hspi->hdmatx);
+    SPI_Reset_DMA_Handle(hspi->hdmarx);
+    hspi->ErrorCode = HAL_SPI_ERROR_NONE;
+    hspi->State = HAL_SPI_STATE_READY;
+    hspi->Lock = HAL_UNLOCKED;
+    hspi->TxXferCount = 0;
+    hspi->RxXferCount = 0;
+
+    const uint32_t primask = SYS_Enter_Critical();
+    SPI_Release_Transaction(manage_object);
+    SYS_Exit_Critical(primask);
+}
+
+bool SPI_Has_Error(const SPI_HandleTypeDef *hspi)
+{
+    return hspi != nullptr && hspi->ErrorCode != HAL_SPI_ERROR_NONE;
+}
+
+uint32_t SPI_Get_Error_Count(const SPI_HandleTypeDef *hspi)
+{
+    const Struct_SPI_Manage_Object *manage_object = SPI_Get_Manage_Object(hspi);
+    return manage_object != nullptr ? manage_object->Error_Count : 0;
 }
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/

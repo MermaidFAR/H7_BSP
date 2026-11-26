@@ -132,6 +132,24 @@ uint8_t SPI_Transmit_Receive_Data(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GPIOx, 
 
 void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us);
 
+/**
+ * @brief 在任务上下文中止异常 SPI/DMA 事务并复位总线管理状态。
+ * @param hspi 需要恢复的 SPI 句柄。
+ */
+void SPI_Recover(SPI_HandleTypeDef *hspi);
+
+/**
+ * @brief 查询 HAL SPI 句柄是否存在未清除的错误标志。
+ * @param hspi SPI 句柄。
+ */
+bool SPI_Has_Error(const SPI_HandleTypeDef *hspi);
+
+/**
+ * @brief 读取对应 SPI 总线累计的 HAL 错误回调次数。
+ * @param hspi SPI 句柄。
+ */
+uint32_t SPI_Get_Error_Count(const SPI_HandleTypeDef *hspi);
+
 #endif
 
 /************************ COPYRIGHT(C) USTC-ROBOWALKER **************************/
