@@ -107,7 +107,7 @@ User_File/
 │   ├── Storage/            W25Q64 外部 Flash 分区布局定义
 │   └── Timestamp/          1 MHz 硬件微秒时间戳基准
 ├── Task/                   CMSIS-RTOS V2 任务入口（1 kHz 控制、CAN 发送、IMU 解算、健康等）
-└── Application/            应用级控制策略（SpinMode、PowerControl、Communication）
+└── Application/            应用级控制策略（SpinMode、PowerControl）
 Core/                       CubeMX 生成的启动、外设与 FreeRTOS 配置
 Drivers/                    STM32H7 HAL / CMSIS 驱动
 Middlewares/                FreeRTOS、USB Device、CMSIS-DSP

@@ -13,7 +13,6 @@
 #include "bsp_w25q64jv.h"
 #include "bsp_ws2812.h"
 #include "callback.h"
-#include "com.h"
 #include "erictool.h"
 #include "sys_imu.h"
 #include "sys_timestamp.h"

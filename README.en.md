@@ -108,7 +108,7 @@ User_File/
 │   ├── Storage/            Partition layout for external W25Q64 flash
 │   └── Timestamp/          1 MHz hardware timebase for microsecond timestamps
 ├── Task/                   CMSIS-RTOS V2 tasks for 1 kHz control, CAN TX, IMU, and health
-└── Application/            SpinMode, PowerControl, and Communication
+└── Application/            SpinMode and PowerControl
 Core/                       CubeMX-generated startup, peripheral, and FreeRTOS setup
 Drivers/                    STM32H7 HAL and CMSIS drivers
 Middlewares/                FreeRTOS, USB Device, and CMSIS-DSP

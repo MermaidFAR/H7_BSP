@@ -237,14 +237,11 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         User_File/Middleware/Algorithm/Pulse/
         User_File/Application/SpinMode/
         User_File/Application/PowerControl/
-        User_File/Application/Communication/
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
-    BALANCE=1
-    GIMBAL=0
 )
 
 # Remove wrong libob.a library dependency when using cpp files
