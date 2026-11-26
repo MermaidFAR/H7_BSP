@@ -14,7 +14,7 @@ CAT_BSP (`H7_BSP` on GitHub) provides reusable board support, device drivers, co
 - **STM32H7 memory and DMA** — A project-owned linker script and MPU configuration reserve `RAM_DMA` as a 64 KiB non-cacheable region. DMA1/DMA2 transmit and receive buffers live in `.dma_buffer`, which avoids D-cache coherency issues and placement in DTCM, which these controllers cannot access.
 - **Low-jitter CAN** — Each of the three buses has an independent asynchronous command queue, avoiding head-of-line blocking across buses. Periodic transmit slots keep the latest payload. Multiple receive callbacks can share the same `(FDCAN, ID)` key, so several Damiao motors can share a `master_id`. `Can_Tx_Task` wakes on events and has a 1 ms fallback timeout.
 - **Tiered NVIC priorities** — The control and timestamp timers, IMU SPI/DMA/EXTI, FDCAN, auxiliary timers, UART DMA, OSPI/MDMA, and USB run at distinct priority levels that match `H7_BSP.ioc`.
-- **System health and live debugging** — `SYS_Health` reports initialization errors, IMU and flash health, supply voltage, and DJI, DM, and QD4310 motor health at 20 Hz. `Sys_Health_Is_Safe()` lets the control loop select its safety branch. The WS2812 and buzzer indicate system health, and EmberProbe and GDB can read a consistent snapshot using the sequence counters.
+- **System health and live debugging** — `SYS_Health` reports initialization errors, IMU and flash health, supply voltage, and motors registered through `Sys_Health_Register_Motor()` (the built-in DJI, DM, and QD4310 drivers register automatically in `Init()`) at 20 Hz. `Sys_Health_Is_Safe()` lets the control loop select its safety branch. The WS2812 and buzzer indicate system health, and EmberProbe and GDB can read a consistent snapshot using the sequence counters.
 - **C with Classes** — C++ builds disable exceptions and RTTI. Timing-critical control and driver paths use fixed-size data structures. FreeRTOS allocates tasks and message queues from `heap_5` during startup.
 
 ## Quick Start
@@ -167,7 +167,7 @@ Lower numbers take precedence. Each interrupt below has subpriority `0`. See [H7
 
 ### 3. System Health and Status Indicators
 
-[Status_Task.cpp](User_File/Task/Status_Task.cpp) collects initialization errors, IMU and flash health, supply voltage, and registered motor health at **20 Hz (50 ms)**. The default undervoltage threshold is `SYS_HEALTH_MIN_POWER_V = 18.0f`. For a consistent `SYS_Health` snapshot (`ABI_Version = 3`), check `ABI_Size` and confirm that `Sequence` and `Sequence_End` match and are even. `Sequence` must remain unchanged across the read.
+[Status_Task.cpp](User_File/Task/Status_Task.cpp) collects initialization errors, IMU and flash health, supply voltage, and motor probes registered via `Sys_Health_Register_Motor()` (built-in DJI, DM, and QD4310 drivers auto-register in `Init()`) at **20 Hz (50 ms)**. The default undervoltage threshold is `SYS_HEALTH_MIN_POWER_V = 18.0f`. For a consistent `SYS_Health` snapshot (`ABI_Version = 4`), check `ABI_Size` and confirm that `Sequence` and `Sequence_End` match and are even. `Sequence` must remain unchanged across the read.
 
 | System State (`Overall_State`) | WS2812 LED | Buzzer | Typical Reasons (`Reason`) |
 | :--- | :--- | :--- | :--- |

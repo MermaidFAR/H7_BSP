@@ -10,6 +10,7 @@
 
 #include "dji_motor.h"
 #include "sys_critical.h"
+#include "sys_health.h"
 #include "sys_timestamp.h"
 #include <string.h>
 
@@ -27,7 +28,6 @@ struct Struct_DJIMotor_Tx_Group
 
 struct Struct_DJIMotor_Registration
 {
-    Class_DJIMotor *motor = nullptr;
     FDCAN_HandleTypeDef *hfdcan = nullptr;
     uint32_t rx_id = 0;
     bool used = false;
@@ -236,8 +236,13 @@ bool Class_DJIMotor::Init(const Struct_DJIMotor_Init_Config &config)
     PID_Init(&speed_pid, &config.speed_pid);
     PID_Init(&angle_pid, &config.angle_pid);
 
+    if (!Sys_Health_Register_Motor(Health_Probe, this))
+    {
+        return false;
+    }
     if (!BSP_CAN_RegisterCallback(resolved_rx_id, config.hfdcan, CAN_RxCpltCallback, this))
     {
+        Sys_Health_Unregister_Motor(Health_Probe, this);
         return false;
     }
 
@@ -253,33 +258,36 @@ bool Class_DJIMotor::Init(const Struct_DJIMotor_Init_Config &config)
     sender->slot_owner[resolved_slot] = this;
     DJI_Motor_Registrations[registration_index].hfdcan = config.hfdcan;
     DJI_Motor_Registrations[registration_index].rx_id = resolved_rx_id;
-    DJI_Motor_Registrations[registration_index].motor = this;
     DJI_Motor_Registrations[registration_index].used = true;
+    const uint32_t primask = SYS_Enter_Critical();
     enabled = true;
     initialized = true;
+    SYS_Exit_Critical(primask);
     return true;
 }
 
-/** @brief 读取已有注册项；不触发超时处理、不修改使能或指令。 @author zzm */
-bool Class_DJIMotor::Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot)
+/** @brief 供健康模块轮询单台实例；不触发超时处理、不修改使能或指令。 @author zzm */
+bool Class_DJIMotor::Health_Probe(void *context, Struct_Sys_Health_Motor_Sample *sample)
 {
-    if (snapshot == nullptr || index >= DJI_MOTOR_MAX_MOTORS)
+    const Class_DJIMotor *motor = (const Class_DJIMotor *) context;
+    if (motor == nullptr || sample == nullptr)
     {
         return false;
     }
-    uint32_t interrupt_state = SYS_Enter_Critical();
-    const Class_DJIMotor *motor = DJI_Motor_Registrations[index].motor;
-    bool ready = motor != nullptr && motor->initialized;
+    const uint32_t primask = SYS_Enter_Critical();
+    const bool ready = motor->initialized;
     if (ready)
     {
-        snapshot->hfdcan = motor->hfdcan;
-        snapshot->rx_id = motor->rx_id;
-        snapshot->last_feedback_us = motor->last_feedback_timestamp_us;
-        snapshot->feedback_timeout_us = motor->feedback_timeout_us;
-        snapshot->feedback_received = motor->feedback_initialized;
-        snapshot->enabled = motor->enabled;
+        sample->Name = "DJI";
+        sample->Bus = motor->hfdcan;
+        sample->Feedback_Id = motor->rx_id;
+        sample->Last_Feedback_us = motor->last_feedback_timestamp_us;
+        sample->Feedback_Timeout_us = motor->feedback_timeout_us;
+        sample->Feedback_Received = motor->feedback_initialized;
+        sample->Enabled = motor->enabled;
+        sample->Drive_Fault = false;
     }
-    SYS_Exit_Critical(interrupt_state);
+    SYS_Exit_Critical(primask);
     return ready;
 }
 

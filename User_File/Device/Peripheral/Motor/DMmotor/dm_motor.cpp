@@ -10,6 +10,7 @@
 #include "dm_motor.h"
 #include "alg_basic.h"
 #include "sys_critical.h"
+#include "sys_health.h"
 #include "sys_timestamp.h"
 
 #include <string.h>
@@ -34,8 +35,7 @@ static constexpr float DM_KP_MIN = 0.0f;
 static constexpr float DM_KP_MAX = 500.0f;
 static constexpr float DM_KD_MIN = 0.0f;
 static constexpr float DM_KD_MAX = 5.0f;
-static constexpr uint8_t DM_FEEDBACK_ENABLED = 1U;
-static Class_DMMotor *DM_Motor_Registrations[DM_MOTOR_MAX_MOTORS];
+static constexpr uint8_t DM_FEEDBACK_ENABLED = 1;
 
 /* Private function declarations ---------------------------------------------*/
 
@@ -169,8 +169,8 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
                          float motor_torque_max,
                          uint32_t feedback_timeout_ms)
 {
-    if (motor_hfdcan == nullptr || motor_can_id > 0x0FU || motor_master_id > 0x7FFU ||
-        feedback_timeout_ms == 0U)
+    if (hfdcan != nullptr || motor_hfdcan == nullptr || motor_can_id > 0x0F ||
+        motor_master_id > 0x7FF || feedback_timeout_ms == 0)
     {
         return false;
     }
@@ -183,15 +183,14 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    uint8_t index = 0U;
-    while (index < DM_MOTOR_MAX_MOTORS &&
-           DM_Motor_Registrations[index] != nullptr && DM_Motor_Registrations[index] != this)
+    if (!Sys_Health_Register_Motor(Health_Probe, this))
     {
-        index++;
+        SYS_Exit_Critical(primask);
+        return false;
     }
-    if (index == DM_MOTOR_MAX_MOTORS ||
-        !BSP_CAN_RegisterCallback(motor_master_id, motor_hfdcan, FeedbackCallback, this))
+    if (!BSP_CAN_RegisterCallback(motor_master_id, motor_hfdcan, FeedbackCallback, this))
     {
+        Sys_Health_Unregister_Motor(Health_Probe, this);
         SYS_Exit_Critical(primask);
         return false;
     }
@@ -204,42 +203,37 @@ bool Class_DMMotor::Init(FDCAN_HandleTypeDef *motor_hfdcan,
     velocity_max = motor_velocity_max;
     torque_max = motor_torque_max;
     feedback_timeout_us = (uint64_t) feedback_timeout_ms * 1000ULL;
-    last_feedback_timestamp_us = 0U;
+    last_feedback_timestamp_us = 0;
     feedback_received = false;
     online = false;
-    DM_Motor_Registrations[index] = this;
     SYS_Exit_Critical(primask);
     return true;
 }
 
-bool Class_DMMotor::Get_Health(uint8_t index, Struct_DMMotor_Health *snapshot)
+bool Class_DMMotor::Health_Probe(void *context, Struct_Sys_Health_Motor_Sample *sample)
 {
-    if (snapshot == nullptr || index >= DM_MOTOR_MAX_MOTORS)
+    const Class_DMMotor *motor = (const Class_DMMotor *) context;
+    if (motor == nullptr || sample == nullptr)
     {
         return false;
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    const Class_DMMotor *motor = DM_Motor_Registrations[index];
-    if (motor == nullptr)
+    const bool ready = motor->hfdcan != nullptr;
+    if (ready)
     {
-        SYS_Exit_Critical(primask);
-        return false;
+        sample->Name = "DM";
+        sample->Bus = motor->hfdcan;
+        sample->Feedback_Id = motor->master_id;
+        sample->Last_Feedback_us = motor->last_feedback_timestamp_us;
+        sample->Feedback_Timeout_us = motor->feedback_timeout_us;
+        sample->Feedback_Received = motor->feedback_received;
+        sample->Enabled = motor->feedback_received && motor->feedback.state == DM_FEEDBACK_ENABLED;
+        // 达妙反馈状态 0 为失能，1 为使能，其余按驱动故障处理。
+        sample->Drive_Fault = motor->feedback_received && motor->feedback.state > DM_FEEDBACK_ENABLED;
     }
-    snapshot->hfdcan = motor->hfdcan;
-    snapshot->rx_id = motor->master_id;
-    snapshot->last_feedback_us = motor->last_feedback_timestamp_us;
-    snapshot->feedback_timeout_us = motor->feedback_timeout_us;
-    snapshot->feedback_received = motor->feedback_received;
-    snapshot->online = motor->online;
-    snapshot->state = motor->feedback.state;
-    snapshot->enabled = motor->feedback_received && motor->feedback.state == DM_FEEDBACK_ENABLED;
     SYS_Exit_Critical(primask);
-
-    const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
-    snapshot->online = snapshot->online && now_us >= snapshot->last_feedback_us &&
-                       now_us - snapshot->last_feedback_us <= snapshot->feedback_timeout_us;
-    return true;
+    return ready;
 }
 
 /** @brief 按本地记录的模式选择管理命令的发送 ID；切换待应答期间仍使用原模式。 */

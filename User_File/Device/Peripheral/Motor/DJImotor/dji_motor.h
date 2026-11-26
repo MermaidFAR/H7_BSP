@@ -96,15 +96,7 @@ struct Struct_DJIMotor_Feedback
     uint8_t temperature = 0;                     // 温度，摄氏度；M2006 不提供
 };
 
-struct Struct_DJIMotor_Health
-{
-    FDCAN_HandleTypeDef *hfdcan;
-    uint32_t rx_id;
-    uint64_t last_feedback_us;
-    uint64_t feedback_timeout_us;
-    bool feedback_received;
-    bool enabled;
-};
+struct Struct_Sys_Health_Motor_Sample;
 
 class Class_DJIMotor
 {
@@ -121,7 +113,6 @@ class Class_DJIMotor
     bool Set_Feedback_Source(Enum_DJIMotor_Loop loop, Enum_DJIMotor_Feedback source,
                              const float *external_value = nullptr);
     uint64_t Get_Last_Feedback_Timestamp_Us() const;
-    static bool Get_Health(uint8_t index, Struct_DJIMotor_Health *snapshot);
 
     // 运动反馈由接收中断逐项更新。
     Struct_DJIMotor_Feedback feedback;
@@ -137,6 +128,7 @@ class Class_DJIMotor
     friend class Class_DJIMotor_Group;
     static void CAN_RxCpltCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t id,
                                    uint8_t *data, uint32_t len, void *context);
+    static bool Health_Probe(void *context, Struct_Sys_Health_Motor_Sample *sample);
     static void PID_Init(Class_PID *pid, const PID_InitTypeDef *config);
     bool Check_Feedback_Timeout();
     void Clear_Command();

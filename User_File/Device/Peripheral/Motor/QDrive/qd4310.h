@@ -12,9 +12,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#define QD4310_MAX_MOTORS 8U
 #ifndef QD4310_FEEDBACK_TIMEOUT_MS
-#define QD4310_FEEDBACK_TIMEOUT_MS 100U
+#define QD4310_FEEDBACK_TIMEOUT_MS 100
 #endif
 
 #ifdef __cplusplus
@@ -51,16 +50,6 @@ extern "C"
         uint64_t last_feedback_us;
         bool feedback_received;
     } QD4310_t;
-
-    typedef struct
-    {
-        FDCAN_HandleTypeDef *hfdcan;
-        uint32_t rx_id;
-        uint64_t last_feedback_us;
-        uint64_t feedback_timeout_us;
-        bool feedback_received;
-        bool enabled;
-    } QD4310_Health_t;
 
     // 命令接口返回值：true 表示已提交队列或周期槽，false 表示提交失败；不代表电机已执行。
     /**
@@ -114,10 +103,8 @@ extern "C"
 
     bool QD4310_SendCommand(QD4310_t *motor, QD4310_Command_t cmd, int16_t value);
 
-    bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan);
-
     // 注册实例须在框架运行期间保持有效。
-    bool QD4310_GetHealth(uint8_t index, QD4310_Health_t *snapshot);
+    bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan);
 
 // 数学常数定义
 #define QD4310_PI (3.14159265358979323846f)

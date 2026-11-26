@@ -12,15 +12,14 @@
 
 #include <stdint.h>
 
-#define DM_MOTOR_MAX_MOTORS 8U
-#define DM_MOTOR_DEFAULT_FEEDBACK_TIMEOUT_MS 100U
+#define DM_MOTOR_DEFAULT_FEEDBACK_TIMEOUT_MS 100
 
 enum Enum_DMMotor_Mode : uint8_t
 {
-    DM_MODE_MIT = 1U,
-    DM_MODE_POSITION_SPEED = 2U,
-    DM_MODE_SPEED = 3U,
-    DM_MODE_FORCE_POSITION = 4U,
+    DM_MODE_MIT = 1,
+    DM_MODE_POSITION_SPEED = 2,
+    DM_MODE_SPEED = 3,
+    DM_MODE_FORCE_POSITION = 4,
 };
 
 struct Struct_DMMotor_Feedback
@@ -34,17 +33,7 @@ struct Struct_DMMotor_Feedback
     float rotor_temperature = 0.0f; // 转子温度，摄氏度
 };
 
-struct Struct_DMMotor_Health
-{
-    FDCAN_HandleTypeDef *hfdcan;
-    uint32_t rx_id;
-    uint64_t last_feedback_us;
-    uint64_t feedback_timeout_us;
-    bool feedback_received;
-    bool online;
-    bool enabled;
-    uint8_t state;
-};
+struct Struct_Sys_Health_Motor_Sample;
 
 class Class_DMMotor
 {
@@ -58,8 +47,6 @@ class Class_DMMotor
               float velocity_max = 30.0f,
               float torque_max = 10.0f,
               uint32_t feedback_timeout_ms = DM_MOTOR_DEFAULT_FEEDBACK_TIMEOUT_MS);
-    // 注册实例须在框架运行期间保持有效。查询在线状态不会改变使能或指令。
-    static bool Get_Health(uint8_t index, Struct_DMMotor_Health *snapshot);
     // true 仅表示命令入队成功，不代表电机已执行；false 时可由上层重试。
     bool Enable();
     bool Disable();
@@ -95,6 +82,7 @@ class Class_DMMotor
                                  uint8_t *data,
                                  uint32_t len,
                                  void *context);
+    static bool Health_Probe(void *context, Struct_Sys_Health_Motor_Sample *sample);
     bool SendModeCommand(uint8_t command);
     void DiscardMotion();
     void Publish(const Struct_CAN_Tx_Msg &message);

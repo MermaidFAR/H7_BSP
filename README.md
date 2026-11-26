@@ -14,7 +14,7 @@ CAT_BSP（仓库名 `H7_BSP`）围绕板级外设、设备驱动、控制/估计
 - **STM32H7 内存域与 DMA 治理**：通过自有链接脚本与 MPU 配置划分 `RAM_DMA`（64 KiB 不可缓存区），DMA1/DMA2 收发缓冲统一放入 `.dma_buffer`，规避 D-Cache 一致性与 DTCM 不可达陷阱。
 - **低抖动 CAN 底座**：三总线独立异步命令队列（消除跨总线队头阻塞）、周期最新值覆盖槽、同一 `(FDCAN, ID)` 一对多回调分发（原生兼容多台达妙电机共享 `master_id`），以及事件驱动 + 1 ms 超时兜底的 `Can_Tx_Task`。
 - **NVIC 抢占优先级分层**：基准定时、IMU SPI/DMA/EXTI、FDCAN、辅助定时、UART DMA、OSPI/MDMA 与 USB 分层配置，并与 `H7_BSP.ioc` 同步。
-- **整车健康联动与实时观测**：20 Hz `SYS_Health` 汇总初始化错误、IMU、Flash、电源电压与 DJI / DM / QD4310 三类电机。控制层通过 `Sys_Health_Is_Safe()` 判定是否进入安全分支，WS2812 与蜂鸣器显示健康状态，EmberProbe / GDB 可通过 Seqlock 读取一致的快照。
+- **整车健康联动与实时观测**：20 Hz `SYS_Health` 汇总初始化错误、IMU、Flash、电源电压及通过 `Sys_Health_Register_Motor()` 注册的电机（内置 DJI / DM / QD4310 驱动在 `Init()` 时自动接入）。控制层通过 `Sys_Health_Is_Safe()` 判定是否进入安全分支，WS2812 与蜂鸣器显示健康状态，EmberProbe / GDB 可通过 Seqlock 读取一致的快照。
 - **C with Classes 风格**：C++ 构建关闭异常与 RTTI，控制和驱动热路径使用定长数据结构。启动时 FreeRTOS 从 `heap_5` 分配任务与消息队列。
 
 ## 快速开始
@@ -166,7 +166,7 @@ cmake/                      GNU Arm / Clang 工具链与 CubeMX 构建接入
 
 ### 3. 整车健康监控与声光联动
 
-[Status\_Task.cpp](User_File/Task/Status_Task.cpp) 以 **20 Hz（50 ms）** 汇总初始化错误、IMU、Flash、电源电压（默认欠压阈值 `SYS_HEALTH_MIN_POWER_V = 18.0f`）及三类已注册电机，写入全局快照 `SYS_Health`（`ABI_Version = 3`）。读取时核对 `ABI_Size`，并确认 `Sequence` 与 `Sequence_End` 相等且为偶数。读取期间 `Sequence` 应保持不变。
+[Status\_Task.cpp](User_File/Task/Status_Task.cpp) 以 **20 Hz（50 ms）** 汇总初始化错误、IMU、Flash、电源电压（默认欠压阈值 `SYS_HEALTH_MIN_POWER_V = 18.0f`）及所有已注册电机（通过 `Sys_Health_Register_Motor()` 接入，内置 DJI / DM / QD4310 在 `Init()` 时自动注册），写入全局快照 `SYS_Health`（`ABI_Version = 4`）。读取时核对 `ABI_Size`，并确认 `Sequence` 与 `Sequence_End` 相等且为偶数。读取期间 `Sequence` 应保持不变。
 
 | 整车状态 (`Overall_State`) | WS2812 指示灯 | 蜂鸣器提示 | 常见原因 (`Reason`) |
 | :--- | :--- | :--- | :--- |

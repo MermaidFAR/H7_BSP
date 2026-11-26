@@ -20,13 +20,14 @@
 
 #include "qd4310.h"
 #include "sys_critical.h"
+#include "sys_health.h"
 #include "sys_timestamp.h"
 
 #include <math.h>
 #include <string.h>
 
-static QD4310_t *QD4310_Registrations[QD4310_MAX_MOTORS];
 static void QD4310_DecodeFeedback(QD4310_t *motor, const uint8_t feedback[8]);
+static bool QD4310_HealthProbe(void *context, Struct_Sys_Health_Motor_Sample *sample);
 
 /**
  * @brief  QD4310 CAN 反馈帧统一回调入口
@@ -56,54 +57,55 @@ static void QDrive_Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *d
  */
 bool QD4310_Init(QD4310_t *motor, uint8_t id, FDCAN_HandleTypeDef *hfdcan)
 {
-    if (motor == NULL || id > 7)
+    if (motor == NULL || hfdcan == NULL || id > 7)
     {
         return false;
     }
 
     // 注册成功后再设置实例，并在完整初始化前阻止接收中断访问。
     const uint32_t primask = SYS_Enter_Critical();
-    uint8_t index = 0U;
-    while (index < QD4310_MAX_MOTORS &&
-           QD4310_Registrations[index] != NULL && QD4310_Registrations[index] != motor)
+    if (!Sys_Health_Register_Motor(QD4310_HealthProbe, motor))
     {
-        index++;
+        SYS_Exit_Critical(primask);
+        return false;
     }
-    const bool registered = index < QD4310_MAX_MOTORS &&
-                            BSP_CAN_RegisterCallback(id + 0x500, hfdcan, QDrive_Callback, motor);
-    if (registered)
+    if (!BSP_CAN_RegisterCallback(id + 0x500, hfdcan, QDrive_Callback, motor))
     {
-        memset(motor, 0, sizeof(*motor));
-        motor->id = id;
-        motor->hfdcan = hfdcan;
-        QD4310_Registrations[index] = motor;
+        Sys_Health_Unregister_Motor(QD4310_HealthProbe, motor);
+        SYS_Exit_Critical(primask);
+        return false;
     }
+
+    memset(motor, 0, sizeof(*motor));
+    motor->id = id;
+    motor->hfdcan = hfdcan;
     SYS_Exit_Critical(primask);
-    return registered;
+    return true;
 }
 
-bool QD4310_GetHealth(uint8_t index, QD4310_Health_t *snapshot)
+static bool QD4310_HealthProbe(void *context, Struct_Sys_Health_Motor_Sample *sample)
 {
-    if (snapshot == NULL || index >= QD4310_MAX_MOTORS)
+    const QD4310_t *motor = (const QD4310_t *) context;
+    if (motor == NULL || sample == NULL)
     {
         return false;
     }
 
     const uint32_t primask = SYS_Enter_Critical();
-    const QD4310_t *motor = QD4310_Registrations[index];
-    if (motor == NULL)
+    const bool ready = motor->hfdcan != NULL;
+    if (ready)
     {
-        SYS_Exit_Critical(primask);
-        return false;
+        sample->Name = "QD4310";
+        sample->Bus = motor->hfdcan;
+        sample->Feedback_Id = 0x500 + motor->id;
+        sample->Last_Feedback_us = motor->last_feedback_us;
+        sample->Feedback_Timeout_us = QD4310_FEEDBACK_TIMEOUT_MS * 1000ULL;
+        sample->Feedback_Received = motor->feedback_received;
+        sample->Enabled = motor->enabled;
+        sample->Drive_Fault = false;
     }
-    snapshot->hfdcan = motor->hfdcan;
-    snapshot->rx_id = 0x500U + motor->id;
-    snapshot->last_feedback_us = motor->last_feedback_us;
-    snapshot->feedback_timeout_us = QD4310_FEEDBACK_TIMEOUT_MS * 1000ULL;
-    snapshot->feedback_received = motor->feedback_received;
-    snapshot->enabled = motor->enabled;
     SYS_Exit_Critical(primask);
-    return true;
+    return ready;
 }
 
 /**

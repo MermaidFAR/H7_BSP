@@ -12,7 +12,7 @@
 extern "C"
 {
     volatile Struct_Sys_Health SYS_Health __attribute__((used)) = {};
-    volatile uint8_t SYS_Health_Buzzer_Mute __attribute__((used)) = 0U;
+    volatile uint8_t SYS_Health_Buzzer_Mute __attribute__((used)) = 0;
 }
 
 struct Health_Tracking
@@ -25,15 +25,23 @@ struct Health_Tracking
 struct Health_Motor_Tracking
 {
     Health_Tracking Link;
+    const char *Name;
     FDCAN_HandleTypeDef *Bus;
     uint32_t Feedback_Id;
     bool Feedback_Received;
+};
+
+struct Health_Motor_Probe_Entry
+{
+    Sys_Health_Motor_Probe_t Probe;
+    void *Context;
 };
 
 static Struct_Sys_Health Health_Next;
 static Health_Tracking Health_IMU;
 static Health_Tracking Health_Power;
 static Health_Motor_Tracking Health_Motors[SYS_HEALTH_MAX_MOTORS];
+static Health_Motor_Probe_Entry Health_Motor_Probes[SYS_HEALTH_MAX_MOTORS];
 static uint32_t Previous_IMU_Counters[9];
 static bool Previous_IMU_Valid;
 
@@ -260,30 +268,33 @@ static void Health_Update_Power(void)
     Health_Next.Power = Health_Power.Item;
 }
 
-static void Health_Add_Motor(uint8_t slot, Enum_Sys_Health_Motor_Type type, FDCAN_HandleTypeDef *bus,
-                             uint32_t id, bool enabled, bool received, uint64_t sample_us,
-                             uint64_t timeout_us, bool drive_fault)
+static void Health_Add_Motor(uint8_t slot, const Struct_Sys_Health_Motor_Sample *sample)
 {
     // 用固定注册槽保存历史，发布时压紧有效电机，避免新增电机导致已有历史错位。
     Health_Motor_Tracking *tracking = &Health_Motors[slot];
-    if (tracking->Bus != bus || tracking->Feedback_Id != id ||
-        (tracking->Feedback_Received && !received))
+    if (tracking->Name != sample->Name || tracking->Bus != sample->Bus ||
+        tracking->Feedback_Id != sample->Feedback_Id ||
+        (tracking->Feedback_Received && !sample->Feedback_Received))
     {
         tracking->Link = {};
-        tracking->Bus = bus;
-        tracking->Feedback_Id = id;
+        tracking->Name = sample->Name;
+        tracking->Bus = sample->Bus;
+        tracking->Feedback_Id = sample->Feedback_Id;
     }
-    tracking->Feedback_Received = received;
+    tracking->Feedback_Received = sample->Feedback_Received;
     const uint64_t now_us = SYS_Timestamp_Get_Microsecond();
-    tracking->Link.Item.Data_Age_ms = received ? Health_Age_ms(now_us, sample_us) : UINT32_MAX;
+    tracking->Link.Item.Data_Age_ms = sample->Feedback_Received
+                                          ? Health_Age_ms(now_us, sample->Last_Feedback_us)
+                                          : UINT32_MAX;
     uint32_t reason = HEALTH_REASON_NONE;
-    Enum_Sys_Health_State state = Health_Data_State(&tracking->Link, received, sample_us,
-                                                    timeout_us, now_us, &reason);
+    Enum_Sys_Health_State state = Health_Data_State(&tracking->Link, sample->Feedback_Received,
+                                                    sample->Last_Feedback_us,
+                                                    sample->Feedback_Timeout_us, now_us, &reason);
     if (state == HEALTH_OK)
     {
         // 在线计数反映反馈链路，驱动器上报的故障单独进入整车状态。
         Health_Next.Online_Motor_Count++;
-        if (drive_fault)
+        if (sample->Drive_Fault)
         {
             reason |= HEALTH_REASON_MOTOR_FAULT;
             state = HEALTH_FAULT;
@@ -297,55 +308,104 @@ static void Health_Add_Motor(uint8_t slot, Enum_Sys_Health_Motor_Type type, FDCA
 
     Struct_Sys_Health_Motor *out = &Health_Next.Motor[Health_Next.Motor_Count++];
     out->Health = tracking->Link.Item;
-    out->Bus = bus;
-    out->Feedback_Id = id;
-    out->Enabled = enabled;
-    out->Type = type;
+    out->Name = sample->Name;
+    out->Bus = sample->Bus;
+    out->Feedback_Id = sample->Feedback_Id;
+    out->Enabled = sample->Enabled;
     Health_Next.Overall_State = Health_Worse_State(Health_Next.Overall_State, out->Health.State);
 }
 
 static void Health_Update_Motors(void)
 {
     const uint32_t previous_count = Health_Next.Motor_Count;
-    Health_Next.Motor_Count = 0U;
-    Health_Next.Online_Motor_Count = 0U;
-    Health_Next.Offline_Motor_Count = 0U;
+    Health_Next.Motor_Count = 0;
+    Health_Next.Online_Motor_Count = 0;
+    Health_Next.Offline_Motor_Count = 0;
 
-    for (uint8_t i = 0; i < DJI_MOTOR_MAX_MOTORS; ++i)
+    for (uint32_t i = 0; i < SYS_HEALTH_MAX_MOTORS; i++)
     {
-        Struct_DJIMotor_Health motor;
-        if (Class_DJIMotor::Get_Health(i, &motor))
+        const uint32_t primask = SYS_Enter_Critical();
+        const Sys_Health_Motor_Probe_t probe = Health_Motor_Probes[i].Probe;
+        void *const context = Health_Motor_Probes[i].Context;
+        SYS_Exit_Critical(primask);
+
+        if (probe == nullptr)
         {
-            Health_Add_Motor(i, HEALTH_MOTOR_DJI, motor.hfdcan, motor.rx_id, motor.enabled,
-                             motor.feedback_received, motor.last_feedback_us, motor.feedback_timeout_us, false);
+            Health_Motors[i] = {};
+            continue;
         }
-    }
-    for (uint8_t i = 0; i < DM_MOTOR_MAX_MOTORS; ++i)
-    {
-        Struct_DMMotor_Health motor;
-        if (Class_DMMotor::Get_Health(i, &motor))
+
+        Struct_Sys_Health_Motor_Sample sample = {};
+        if (probe(context, &sample))
         {
-            // 达妙反馈状态 0 为失能，1 为使能，其余按驱动故障处理。
-            Health_Add_Motor(DJI_MOTOR_MAX_MOTORS + i, HEALTH_MOTOR_DM, motor.hfdcan, motor.rx_id,
-                             motor.enabled, motor.feedback_received, motor.last_feedback_us,
-                             motor.feedback_timeout_us, motor.state > 1U);
+            Health_Add_Motor((uint8_t) i, &sample);
         }
-    }
-    for (uint8_t i = 0; i < QD4310_MAX_MOTORS; ++i)
-    {
-        QD4310_Health_t motor;
-        if (QD4310_GetHealth(i, &motor))
+        else
         {
-            Health_Add_Motor(DJI_MOTOR_MAX_MOTORS + DM_MOTOR_MAX_MOTORS + i, HEALTH_MOTOR_QD4310,
-                             motor.hfdcan, motor.rx_id, motor.enabled, motor.feedback_received,
-                             motor.last_feedback_us, motor.feedback_timeout_us, false);
+            Health_Motors[i] = {};
         }
     }
 
-    for (uint32_t i = Health_Next.Motor_Count; i < previous_count; ++i)
+    for (uint32_t i = Health_Next.Motor_Count; i < previous_count; i++)
     {
         Health_Next.Motor[i] = {};
     }
+}
+
+bool Sys_Health_Register_Motor(Sys_Health_Motor_Probe_t probe, void *context)
+{
+    if (probe == nullptr)
+    {
+        return false;
+    }
+
+    const uint32_t primask = SYS_Enter_Critical();
+    int free_index = -1;
+    for (uint32_t i = 0; i < SYS_HEALTH_MAX_MOTORS; i++)
+    {
+        if (Health_Motor_Probes[i].Probe == probe && Health_Motor_Probes[i].Context == context)
+        {
+            SYS_Exit_Critical(primask);
+            return false;
+        }
+        if (Health_Motor_Probes[i].Probe == nullptr && free_index < 0)
+        {
+            free_index = (int) i;
+        }
+    }
+    if (free_index < 0)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
+
+    Health_Motor_Probes[free_index].Context = context;
+    __DMB();
+    Health_Motor_Probes[free_index].Probe = probe;
+    SYS_Exit_Critical(primask);
+    return true;
+}
+
+bool Sys_Health_Unregister_Motor(Sys_Health_Motor_Probe_t probe, void *context)
+{
+    if (probe == nullptr)
+    {
+        return false;
+    }
+
+    const uint32_t primask = SYS_Enter_Critical();
+    for (uint32_t i = 0; i < SYS_HEALTH_MAX_MOTORS; i++)
+    {
+        if (Health_Motor_Probes[i].Probe == probe && Health_Motor_Probes[i].Context == context)
+        {
+            Health_Motor_Probes[i].Probe = nullptr;
+            Health_Motor_Probes[i].Context = nullptr;
+            SYS_Exit_Critical(primask);
+            return true;
+        }
+    }
+    SYS_Exit_Critical(primask);
+    return false;
 }
 
 void Sys_Health_Init(void)
