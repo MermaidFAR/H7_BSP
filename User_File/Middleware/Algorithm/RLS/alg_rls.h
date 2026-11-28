@@ -33,6 +33,13 @@ class Class_RLS
      * @author zzm
      */
     bool Update(const float *features, float measurement);
+    /**
+     * @brief 标量观测的 SIFt-RLS 更新，仅在本帧特征提供信息的方向遗忘。
+     * @note P0 * ‖φ‖² 小于 1 - λ 时只执行测量更新，以免微弱输入持续放大方差。
+     *       P0 为初始协方差标量。λ = 1 时与 Update 相同。
+     * @see https://arxiv.org/abs/2404.10844
+     */
+    bool Update_Directional(const float *features, float measurement);
     void Reset();
     bool Get_Parameters(float *out, uint8_t capacity) const;
     float Get_Parameter(uint8_t index) const;
@@ -47,6 +54,9 @@ class Class_RLS
     double Forgetting_Factor = 1.0;
     uint8_t Dimension = 0;
     bool Initialized_Flag = false;
+
+  private:
+    bool Update_Sample(const float *features, float measurement, bool directional);
 };
 
 #endif

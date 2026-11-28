@@ -52,7 +52,7 @@ class PowerControl
     bool TIM_Calculate_PeriodElapsedCallback();
     PowerControlOutput_t Get_Output() const;
 
-    /** @brief 每帧新的、时间对齐的有效功率测量最多调用一次；只用驱动工况辨识。 */
+    /** @brief 每帧新的、时间对齐的驱动功率样本最多调用一次，按速度与力矩平方的观测方向遗忘。 */
     bool Update_Identification(float measured_power_w, const float *actual_torque_nm,
                                const float *speed_rad_s);
     void Reset_Identification();

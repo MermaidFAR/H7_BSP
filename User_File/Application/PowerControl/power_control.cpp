@@ -178,7 +178,7 @@ bool PowerControl::Update_Identification(float measured_power_w,
         return false;
     }
     const float features[2] = {(float) speed_sum, (float) torque_square_sum};
-    if (!Estimator.Update(features, (float) residual))
+    if (!Estimator.Update_Directional(features, (float) residual))
     {
         return false;
     }
@@ -211,7 +211,9 @@ void PowerControl::Reset_Identification()
     Copper_Coefficient = Config.copper_coefficient;
     if (Config.enable_rls)
     {
-        Estimator.Reset();
+        // 越界回退可能以最近系数重建过估计器，显式复位须恢复最初配置。
+        const float initial[2] = {Friction_Coefficient, Copper_Coefficient};
+        Estimator.Init(2, Config.rls_forgetting_factor, Config.rls_initial_covariance, initial);
     }
 }
 
