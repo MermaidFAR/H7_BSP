@@ -200,7 +200,11 @@ void Class_BMI088::TIM_1ms_Service_PeriodElapsedCallback()
 void Class_BMI088::BMI088_Recover_SPI(uint8_t reason)
 {
     SPI_Recovery_Counter++;
-    SPI_Recovery_Last_Reason = reason;
+    // 重试沿用首次触发原因，避免同一帧超时被重复计数。
+    if (reason != BMI088_SPI_RECOVERY_NONE)
+    {
+        SPI_Recovery_Last_Reason = reason;
+    }
     if ((reason & (BMI088_SPI_RECOVERY_ACCEL_TIMEOUT |
                    BMI088_SPI_RECOVERY_GYRO_TIMEOUT |
                    BMI088_SPI_RECOVERY_TEMPERATURE_TIMEOUT)) != 0U)
@@ -219,9 +223,17 @@ void Class_BMI088::BMI088_Recover_SPI(uint8_t reason)
     {
         SPI_Temperature_Timeout_Counter++;
     }
-    SPI_Recover(SPI_Manage_Object->SPI_Handler);
+    const bool recovered = SPI_Recover(SPI_Manage_Object->SPI_Handler);
     const uint32_t primask = SYS_Enter_Critical();
-    SPI_State = BMI088_SPI_STATE_IDLE;
+    if (recovered)
+    {
+        SPI_State = BMI088_SPI_STATE_IDLE;
+    }
+    else
+    {
+        SPI_State_Since_Low32 = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
+        SPI_State = BMI088_SPI_STATE_RECOVERY_PENDING;
+    }
     SYS_Exit_Critical(primask);
 }
 
@@ -255,18 +267,28 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
         if (SPI_State == BMI088_SPI_STATE_IN_FLIGHT)
         {
             const uint32_t now = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
-            const uint32_t elapsed = now - Transfer_Start_Timestamp_Low32;
+            const uint32_t elapsed = now - SPI_State_Since_Low32;
             if (elapsed >= TRANSFERING_TIMEOUT)
             {
                 SPI_Capture_Timeout_Snapshot(spi_handler, elapsed);
                 recovery |= timeout_reasons[Active_Sensor];
             }
         }
+        const bool retry = SPI_State == BMI088_SPI_STATE_RECOVERY_PENDING;
+        if (retry)
+        {
+            const uint32_t now = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
+            if (now - SPI_State_Since_Low32 < RECOVERY_RETRY_INTERVAL_US)
+            {
+                SYS_Exit_Critical(primask);
+                return;
+            }
+        }
         if (SPI_Has_Error(spi_handler))
         {
             recovery |= BMI088_SPI_RECOVERY_HAL_ERROR;
         }
-        if (recovery != BMI088_SPI_RECOVERY_NONE)
+        if (retry || recovery != BMI088_SPI_RECOVERY_NONE)
         {
             if (SPI_State == BMI088_SPI_STATE_IN_FLIGHT)
             {
@@ -281,7 +303,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
             SPI_State = BMI088_SPI_STATE_RECOVERING;
             SYS_Exit_Critical(primask);
 
-            BMI088_Recover_SPI(recovery);
+            BMI088_Recover_SPI(retry ? (uint8_t) BMI088_SPI_RECOVERY_NONE : recovery);
             return;
         }
     }
@@ -332,7 +354,7 @@ void Class_BMI088::BMI088_Service_Transfer(bool Allow_Recovery)
             }
             else
             {
-                Transfer_Start_Timestamp_Low32 = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
+                SPI_State_Since_Low32 = (uint32_t) SYS_Timestamp.Get_Now_Microsecond();
                 SPI_State = BMI088_SPI_STATE_IN_FLIGHT;
             }
         }

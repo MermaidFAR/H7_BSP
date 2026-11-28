@@ -153,6 +153,7 @@ class Class_BMI088
     Struct_SPI_Manage_Object *SPI_Manage_Object = nullptr;
 
     static constexpr uint32_t TRANSFERING_TIMEOUT = 1000U;
+    static constexpr uint32_t RECOVERY_RETRY_INTERVAL_US = 10000U;
     static constexpr float D_T_TIMEOUT_THRESHOLD = 0.1f;
     static constexpr uint32_t PUBLICATION_INTERVAL_US = 5000;
 
@@ -190,6 +191,7 @@ class Class_BMI088
         BMI088_SPI_STATE_COMPLETED_DURING_START,
         BMI088_SPI_STATE_IN_FLIGHT,
         BMI088_SPI_STATE_RECOVERING,
+        BMI088_SPI_STATE_RECOVERY_PENDING,
     };
 
     volatile bool Init_Finished_Flag = false;
@@ -198,7 +200,7 @@ class Class_BMI088
     uint8_t Next_Sensor = 0U;
     uint64_t Ready_Timestamps[BMI088_SENSOR_COUNT] = {};
     uint64_t Active_Ready_Timestamp = 0U;
-    uint32_t Transfer_Start_Timestamp_Low32 = 0U;
+    uint32_t SPI_State_Since_Low32 = 0U;
     uint64_t Accel_Update_Timestamp = 0U;
     uint64_t Accel_Update_Ready_Timestamp = 0U;
     uint64_t Gyro_FIFO_Last_Fallback_Poll_Timestamp = 0U;

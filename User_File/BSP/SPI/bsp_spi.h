@@ -41,6 +41,14 @@
  */
 typedef void (*SPI_Callback)(uint8_t *Tx_Buffer, uint8_t *Rx_Buffer, uint16_t Tx_Length, uint16_t Rx_Length);
 
+enum Enum_SPI_Transaction_State : uint8_t
+{
+    SPI_TRANSACTION_IDLE,
+    SPI_TRANSACTION_ACTIVE,
+    SPI_TRANSACTION_RECOVERING,
+    SPI_TRANSACTION_RECOVERY_PENDING,
+};
+
 /**
  * @brief 单路 SPI 的收发缓冲区、片选状态与诊断计数。
  */
@@ -49,8 +57,7 @@ struct Struct_SPI_Manage_Object
     SPI_HandleTypeDef *SPI_Handler;
     SPI_Callback Callback_Function;
 
-    // 当前是否存在尚未完成的事务
-    volatile bool Transaction_Active;
+    volatile Enum_SPI_Transaction_State Transaction_State;
 
     // 片选信号的GPIO与电平
     GPIO_TypeDef *Activate_GPIOx;
@@ -70,6 +77,7 @@ struct Struct_SPI_Manage_Object
     uint32_t Error_Count;
     uint32_t Transaction_Busy_Count;
     uint32_t Start_Failure_Count;
+    uint32_t Recovery_Failure_Count;
     uint32_t Callback_Anomaly_Count;
     uint8_t Last_Start_Failure_Status;
 };
@@ -134,9 +142,10 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us);
 
 /**
  * @brief 在任务上下文中止异常 SPI/DMA 事务并复位总线管理状态。
- * @param hspi 需要恢复的 SPI 句柄。
+ * @param hspi 需要恢复的 SPI 句柄，由事务所有者在提交返回后调用。
+ * @return true 表示 SPI 与关联 DMA 已停止，缓冲区可复用。false 时由任务稍后重试。
  */
-void SPI_Recover(SPI_HandleTypeDef *hspi);
+bool SPI_Recover(SPI_HandleTypeDef *hspi);
 
 /**
  * @brief 查询 HAL SPI 句柄是否存在未清除的错误标志。

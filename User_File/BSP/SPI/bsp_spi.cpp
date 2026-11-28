@@ -68,17 +68,38 @@ static Struct_SPI_Manage_Object *SPI_Get_Manage_Object(const SPI_HandleTypeDef *
     return nullptr;
 }
 
-static void SPI_Reset_DMA_Handle(DMA_HandleTypeDef *dma_handler)
+static bool SPI_Recover_DMA(DMA_HandleTypeDef *dma_handler)
 {
-    if (dma_handler == nullptr)
+    if (dma_handler->State == HAL_DMA_STATE_BUSY)
     {
-        return;
+        const uint32_t previous_error = dma_handler->ErrorCode;
+        if (HAL_DMA_Abort(dma_handler) != HAL_OK)
+        {
+            if (dma_handler->ErrorCode != HAL_DMA_ERROR_NO_XFER)
+            {
+                return false;
+            }
+            dma_handler->ErrorCode = previous_error;
+        }
     }
 
-    HAL_DMA_Abort(dma_handler);
+    // HAL 中止超时后软件可已是 ERROR，只有硬件 EN 清零后才能复用该通道。
+    const bool enabled = IS_DMA_STREAM_INSTANCE(dma_handler->Instance)
+                             ? (((DMA_Stream_TypeDef *) dma_handler->Instance)->CR & DMA_SxCR_EN) != 0U
+                             : (((BDMA_Channel_TypeDef *) dma_handler->Instance)->CCR & BDMA_CCR_EN) != 0U;
+    if (enabled)
+    {
+        __HAL_DMA_DISABLE(dma_handler);
+        return false;
+    }
+    if (dma_handler->State != HAL_DMA_STATE_READY || dma_handler->Lock != HAL_UNLOCKED ||
+        (dma_handler->ErrorCode & ~HAL_DMA_ERROR_NO_XFER) != HAL_DMA_ERROR_NONE)
+    {
+        return HAL_DMA_Init(dma_handler) == HAL_OK;
+    }
+    // HAL_SPI_Abort 可能对已空闲的 DMA 调用 Abort，留下 HAL_DMA_ERROR_NO_XFER。
     dma_handler->ErrorCode = HAL_DMA_ERROR_NONE;
-    dma_handler->State = HAL_DMA_STATE_READY;
-    dma_handler->Lock = HAL_UNLOCKED;
+    return true;
 }
 
 void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
@@ -140,7 +161,7 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
     SPI2_Timeout_Snapshot.TX_DMA_State =
         tx_dma != nullptr ? (uint8_t) tx_dma->State : 0U;
     SPI2_Timeout_Snapshot.Transaction_Active =
-        manage_object != nullptr && manage_object->Transaction_Active ? 1U : 0U;
+        manage_object != nullptr && manage_object->Transaction_State != SPI_TRANSACTION_IDLE ? 1U : 0U;
     SPI2_Timeout_Snapshot.NVIC_Pending_Bits = pending_bits;
     SPI2_Timeout_Snapshot.NVIC_Active_Bits = active_bits;
     SPI2_Timeout_Snapshot.Reserved = 0U;
@@ -152,10 +173,10 @@ void SPI_Capture_Timeout_Snapshot(SPI_HandleTypeDef *hspi, uint32_t Elapsed_Us)
 static bool SPI_Try_Acquire_Transaction(Struct_SPI_Manage_Object *manage_object)
 {
     const uint32_t primask = SYS_Enter_Critical();
-    const bool acquired = !manage_object->Transaction_Active;
+    const bool acquired = manage_object->Transaction_State == SPI_TRANSACTION_IDLE;
     if (acquired)
     {
-        manage_object->Transaction_Active = true;
+        manage_object->Transaction_State = SPI_TRANSACTION_ACTIVE;
     }
     else
     {
@@ -186,7 +207,7 @@ static void SPI_Release_Transaction(Struct_SPI_Manage_Object *manage_object)
     manage_object->Tx_Buffer_Length = 0;
     manage_object->Rx_Buffer_Length = 0;
     __DMB();
-    manage_object->Transaction_Active = false;
+    manage_object->Transaction_State = SPI_TRANSACTION_IDLE;
     __DMB();
 }
 
@@ -362,7 +383,7 @@ extern "C" void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     {
         return;
     }
-    if (!manage_object->Transaction_Active)
+    if (manage_object->Transaction_State != SPI_TRANSACTION_ACTIVE)
     {
         manage_object->Callback_Anomaly_Count++;
         return;
@@ -384,7 +405,7 @@ extern "C" void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     {
         return;
     }
-    if (!manage_object->Transaction_Active)
+    if (manage_object->Transaction_State != SPI_TRANSACTION_ACTIVE)
     {
         manage_object->Callback_Anomaly_Count++;
         return;
@@ -414,7 +435,7 @@ extern "C" void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     {
         return;
     }
-    if (!manage_object->Transaction_Active)
+    if (manage_object->Transaction_State != SPI_TRANSACTION_ACTIVE)
     {
         manage_object->Callback_Anomaly_Count++;
         return;
@@ -425,27 +446,67 @@ extern "C" void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     SPI_Release_Transaction(manage_object);
 }
 
-void SPI_Recover(SPI_HandleTypeDef *hspi)
+bool SPI_Recover(SPI_HandleTypeDef *hspi)
 {
     Struct_SPI_Manage_Object *manage_object = SPI_Get_Manage_Object(hspi);
     if (manage_object == nullptr)
     {
-        return;
+        return false;
     }
 
-    SPI_Deactivate_Chip_Select(manage_object);
-    HAL_SPI_Abort(hspi);
-    SPI_Reset_DMA_Handle(hspi->hdmatx);
-    SPI_Reset_DMA_Handle(hspi->hdmarx);
-    hspi->ErrorCode = HAL_SPI_ERROR_NONE;
-    hspi->State = HAL_SPI_STATE_READY;
-    hspi->Lock = HAL_UNLOCKED;
-    hspi->TxXferCount = 0;
-    hspi->RxXferCount = 0;
-
-    const uint32_t primask = SYS_Enter_Critical();
-    SPI_Release_Transaction(manage_object);
+    uint32_t primask = SYS_Enter_Critical();
+    if (manage_object->Transaction_State == SPI_TRANSACTION_RECOVERING)
+    {
+        SYS_Exit_Critical(primask);
+        return false;
+    }
+    if (manage_object->Transaction_State == SPI_TRANSACTION_RECOVERY_PENDING && hspi->Lock == HAL_UNLOCKED)
+    {
+        // HAL_SPI_Abort 用此位判定本次中止结果，重试前移除上次锁存的中止错误。
+        hspi->ErrorCode &= ~HAL_SPI_ERROR_ABORT;
+    }
+    manage_object->Transaction_State = SPI_TRANSACTION_RECOVERING;
     SYS_Exit_Critical(primask);
+
+    SPI_Deactivate_Chip_Select(manage_object);
+    DMA_HandleTypeDef *const channels[] = {hspi->hdmatx, hspi->hdmarx};
+    const uint32_t previous_errors[] = {
+        hspi->hdmatx != nullptr ? hspi->hdmatx->ErrorCode : HAL_DMA_ERROR_NONE,
+        hspi->hdmarx != nullptr ? hspi->hdmarx->ErrorCode : HAL_DMA_ERROR_NONE};
+    const bool spi_stopped = HAL_SPI_Abort(hspi) == HAL_OK &&
+                             (hspi->Instance->CR1 & (SPI_CR1_SPE | SPI_CR1_CSTART)) == 0U &&
+                             (hspi->Instance->CFG1 & (SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN)) == 0U;
+    bool stopped = spi_stopped;
+    for (unsigned i = 0; i < 2U; ++i)
+    {
+        DMA_HandleTypeDef *dma = channels[i];
+        if (dma == nullptr)
+        {
+            continue;
+        }
+        // HAL_SPI_Abort 中止已空闲的 DMA 时会覆盖原错误，包括上次 Init 留下的 PARAM。
+        if (dma->ErrorCode == HAL_DMA_ERROR_NO_XFER)
+        {
+            dma->ErrorCode = previous_errors[i];
+        }
+        if (spi_stopped && !SPI_Recover_DMA(dma))
+        {
+            stopped = false;
+        }
+    }
+
+    primask = SYS_Enter_Critical();
+    if (stopped)
+    {
+        SPI_Release_Transaction(manage_object);
+    }
+    else
+    {
+        manage_object->Recovery_Failure_Count++;
+        manage_object->Transaction_State = SPI_TRANSACTION_RECOVERY_PENDING;
+    }
+    SYS_Exit_Critical(primask);
+    return stopped;
 }
 
 bool SPI_Has_Error(const SPI_HandleTypeDef *hspi)
